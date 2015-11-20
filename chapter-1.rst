@@ -7,11 +7,12 @@ I've worked on Varnish since the of autumn 2008, first for Redpill Linpro,
 then Varnish Software, then, after a brief pause, for Redpill Linpro again.
 Over the years I've written code, written Varnish modules and blog posts,
 held more training courses than most, written most of the training
-material, and, I hope helped shape the Varnish community in a positive way.
+material, and helped shape the Varnish community.
 
-I love writing. Educating. But today I find myself in a position where the
-training material is out of my hands - I no longer work for Varnish
-Software. And besides, writing training material only gets you so far.
+I love writing. Educating. Today I find myself in a position where the
+training material I once maintained is out of my hands - I no longer work
+for Varnish Software. And besides, writing training material only gets you
+so far.
 
 This is my solution. I will write a book (again). Because I can't imagine
 that I'll ever finish it if I actually try to write a whole book in one go,
@@ -21,8 +22,9 @@ calling it "Foo Varnish", at least for now. I call everything else foo* so
 I might as well keep that tradition.
 
 You will find the source on https://github.com/KristianLyng/foovarnish.
-I accept pull requests (Before you ask, no, not blindly). Even though a
-chapter might be published on my blog - or on paper, it's never finished.
+I welcome pull requests, issues and any sort of feedback. Even though a
+chapter might be published on my blog or on paper, it's never finished. I
+hope this will be a living document.
 
 I intend to cover as much Varnish-related content as possible, from
 administration to web development and infrastructure. And my hope is that
@@ -34,8 +36,8 @@ Target audience and format
 
 This book tries to cover a large spectre of subjects related to Varnish. It
 is suitable for system administrators, infrastructure architects and web
-developers. But you might have to be a bit selective as to what chapters
-you decide to read.
+developers. The first few chapters should be of interest to all, while
+later chapters will specialize on certain aspects of Varnish usage.
 
 Each chapter is intended to stand well on its own, but there will be some
 cross-references. This is a book intended to give you practical knowledge,
@@ -49,9 +51,10 @@ In addition to just giving you the facts, this book also tries to give you
 the mindset and the good habits that will help you beyond what the material
 in a single book can cover.
 
-Most chapters have both a theoretical bit and a practical bit. The
-practical parts are meant to help you master what has already been
-explained.
+Most chapters have both a theoretical bit and a practical bit with
+exercises. You will find examples that are based on real-world deployments,
+both from large scale high-traffic sites and small one-man setups. And
+everything in-between.
 
 All examples and code snippets are machine-tested for syntax correctness.
 
