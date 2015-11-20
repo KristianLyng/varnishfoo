@@ -152,3 +152,12 @@ or optionally change configuration, stop and start Varnish, and more. The
 agent lives on https://github.com/varnish/vagent2, and is packaged for most
 distributions today. There's also a commercial administration console that
 builds further on the agent.
+
+Using Varnish to gracefully handle operational issues is also common.
+Serving cached content past its expiry time while a web server is down, or
+switching to a different server, will give your users a better browsing
+experience. And in a worst case scenario, at least the user can be
+presented with a real error message instead of a refused or timed out
+connection.
+
+
