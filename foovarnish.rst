@@ -49,6 +49,14 @@ material, not whether Red Hat or Debian is the better distribution, or
 whether ``httpie``, ``libwww-perl`` or ``curl`` the better command line
 HTTP tool.
 
+In addition to just giving you the facts, this book also tries to give you
+the mindset and the good habits that will help you beyond what the material
+in a single book can cover.
+
+Most chapters have both a theoretical bit and a practical bit. The
+practical parts are meant to help you master what has already been
+explained.
+
 All examples and code snippets are machine-tested for syntax correctness.
 
 What is Varnish
