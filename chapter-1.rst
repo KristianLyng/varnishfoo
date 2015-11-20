@@ -17,46 +17,42 @@ so far.
 This is my solution. I will write a book (again). Because I can't imagine
 that I'll ever finish it if I actually try to write a whole book in one go,
 I will publish one chapter at a time on my blog. This is the first chapter
-of that book. At the time of this writing, I don't have a name. So I'm
+of that book. At the time of this writing, it doesn't have a name. So I'm
 calling it "Foo Varnish", at least for now. I call everything else foo* so
-I might as well keep that tradition.
+I might as well keep up with that tradition.
 
 You will find the source on https://github.com/KristianLyng/foovarnish.
 I welcome pull requests, issues and any sort of feedback. Even though a
-chapter might be published on my blog or on paper, it's never finished. I
-hope this will be a living document.
+chapter might be published on my blog or on paper, it's never finished.
 
 I intend to cover as much Varnish-related content as possible, from
 administration to web development and infrastructure. And my hope is that
 one day, this will be good enough that it will be worth printing as more
 than just a leaflet.
 
+I am writing this in my spare time, and as such, I retain full ownership of
+the material. For now, the material is available under a Creative Commons
+"CC-BY-SA-NC" license. The NC-clause will likely be temporary, and I want
+to clarify that it is NOT meant to indicate that you can't read this book
+at work.
+
 Target audience and format
 --------------------------
 
 This book tries to cover a large spectre of subjects related to Varnish. It
 is suitable for system administrators, infrastructure architects and web
-developers. The first few chapters should be of interest to all, while
-later chapters will specialize on certain aspects of Varnish usage.
+developers. The first few chapters is of interest to all, while later
+chapters specialize on certain aspects of Varnish usage.
 
 Each chapter is intended to stand well on its own, but there will be some
-cross-references. This is a book intended to give you practical knowledge,
-and as such, certain tools are used in examples and exercises to get you
-started. This is mainly intended to keep you focused on the Varnish-related
-material, not whether Red Hat or Debian is the better distribution, or
-whether ``httpie``, ``libwww-perl`` or ``curl`` the better command line
-HTTP tool.
+cross-references. The book focuses on best practices and good habits that
+will help you beyond what just a few examples or explanations will do.
 
-In addition to just giving you the facts, this book also tries to give you
-the mindset and the good habits that will help you beyond what the material
-in a single book can cover.
-
-Most chapters have both a theoretical bit and a practical bit with
-exercises. You will find examples that are based on real-world deployments,
-both from large scale high-traffic sites and small one-man setups. And
-everything in-between.
-
-All examples and code snippets are machine-tested for syntax correctness.
+Each chapter focuses on understanding the concepts they cover, but also
+provide examples to demonstrate the concepts they cover. Each example
+snippet is tested with a recent Varnish Version. You will find examples
+that are based on real-world deployments, both from large scale
+high-traffic sites and small one-man setups. And everything in-between.
 
 What is Varnish
 ---------------
@@ -83,13 +79,10 @@ There are numerous reasons you might want Varnish:
 6. ???
 
 Varnish is designed around two simple concepts: Give you the means to fix
-or work around technical issues. And speed. Speed was largely handled very
-early on, and Varnish is quite simply fast. This is achieved by being, at
-the core, simple. The less you have to do for each request, the more
+or work around technical challenges. And speed. Speed was largely handled
+very early on, and Varnish is quite simply fast. This is achieved by being,
+at the core, simple. The less you have to do for each request, the more
 requests you can handle.
-
-In this book, you'll learn how Varnish works, how, when and why to use
-Varnish, and more.
 
 History
 -------
@@ -129,6 +122,14 @@ functions (vmod-digest) and memcached. The number of vmods available grew
 quickly, but even with Varnish 4.1, the biggest issue with them were that
 they required source-compilation for use. That, however, is being fixed
 almost as I am writing this sentence.
+
+Varnish would not be where it is today without a large number of people and
+businesses. Varnish Software have contributed and continues to contribute
+numerous tools, vmods, and core features. Poul-Henning Kamp is still the
+gatekeeper of Varnish Cache code, for better or worse, and does the
+majority of the architectural work. Over the years, there have been too
+many companies and individuals involved to list them all in a book, so I
+will leave that to the official Varnish Cache project.
 
 Today, Varnish is used by too many sites to mention. From CDNs (plural), to
 tiny blogs and everything in-between.
