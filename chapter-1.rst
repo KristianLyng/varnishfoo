@@ -98,11 +98,11 @@ History
 
 The Varnish project begun in 2005. The issue to be solved was that of
 `VG`_,  a large Norwegian news site (or alternatively a tiny international
-site). The first release came in 2006, and worked flawlessly for exactly
+site). The first release came in 2006, and worked well for exactly
 one site: www.vg.no. In 2008, Varnish 2.0 came, which opened Varnish up to
-sites that looked and behaved like www.vg.no. As time progressed and more
-people started using Varnish, Varnish has been adapted to a large and
-varied set of use cases.
+more sites, as long as they looked and behaved like www.vg.no.  As time
+progressed and more people started using Varnish, Varnish has been adapted
+to a large and varied set of use cases.
 
 From the beginning, the project was administered through Redpill Linpro,
 with the majority of development being done by Poul-Henning Kamp through
