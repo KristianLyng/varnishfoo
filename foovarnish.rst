@@ -33,6 +33,24 @@ administration to web development and infrastructure. And my hope is that
 one day, this will be good enough that it will be worth printing as more
 than just a leaflet.
 
+Target audience and format
+--------------------------
+
+This book tries to cover a large spectre of subjects related to Varnish. It
+is suitable for system administrators, infrastructure architects and web
+developers. But you might have to be a bit selective as to what chapters
+you decide to read.
+
+Each chapter is intended to stand well on its own, but there will be some
+cross-references. This is a book intended to give you practical knowledge,
+and as such, certain tools are used in examples and exercises to get you
+started. This is mainly intended to keep you focused on the Varnish-related
+material, not whether Red Hat or Debian is the better distribution, or
+whether ``httpie``, ``libwww-perl`` or ``curl`` the better command line
+HTTP tool.
+
+All examples and code snippets are machine-tested for syntax correctness.
+
 What is Varnish
 ---------------
 
