@@ -1,3 +1,7 @@
+===========
+Foo Varnish
+===========
+
 The personal introduction
 -------------------------
 
@@ -24,8 +28,10 @@ You will find the source on https://github.com/KristianLyng/foovarnish.
 I accept pull requests (Before you ask, no, not blindly). Even though a
 chapter might be published on my blog - or on paper, it's never finished.
 
-My hope is that one day, this will be good enough that it will be worth
-printing as more than just a leaflet.
+I intend to cover as much Varnish-related content as possible, from
+administration to web development and infrastructure. And my hope is that
+one day, this will be good enough that it will be worth printing as more
+than just a leaflet.
 
 What is Varnish
 ---------------
@@ -63,11 +69,15 @@ Varnish, and more.
 History
 -------
 
+.. _VG: http://www.vg.no
+
 The Varnish project begun in 2005. The issue to be solved was that of
-www.vg.no, a large Norwegian news site (or alternately a tiny international
+`VG`_  a large Norwegian news site (or alternatively a tiny international
 site). The first release came in 2006, and worked flawlessly for exactly
-one site: www.vg.no. In 2008, the 2.0 came, which opened Varnish up to
-sites that looked and behaved like www.vg.no. And so fort, and so on.
+one site: www.vg.no. In 2008, Varnish 2.0 came, which opened Varnish up to
+sites that looked and behaved like www.vg.no. As time progressed and more
+people started using Varnish, Varnish has been adapted to a large and
+varied set of use cases.
 
 From the beginning, the project was administered through Redpill Linpro,
 with the majority of development being done by Poul-Henning Kamp through
@@ -87,21 +97,36 @@ other (streaming, surrogate keys, and more), and some have still to make
 it. Some may never make it. This book will focus on Varnish Cache proper,
 but will reference Varnish Plus where it makes sense.
 
-With Varnish 3.0, released in [FIXME], varnish modules started becoming a
+With Varnish 3.0, released in 2011, varnish modules started becoming a
 big thing. These are modules that are not part of the Varnish Cache code
 base, but are loaded at run-time to add features such as cryptographic hash
-functions (vmod-digest) and  (FIXME). The number of vmods available grew
+functions (vmod-digest) and memcached. The number of vmods available grew
 quickly, but even with Varnish 4.1, the biggest issue with them were that
-they required source-compilation for use.
+they required source-compilation for use. That, however, is being fixed
+almost as I am writing this sentence.
 
 Today, Varnish is used by too many sites to mention. From CDNs (plural), to
 tiny blogs and everything in-between.
 
+More than just cache
+--------------------
 
-----------------
+Varnish caches content, but can do so much more. In 2008, it was used to
+rewrite URLs, normalize HTTP headers and similar things. Today, it is used
+to implement paywalls (whether you like them or not), API metering, load
+balancing, CDNs, and more.
 
+Varnish has a powerful configuration language, the Varnish Configuration
+Language (VCL). This isn't parsed the traditional way a configuration file
+is, but is translated to C code, compiled and linked into the running
+Varnish. From the beginning, it was possible to bypass the entire
+translation process and provide C code directly, which was never
+recommended. With Varnish modules, it's possible to write proper modules to
+replace the in-line C code that was used in the past.
 
-Architecture
-------------
-
-
+There is also a often overlooked Varnish agent that provides a HTTP REST
+interface to managing Varnish. This can be used to extract metrics, review
+or optionally change configuration, stop and start Varnish, and more. The
+agent lives on https://github.com/varnish/vagent2, and is packaged for most
+distributions today. There's also a commercial administration console that
+builds further on the agent.
