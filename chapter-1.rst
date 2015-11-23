@@ -3,23 +3,21 @@ Introduction
 
 This is the only chapter written in first person.
 
-I've worked on Varnish since the of autumn 2008, first for Redpill Linpro,
+I've worked on Varnish since late 2008, first for Redpill Linpro,
 then Varnish Software, then, after a brief pause, for Redpill Linpro again.
 Over the years I've written code, written Varnish modules and blog posts,
-held more training courses than most, written most of the training
-material, and helped shape the Varnish community.
+held more training courses than most, written training material, and helped
+shape the Varnish community.
 
 I love writing. Educating. Today I find myself in a position where the
-training material I once maintained is out of my hands - I no longer work
-for Varnish Software. And besides, writing training material only gets you
-so far.
+training material I once maintained is no longer my responsibility, yet I
+still love writing.
 
-This is my solution. I will write a book (again). Because I can't imagine
-that I'll ever finish it if I actually try to write a whole book in one go,
-I will publish one chapter at a time on my blog. This is the first chapter
-of that book. At the time of this writing, it doesn't have a name. So I'm
-calling it "Foo Varnish", at least for now. I call everything else foo* so
-I might as well keep up with that tradition.
+This is my solution. I will write a book. Because I can't imagine that I'll
+ever finish it if I attempt writing a whole book in one go, I will publish
+one chapter at a time on my blog. This is the first chapter of that book.
+At the time of this writing, it doesn't have a name. Falling back to my
+regular naming tradition, this means the book is called "Varnish Foo".
 
 You will find the source on https://github.com/KristianLyng/foovarnish.
 I welcome pull requests, issues and any sort of feedback. Even though a
@@ -30,8 +28,8 @@ administration to web development and infrastructure. And my hope is that
 one day, this will be good enough that it will be worth printing as more
 than just a leaflet.
 
-I am writing this in my spare time, and as such, I retain full ownership of
-the material. For now, the material is available under a Creative Commons
+I am writing this in my spare time, I retain full ownership of the
+material. For now, the material is available under a Creative Commons
 "CC-BY-SA-NC" license. The NC-clause will likely be temporary, and I want
 to clarify that it is NOT meant to indicate that you can't read this book
 at work.
@@ -39,20 +37,18 @@ at work.
 Target audience and format
 --------------------------
 
-This book tries to cover a large spectre of subjects related to Varnish. It
-is suitable for system administrators, infrastructure architects and web
-developers. The first few chapters is of interest to all, while later
-chapters specialize on certain aspects of Varnish usage.
+This book covers a large spectre of subjects related to Varnish. It is
+suitable for system administrators, infrastructure architects and web
+developers. The first few chapters is general enough to be of interest to
+all, while later chapters specialize on certain aspects of Varnish usage.
 
 Each chapter is intended to stand well on its own, but there will be some
 cross-references. The book focuses on best practices and good habits that
 will help you beyond what just a few examples or explanations will do.
 
-Each chapter focuses on understanding the concepts they cover, but also
-provide examples to demonstrate the concepts they cover. Each example
-snippet is tested with a recent Varnish Version. You will find examples
-that are based on real-world deployments, both from large scale
-high-traffic sites and small one-man setups. And everything in-between.
+Each chapter provides both theory and practical examples. Each example
+is tested with a recent Varnish Version where relevant, and are based on
+experience from real-world Varnish installations.
 
 What is Varnish
 ---------------
@@ -84,36 +80,60 @@ very early on, and Varnish is quite simply fast. This is achieved by being,
 at the core, simple. The less you have to do for each request, the more
 requests you can handle.
 
+The name suggests what it's really all about::
+
+        From The Collaborative International Dictionary of English v.0.48 [gcide]:
+
+          Varnish \Var"nish\, v. t. [imp. & p. p. {Varnished}; p. pr. &
+             vb. n. {Varnishing}.] [Cf. F. vernir, vernisser. See
+             {Varnish}, n.]
+             [1913 Webster]
+             1. To lay varnish on; to cover with a liquid which produces,
+                when dry, a hard, glossy surface; as, to varnish a table;
+                to varnish a painting.
+                [1913 Webster]
+          
+             2. To cover or conceal with something that gives a fair
+                appearance; to give a fair coloring to by words; to gloss
+                over; to palliate; as, to varnish guilt. "Beauty doth
+                varnish age." --Shak.
+                [1913 Webster]
+
+Varnish can be used to smooth over rough edges in your stack, to give a fair
+appearance.
+
 History
 -------
 
 .. _VG: http://www.vg.no
 
-The Varnish project begun in 2005. The issue to be solved was that of
+The Varnish project began in 2005. The issue to be solved was that of
 `VG`_,  a large Norwegian news site (or alternatively a tiny international
-site). The first release came in 2006, and worked well for exactly
+site). The first release came in 2006, and worked well for pretty much
 one site: www.vg.no. In 2008, Varnish 2.0 came, which opened Varnish up to
-more sites, as long as they looked and behaved like www.vg.no.  As time
-progressed and more people started using Varnish, Varnish has been adapted
-to a large and varied set of use cases.
+more sites, as long as they looked and behaved similar to www.vg.no.  As
+time progressed and more people started using Varnish, Varnish has been
+adapted to a large and varied set of use cases.
 
 From the beginning, the project was administered through Redpill Linpro,
 with the majority of development being done by Poul-Henning Kamp through
-his own company. In 2010, Varnish Software sprung out from Redpill Linpro.
-Varnish Cache has always been a free software project, and while Varnish
-Software has been custodians of the infrastructure and large contributors
-of code and cash, the project is independent.
+his own company and his Varnish Moral License. In 2010, Varnish Software
+sprung out from Redpill Linpro. Varnish Cache has always been a free
+software project, and while Varnish Software has been custodians of the
+infrastructure and large contributors of code and cash, the project is
+independent.
 
-Varnish Plus came around some time during 2011, depending on how you count.
-It was the result of somewhat conflicting interests. Varnish Software had
-customer obligations that required features, and the development power to
-implement them, but they did not necessarily align with the goals and time
-frames of Varnish Cache. Varnish Plus became a commercial test-bed for
-features that were not /yet/ in Varnish Cache for various reasons. Some of
-the features have since trickled into Varnish Cache proper in one way or an
-other (streaming, surrogate keys, and more), and some have still to make
-it. Some may never make it. This book will focus on Varnish Cache proper,
-but will reference Varnish Plus where it makes sense.
+Varnish Plus was born some time during 2011, all though it didn't go by
+that name at the time. It was the result of somewhat conflicting interests.
+Varnish Software had customer obligations that required features, and the
+development power to implement them, but they did not necessarily align
+with the goals and time frames of Varnish Cache. Varnish Plus became a
+commercial test-bed for features that were not /yet/ in Varnish Cache for
+various reasons. Many of the features have since trickled into Varnish
+Cache proper in one way or an other (streaming, surrogate keys, and more),
+and some have still to make it. Some may never make it. This book will
+focus on Varnish Cache proper, but will reference Varnish Plus where it
+makes sense.
 
 With Varnish 3.0, released in 2011, varnish modules started becoming a
 big thing. These are modules that are not part of the Varnish Cache code
@@ -131,19 +151,18 @@ majority of the architectural work. Over the years, there have been too
 many companies and individuals involved to list them all in a book, so I
 will leave that to the official Varnish Cache project.
 
-Today, Varnish is used by too many sites to mention. From CDNs (plural), to
-tiny blogs and everything in-between.
+Today, Varnish is used by CDNs and news papers, APIs and blogs.
 
 More than just cache
 --------------------
 
-Varnish caches content, but can do so much more. In 2008, it was used to
+Varnish caches content, but can do much more. In 2008, it was used to
 rewrite URLs, normalize HTTP headers and similar things. Today, it is used
 to implement paywalls (whether you like them or not), API metering, load
 balancing, CDNs, and more.
 
 Varnish has a powerful configuration language, the Varnish Configuration
-Language (VCL). This isn't parsed the traditional way a configuration file
+Language (VCL). VCL isn't parsed the traditional way a configuration file
 is, but is translated to C code, compiled and linked into the running
 Varnish. From the beginning, it was possible to bypass the entire
 translation process and provide C code directly, which was never
@@ -164,4 +183,9 @@ experience. And in a worst case scenario, at least the user can be
 presented with a real error message instead of a refused or timed out
 connection.
 
+An often overlooked feature of Varnish is Edge Side Includes. This is a
+means to build a single HTTP object (like a HTML page) from multiple
+smaller object, with different caching properties. This lets content
+writers provide more fine-grained caching strategies without having to be
+too smart about it.
 
