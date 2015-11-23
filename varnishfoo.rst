@@ -1,5 +1,5 @@
 ===========
-Foo Varnish
+Varnish Foo
 ===========
 
 A book about Varnish Cache-stuff.

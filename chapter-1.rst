@@ -80,7 +80,7 @@ very early on, and Varnish is quite simply fast. This is achieved by being,
 at the core, simple. The less you have to do for each request, the more
 requests you can handle.
 
-The name suggests what it's really all about::
+The name suggests what it's all about::
 
         From The Collaborative International Dictionary of English v.0.48 [gcide]:
 
