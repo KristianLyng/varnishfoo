@@ -6,22 +6,24 @@ This is the only chapter written in first person.
 I've worked on Varnish since late 2008, first for Redpill Linpro,
 then Varnish Software, then, after a brief pause, for Redpill Linpro again.
 Over the years I've written code, written Varnish modules and blog posts,
-held more training courses than most, written training material, and helped
-shape the Varnish community.
+tried to push the boundaries of what Varnish can do, debugged or analyzed
+countless Varnish sites, probably held more training courses than anyone
+else, written training material, and helped shape the Varnish community.
 
-I love writing. Educating. Today I find myself in a position where the
-training material I once maintained is no longer my responsibility, yet I
-still love writing.
+Today I find myself in a position where the training material I once
+maintained is no longer my responsibility. But I still love writing, and
+there's an obvious need for documentation for Varnish.
 
-This is my solution. I will write a book. Because I can't imagine that I'll
-ever finish it if I attempt writing a whole book in one go, I will publish
-one chapter at a time on my blog. This is the first chapter of that book.
-At the time of this writing, it doesn't have a name. Falling back to my
-regular naming tradition, this means the book is called "Varnish Foo".
+I came up with a simple solution: I will write a book. Because I couldn't
+imagine that I would ever finish it if I attempted writing a whole book in
+one go, I decided I would publish one chapter at a time on my blog. This is
+the first chapter of that book.
 
-You will find the source on https://github.com/KristianLyng/foovarnish.
-I welcome pull requests, issues and any sort of feedback. Even though a
-chapter might be published on my blog or on paper, it's never finished.
+You will find the source on https://github.com/KristianLyng/varnishfoo.
+This is something I am doing on my spare time, and I hope to get help from
+the Varnish community in the form of feedback. While the format will be
+that of a book, I intend to keep it alive with updates as long as I can
+stay motivated.
 
 I intend to cover as much Varnish-related content as possible, from
 administration to web development and infrastructure. And my hope is that
@@ -30,9 +32,11 @@ than just a leaflet.
 
 I am writing this in my spare time, I retain full ownership of the
 material. For now, the material is available under a Creative Commons
-"CC-BY-SA-NC" license. The NC-clause will likely be temporary, and I want
-to clarify that it is NOT meant to indicate that you can't read this book
-at work.
+"CC-BY-SA-NC" license. The NC-part of that license will be removed when I
+feel the material has matured enough and the time is right. To clarify, the
+"non-commercial" clause is aimed at people wanting to sell the book or use
+it in commercial training (or similar) - it is not intended to prevent you
+from reading the material at work.
 
 Target audience and format
 --------------------------
@@ -189,3 +193,72 @@ smaller object, with different caching properties. This lets content
 writers provide more fine-grained caching strategies without having to be
 too smart about it.
 
+Where to get help
+-----------------
+
+The official varnish documentation is available both as manual pages (run
+``man -k varnish`` on a machine with a properly installed Varnish package),
+and as Sphinx documentation found under http://varnish-cache.org/docs/.
+
+Varnish Software has also publish their official training material, which
+is called "The Varnish Book" (Not to be confused with THIS book about
+Varnish). This is available freely through their site at
+http://varnish-software.com, after registration.
+
+An often overlooked source of information for Varnish are the flow
+charts/``dot``-graphs used to document the VCL state engine. The official
+location for this is only found in the source code of Varnish, under
+``doc/graphviz/``. They can be generated simply, assuming you have
+``graphviz`` installed::
+
+        # git clone http://github.com/varnish/Varnish-Cache/
+        Cloning into 'Varnish-Cache'...
+        (...)
+        # cd Varnish-Cache/
+        # cd doc/graphviz/
+        # for a in *dot; do dot -Tpng $a > $(echo $a | sed s/.dot/.png/); done
+        # ls *png
+
+Alternatively, replace ``-Tpng`` and ``.png``  with ``-Tsvg`` and ``.svg``
+respectively to get vector graphics, or ``-Tpdf``/``.pdf`` for pdfs.
+
+You've now made three graphs that you might as well print right now and
+glue to your desk if you will be working with Varnish a lot.
+
+For convenience, the graphs from Varnish 4.1 are included. If you don't
+quite grasp what these tell you yet, don't be too alarmed. These graphs are
+provided early as they are useful to have around as reference material. A
+brief explanation for each is included, mostly to help you in later
+chapters.
+
+cache_req_fsm.png
+.................
+
+.. image:: img/cache_req_fsm.png
+
+This can be used when writing VCL. You want to look for the blocks that
+read ``vcl_`` to identify VCL functions. The lines tell you how a
+return-statement in VCL will affect the VCL state engine at large, and
+which return statements are available where. You can also see which objects
+are available where.
+
+This particular graph details the client-specific part of the VCL state
+engine.
+
+cache_fetch.png
+...............
+
+.. image:: img/cache_fetch.png
+
+This graph has the same format as the ``cache_req_fsm.png``-one, but from
+the perspective of a backend request.
+
+cache_http1_fsm.png
+...................
+
+.. image:: img/cache_http1_fsm.png
+
+Of the three, this is the least practical flow chart, mainly included for
+completeness. It does not document much related to VCL or practical Varnish
+usage, but the internal state engine of an HTTP request in Varnish. It can
+sometimes be helpful for debugging internal Varnish issues.
