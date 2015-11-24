@@ -1,0 +1,38 @@
+{
+  "pageSetup" : {
+    "firstTemplate": "coverPage"
+  },
+  "pageTemplates" : {
+    "coverPage": {
+        "frames": [
+            ["0cm", "0cm", "100%", "100%"]
+          ],
+         "showHeader" : false,
+        "showFooter" : false,
+	"fontSize": 0
+    },
+    "oneColumn": {
+        "showHeader" : true
+    }
+  },
+  "styles" : [
+    ["right", {
+        "parent": "bodytext",
+        "alignment": "right"
+    }],
+    ["centered", {
+        "parent": "bodytext",
+        "alignment": "center"
+    }],
+    ["left", {
+        "parent": "bodytext",
+        "alignment": "left"
+    }],
+    ["headertable" , {
+    "parent" : "table",
+    "colWidths": ["20%","60%","20%"],
+    "commands": []
+    }
+    ]
+   ]
+}
