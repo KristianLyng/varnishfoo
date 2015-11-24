@@ -22,8 +22,8 @@ the first chapter of that book.
 You will find the source on https://github.com/KristianLyng/varnishfoo.
 This is something I am doing on my spare time, and I hope to get help from
 the Varnish community in the form of feedback. While the format will be
-that of a book, I intend to keep it alive with updates as long as I can
-stay motivated.
+that of a book, I intend to keep it alive with updates as long as I can.
+
 
 I intend to cover as much Varnish-related content as possible, from
 administration to web development and infrastructure. And my hope is that
