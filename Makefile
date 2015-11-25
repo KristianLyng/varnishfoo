@@ -4,6 +4,6 @@ MISC=pdf.style version.rst
 varnishfoo.pdf: varnishfoo.rst ${MISC} ${CHAPTERS}
 	rst2pdf -b2 -s pdf.style varnishfoo.rst -o $@
 
-version.rst: ${CHAPTERS} Makefile
+version.rst: ${CHAPTERS} Makefile .git/index
 	echo ":Version: $$(git describe --always --tags --dirty)" > version.rst
 
