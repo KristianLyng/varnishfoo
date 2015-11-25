@@ -12,6 +12,8 @@ Varnish Foo
 
 :Author: Kristian Lyngstøl <kristian@bohemians.org>
 
+.. include:: version.rst
+
 .. raw:: pdf
 
    PageBreak oneColumn
