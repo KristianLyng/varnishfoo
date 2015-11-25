@@ -7,3 +7,7 @@ varnishfoo.pdf: varnishfoo.rst ${MISC} ${CHAPTERS}
 version.rst: ${CHAPTERS} Makefile .git/index
 	echo ":Version: $$(git describe --always --tags --dirty)" > version.rst
 
+clean:
+	-rm varnishfoo.pdf version.rst
+
+.PHONY: clean
