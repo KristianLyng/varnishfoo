@@ -16,6 +16,17 @@
     }
   },
   "styles" : [
+     ["code", {
+           "parent": "literal",
+           "leftIndent": 0,
+	     "fontSize": 8,
+           "spaceBefore": 8,
+           "spaceAfter": 8,
+           "backColor": "beige",
+           "borderColor": "darkgray",
+           "borderWidth": 0.5,
+           "borderPadding": 6
+     }],
     ["right", {
         "parent": "bodytext",
         "alignment": "right"
