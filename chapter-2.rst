@@ -1,16 +1,21 @@
-Caching in HTTP
-===============
+Working with HTTP caching
+=========================
 
 Before we dig into the inner workings of Varnish, it's important to
-establish the right context we're working with.
+make sure we have the tools we need and some background information on
+basic caching.
 
 HTTP caching is both simple and complex. In this chapter, we will look at
 how HTTP caching works on multiple points in the HTTP delivery chain, and
 how these mechanisms work together.
 
 There are a multitude of tools to chose from when you are working with
-Varnish. We will focus on two different types of tools: The command line
-tool and your browser.
+Varnish. We will go through two different client tools: The browser and a
+command line tool. This chapter also sets up a simple web server for
+testing, and demonstrates several aspects of how Varnish behaves.
+
+The focus, however, is not Varnish itself, but HTTP caching and how we can
+debug it and affect it without modifying the proxy or browser.
 
 Caching since RFC2616
 ---------------------
@@ -37,10 +42,8 @@ override cache mechanisms, like ``Cache-Control: no-cache`` HTTP headers.
 Tools: The browser
 ------------------
 
-You wont understand modern until you learn how to use your browser to
-debug. If you are reading this, there's a good chance you already know a
-lot of what is to come, but there's also a good chance you don't know some
-of the details.
+You wont understand modern caching until you learn how to use your browser
+to debug.
 
 Most browsers have a "developer console" or "debug console" today, and we
 will focus on Chromium and Firefox (or Iceweasel, for the Debian-users out
@@ -76,7 +79,7 @@ Now the extra reuest is gone.
 
 You will also quickly learn that a refresh isn't always just a refresh.
 In both Firefox and Chromium, a refresh triggered by ``<F5>`` or
-``<ctrl>+r`` will be "cache aware". What does that mean?
+``<Ctrl>+r`` will be "cache aware". What does that mean?
 
 Look closer on the screenshots above, specially the return code. The return
 code is a ``304 Not Modified``, not a ``200 OK``. This means our browser

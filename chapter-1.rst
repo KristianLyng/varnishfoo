@@ -24,7 +24,6 @@ This is something I am doing on my spare time, and I hope to get help from
 the Varnish community in the form of feedback. While the format will be
 that of a book, I intend to keep it alive with updates as long as I can.
 
-
 I intend to cover as much Varnish-related content as possible, from
 administration to web development and infrastructure. And my hope is that
 one day, this will be good enough that it will be worth printing as more
@@ -42,9 +41,10 @@ Target audience and format
 --------------------------
 
 This book covers a large spectre of subjects related to Varnish. It is
-suitable for system administrators, infrastructure architects and web
-developers. The first few chapters is general enough to be of interest to
-all, while later chapters specialize on certain aspects of Varnish usage.
+suitable for system administrators, infrastructure architects, web
+developers and future Varnish module developers. The first few chapters are
+general enough to be of interest to all, while later chapters specialize on
+certain aspects of Varnish usage.
 
 Each chapter is intended to stand well on its own, but there will be some
 cross-references. The book focuses on best practices and good habits that
