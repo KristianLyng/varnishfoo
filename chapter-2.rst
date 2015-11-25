@@ -165,20 +165,30 @@ set of request headers are very interesting, so let's try that one again::
         X-Cache: HIT from access-gateway.hospitality.swisscom.com
         X-Varnish: 15849590
 
-We now see the original request headers and full response headers. This
-example happens to take place behind a transparent HTTP proxy at a hotel,
-which creates some mildly interesting results for us. We won't dive to much
-into them right now, but you'll notice the obvious reference in
-``X-Cache``, but the advanced reader might also notice that ``Age`` has a
-value of 81 despite Varnish reporting a cache miss, revealed by the
-``X-Varnish`` header having just one number. For now, just make a mental
-note of this - we'll cover the ``Age`` header later in this chapter.
+The ``-p`` option to ``http`` can be used to control output. Specifically:
 
-The ``http`` command provided by `httpie` has multiple options. One thing
-you'll want to do is use a fake ``Host``-header. If you are setting up a
-Varnish server - or any other Web server - it's useful to test it properly
-without pointing the real DNS name at the developmentserver. Here's an
-example of how to do that::
+- ``-p H`` will print request headers.
+- ``-p h`` will print response headers.
+- ``-p B`` will print request body.
+- ``-p b`` will print response body.
+
+These can combined, as in the above example with ``-p Hh``. See ``http
+--help`` and ``man http`` for details.
+
+In the example we can now see the original request headers and full
+response headers. This example happens to take place behind a transparent
+HTTP proxy at a hotel, which creates some mildly interesting results for
+us. We won't dive to much into them right now, but you'll notice the
+obvious reference in ``X-Cache``, but the advanced reader might also notice
+that ``Age`` has a value of 81 despite Varnish reporting a cache miss,
+revealed by the ``X-Varnish`` header having just one number. For now, just
+make a mental note of this - we'll cover the ``Age`` header later in this
+chapter.
+
+An other thing you'll want to do is use a fake ``Host``-header. If you are
+setting up a Varnish server - or any other Web server - it's useful to test
+it properly without pointing the real DNS name at the development server.
+Here's an example of how to do that::
 
         $ http -p Hh http://kly.no/ "Host: example.com"
         GET / HTTP/1.1
