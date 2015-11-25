@@ -249,3 +249,321 @@ multiple headers by just listing them after each other::
         X-Cache: MISS from access-gateway.hospitality.swisscom.com
         X-Varnish: 15759349 15809060
 
+Tools: A web server
+-------------------
+
+This one is a bit obvious, and regardless of what example is used in a
+book, it's the wrong one. So we'll just pick one: Apache.
+
+You can do the same with any half-decent web server, but what you want is a
+web server where you can easily modify response headers to some degree. If
+you are comfortable doing that with NodeJS or some other slightly more
+modern tool than Apache, then go ahead. If you really don't care and just
+want a test environment, then keep reading. To save some time, these
+examples are oriented around Debian and/or Ubuntu-systems, but largely
+apply to any modern GNU/Linux distribution (and other UNIX-like systems).
+
+Note that commands that start with ``#`` are executed as root, while
+commands starting with ``$`` can be run as a regular user. This means you
+either have to login as root directly, through ``su -`` or ``sudo -i``, or
+prefix the command with ``sudo`` if you've set up sudo on your system.
+
+Our first step is getting it installed and configured::
+
+        # apt-get install apache2
+        (...)
+        # a2enmod cgi
+        # cd /etc/apache2
+        # sed -i 's/80/8080/g' ports.conf sites-enabled/000-default.conf 
+        # service apache2 restart
+
+
+In short, what we just did is install Apache httpd, enable the CGI module,
+change the listening port from port 80 to 8080, then restart the web
+server. We changed the listening port to prepare for things to come.
+You can verify that it works through two means::
+
+        # netstat -nlpt
+        Active Internet connections (only servers)
+        Proto Recv-Q Send-Q Local Address           Foreign Address         State PID/Program name
+        tcp6       0      0 :::8080                 :::*                    LISTEN 1101/apache2
+        # http -p Hh http://localhost:8080/
+        GET / HTTP/1.1
+        Accept: */*
+        Accept-Encoding: gzip, deflate
+        Connection: keep-alive
+        Host: localhost:8080
+        User-Agent: HTTPie/0.8.0
+
+        HTTP/1.1 200 OK
+        Accept-Ranges: bytes
+        Connection: Keep-Alive
+        Content-Encoding: gzip
+        Content-Length: 3078
+        Content-Type: text/html
+        Date: Wed, 25 Nov 2015 20:23:09 GMT
+        ETag: "2b60-525632b42b90d-gzip"
+        Keep-Alive: timeout=5, max=100
+        Last-Modified: Wed, 25 Nov 2015 20:19:01 GMT
+        Server: Apache/2.4.10 (Debian)
+        Vary: Accept-Encoding
+
+Now let's make a CGI script to test some custom-headers::
+
+        # cd /usr/lib/cgi-bin
+        # cat > foo.sh <<_EOF_
+         #!/bin/bash
+         echo "Content-type: text/plain"
+         echo
+         echo "Hello. Random number: ${RANDOM}"
+         date
+         _EOF_
+        # chmod a+x foo.sh
+        # ./foo.sh
+        Content-type: text/plain
+
+        Hello. Random number: 21126
+        Wed Nov 25 20:26:59 UTC 2015
+
+You may want to use an actual editor, like ``vim``, ``emacs`` or ``nano``
+instead of using ``cat`` of course. To clarify, the exact content of
+``foo.sh`` should be::
+
+         #!/bin/bash
+         echo "Content-type: text/plain"
+         echo
+         echo "Hello. Random number: ${RANDOM}"
+         date
+
+We then change permissions for it, making it executable by all users, then
+verify that it does what it's supposed to. Next up, let's test if we can
+run it through Apache::
+
+        # http -p Hhb http://localhost:8080/cgi-bin/foo.sh
+        GET /cgi-bin/foo.sh HTTP/1.1
+        Accept: */*
+        Accept-Encoding: gzip, deflate
+        Connection: keep-alive
+        Host: localhost:8080
+        User-Agent: HTTPie/0.8.0
+
+        HTTP/1.1 200 OK
+        Connection: Keep-Alive
+        Content-Length: 57
+        Content-Type: text/plain
+        Date: Wed, 25 Nov 2015 20:31:00 GMT
+        Keep-Alive: timeout=5, max=100
+        Server: Apache/2.4.10 (Debian)
+
+        Hello. Random number: 21126
+        Wed Nov 25 20:31:00 UTC 2015
+
+If you've been able to reproduce the above example, you're ready to start
+start testing and experimenting.
+
+Tools: Varnish
+--------------
+
+We need an intermediary cache, and what better example than Varnish? We'll
+refrain from configuring Varnish beyond the defaults for now, though.
+
+For now, let's just install Varnish. This assumes you're using a Debian or
+Ubuntu-system and that you have a web server listening on port 8080, as
+Varnish uses a web server on port 8080 by default::
+
+        # apt-get install varnish
+        # service varnish start
+        # http -p Hhb http://localhost:6081/cgi-bin/foo.sh
+        GET /cgi-bin/foo.sh HTTP/1.1
+        Accept: */*
+        Accept-Encoding: gzip, deflate
+        Connection: keep-alive
+        Host: localhost:6081
+        User-Agent: HTTPie/0.8.0
+
+        HTTP/1.1 200 OK
+        Accept-Ranges: bytes
+        Age: 0
+        Connection: keep-alive
+        Content-Length: 57
+        Content-Type: text/plain
+        Date: Wed, 25 Nov 2015 20:38:09 GMT
+        Server: Apache/2.4.10 (Debian)
+        Via: 1.1 varnish-v4
+        X-Varnish: 5
+
+        Hello. Random number: 21126
+        Wed Nov 25 20:38:09 UTC 2015
+
+As you can see from the above example, a typical Varnish installation
+listens to port 6081 by default, and uses ``127.0.0.1:8080`` as the backend
+web server. If the above example doesn't work, you can change the listening
+port of Varnish by altering the ``-a`` argument in ``/etc/default/varnish``
+and issuing ``service varnish restart``, and the backend web server can be
+changed in ``/etc/varnish/default.vcl``, then issue a restart with
+``service varnish restart``. We'll cover both of these files in detail in
+later chapters.
+
+Conditional GET requests
+------------------------
+
+In the tool-examples earlier we saw a real example of a `conditional GET
+request`. In many ways, they are quite simple mechanisms to allow a HTTP
+client - typically a browser - to verify that they have the most up-to-date
+version of the HTTP object. There are two different types of conditional
+GET requests: ``If-Modified-Since`` and ``If-None-Match``.
+
+If a server sends ``Last-Modified``-header, the client can issue a
+``If-Modified-Since`` header on later requests for the same content,
+indicating that the server only needs to transmit this content if it's been
+updated.
+
+Some times it isn't trivial to know the modification time, but you might be
+able to uniquely identify the content anyway. For that matter, the content
+might have been changed back to the original state. This is where the
+response header ``Etag`` comes into the picture.
+
+An ``Etag`` header can be used to provide an arbitrary ID to an HTTP
+object, and the client can then re-use that in a ``If-None-Match`` request
+header.
+
+Let's test this out for ourself. Let's modify our dummy-backend, that we
+created in ``/usr/lib/cgi-bin/foo.sh`` (or your equivalent). The goal is to
+send a static ``Etag`` header. Here's a modified version::
+
+        #!/bin/bash
+        echo "Content-type: text/plain"
+        echo "Etag: testofetagnumber1"
+        echo
+        echo "Hello. Random number: 21126"
+        date
+
+Let's see what happens when we talk directly to Apache::
+
+        # http http://localhost:8080/cgi-bin/foo.sh
+        HTTP/1.1 200 OK
+        Connection: Keep-Alive
+        Content-Length: 57
+        Content-Type: text/plain
+        Date: Wed, 25 Nov 2015 20:43:25 GMT
+        Etag: testofetagnumber1
+        Keep-Alive: timeout=5, max=100
+        Server: Apache/2.4.10 (Debian)
+
+        Hello. Random number: 21126
+        Wed Nov 25 20:43:25 UTC 2015
+
+        # http http://localhost:8080/cgi-bin/foo.sh
+        HTTP/1.1 200 OK
+        Connection: Keep-Alive
+        Content-Length: 57
+        Content-Type: text/plain
+        Date: Wed, 25 Nov 2015 20:43:28 GMT
+        Etag: testofetagnumber1
+        Keep-Alive: timeout=5, max=100
+        Server: Apache/2.4.10 (Debian)
+
+        Hello. Random number: 21126
+        Wed Nov 25 20:43:28 UTC 2015
+
+Two successive requests yielded updated content, but with the same Etag.
+Now let's see how Varnish handles this::
+
+        # http http://localhost:6081/cgi-bin/foo.sh
+        HTTP/1.1 200 OK
+        Accept-Ranges: bytes
+        Age: 0
+        Connection: keep-alive
+        Content-Length: 57
+        Content-Type: text/plain
+        Date: Wed, 25 Nov 2015 20:44:53 GMT
+        Etag: testofetagnumber1
+        Server: Apache/2.4.10 (Debian)
+        Via: 1.1 varnish-v4
+        X-Varnish: 32770
+
+        Hello. Random number: 21126
+        Wed Nov 25 20:44:53 UTC 2015
+
+        # http http://localhost:6081/cgi-bin/foo.sh
+        HTTP/1.1 200 OK
+        Accept-Ranges: bytes
+        Age: 2
+        Connection: keep-alive
+        Content-Length: 57
+        Content-Type: text/plain
+        Date: Wed, 25 Nov 2015 20:44:53 GMT
+        Etag: testofetagnumber1
+        Server: Apache/2.4.10 (Debian)
+        Via: 1.1 varnish-v4
+        X-Varnish: 32773 32771
+
+        Hello. Random number: 21126
+        Wed Nov 25 20:44:53 UTC 2015
+
+It's pretty easy to see the difference in the output. However, there are
+two things happening here of interest. First, ``Etag`` doesn't matter for
+this test because we never send ``If-None-Match``! So our ``http``-command
+gets a ``200 OK``, not the ``304 Not Modified`` that we were looking for.
+Let's try that again::
+
+        # http http://localhost:6081/cgi-bin/foo.sh "If-None-Match:
+        testofetagnumber1"
+        HTTP/1.1 304 Not Modified
+        Age: 0
+        Connection: keep-alive
+        Content-Type: text/plain
+        Date: Wed, 25 Nov 2015 20:48:52 GMT
+        Etag: testofetagnumber1
+        Server: Apache/2.4.10 (Debian)
+        Via: 1.1 varnish-v4
+        X-Varnish: 8
+
+Now we see ``Etag`` and ``If-None-Match`` at work. Also note the absence of
+a body: we just saved bandwidth.
+
+Let's try to change our ``If-None-Match`` header a bit::
+
+        # http http://localhost:6081/cgi-bin/foo.sh "If-None-Match: testofetagnumber2"
+        HTTP/1.1 200 OK
+        Accept-Ranges: bytes
+        Age: 0
+        Connection: keep-alive
+        Content-Length: 57
+        Content-Type: text/plain
+        Date: Wed, 25 Nov 2015 20:51:10 GMT
+        Etag: testofetagnumber1
+        Server: Apache/2.4.10 (Debian)
+        Via: 1.1 varnish-v4
+        X-Varnish: 11
+
+        Hello. Random number: 21126
+        Wed Nov 25 20:51:10 UTC 2015
+
+Content!
+
+The observant reader will have noticed several other things that Varnish
+did. Suddenly there's an ``Age`` header, for instance. That's next on our
+agenda.
+
+.. Warning::
+
+        Hopefully our demo also illustrates that supplying static ``Etag``
+        headers or bogus ``Last-Modified`` headers can have unexpected side
+        effects. In our example, ``foo.sh`` clearly provides new content
+        every time. Talking directly to the web server will result in the
+        wanted behavior of the client getting the updated content simply
+        because the web server happens to ignore the conditional part of
+        the request.
+
+        The danger here is not Varnish, but proxy servers outside of our
+        control sitting between the client and the web server. Even if your
+        web server ignores ``If-None-Match`` and ``If-Modified-Since``
+        headers, there's no guarantee that other proxies do! Make sure you
+        only provide ``Etag`` and ``Last-Modified``-headers that are
+        correct, or don't provide them at all.
+
+Cache control and age
+---------------------
+
+FIXME: Write this :p
