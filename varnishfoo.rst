@@ -14,11 +14,11 @@ Varnish Foo
 
 .. include:: version.rst
 
+.. sectnum::
+
 .. raw:: pdf
 
-   PageBreak oneColumn
-
-.. sectnum::
+   PageBreak
 
 .. contents::
 
@@ -41,6 +41,10 @@ Varnish Foo
       |               |                     |   |
       |Page ###Page###|Chapter ###Section###|   |
       +---------------+---------------------+---+
+
+.. raw:: pdf
+
+   PageBreak oneColumn
 
 .. include:: chapter-1.rst
 

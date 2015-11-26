@@ -22,11 +22,23 @@
 	     "fontSize": 8,
            "spaceBefore": 8,
            "spaceAfter": 8,
-           "backColor": "beige",
+           "backColor": "#f1f1f1",
            "borderColor": "darkgray",
            "borderWidth": 0.5,
            "borderPadding": 6
      }],
+    ["admonition",{
+            "parent": "normal",
+            "spaceBefore": 12,
+            "spaceAfter": 6,
+            "borderPadding": [16,16,16,16],
+            "backColor": "#f9eeee",
+            "borderColor": "darkgray",
+            "borderWidth": 0.5,
+            "commands": [
+                   ["VALIGN", [ 0, 0 ], [ -1, -1 ], "TOP" ]
+		]
+    }],
     ["right", {
         "parent": "bodytext",
         "alignment": "right"
