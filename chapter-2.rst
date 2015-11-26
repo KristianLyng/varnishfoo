@@ -1,43 +1,28 @@
 Working with HTTP caching
 =========================
 
+.. _RFC2616: https://www.ietf.org/rfc/rfc2616.txt
+
 Before we dig into the inner workings of Varnish, it's important to
 make sure we have the tools we need and some background information on
 basic caching.
 
-HTTP caching is both simple and complex. In this chapter, we will look at
-how HTTP caching works on multiple points in the HTTP delivery chain, and
-how these mechanisms work together.
+In this chapter, we will look at how HTTP caching works on multiple points
+in the HTTP delivery chain, and how these mechanisms work together.
 
 There are a multitude of tools to chose from when you are working with
-Varnish. We will go through two different client tools: The browser and a
-command line tool. This chapter also sets up a simple web server for
-testing, and demonstrates several aspects of how Varnish behaves.
+Varnish. This chapter provides a few suggestions, but makes no claim on
+whether one tool is better than the other. We will go through two different
+client tools: The browser and a command line tool. This chapter also sets
+up a simple web server for testing, and demonstrates several aspects of how
+Varnish behaves.
 
 The focus, however, is not Varnish itself, but HTTP caching and how we can
 debug it and affect it without modifying the proxy or browser.
 
-Caching since RFC2616
----------------------
-
-.. _RFC2616: https://www.ietf.org/rfc/rfc2616.txt
-
-HTTP version 1.1 was defined in `RFC2616`_, released in 1999. It's worth a
-read, as it's quite informative. If you are ever curious as to what the
-correct interpretation of an HTTP header is, this is the place to go.
-
-The important part for us, is to realize that caching is already there. It
-deals mainly with two types of caches: Client side caches and intermediary
-caches. One weakness of the protocol specification is that it does not
-distinguish between an intermediary cache in the control of the web site
-administrator, (like Varnish) and the traditional proxies that are still
-found all over the world.
-
-It does, however, give us a lot of the tools we need to get things done.
-Most of what relates to caching is about response- and request-headers and
-which HTTP methods and return codes can be cached. Varnish generally tries
-to be a good HTTP-citizen, but largely ignores clients' attempts to
-override cache mechanisms, like ``Cache-Control: no-cache`` HTTP headers.
+After the tools are covered and demonstrated, we'll go through the basics
+of controlling cache through the means of HTTP headers, both for browsers
+and proxies like Varnish, using `RFC2616`_ as the obvious reference.
 
 Tools: The browser
 ------------------
