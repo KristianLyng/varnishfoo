@@ -13,33 +13,31 @@ in the HTTP delivery chain, and how these mechanisms work together.
 There are a multitude of tools to chose from when you are working with
 Varnish. This chapter provides a few suggestions, but makes no claim on
 whether one tool is better than the other. We will go through two different
-client tools: The browser and a command line tool. This chapter also sets
-up a simple web server for testing, and demonstrates several aspects of how
-Varnish behaves.
+type of client tools: The browser and a command line tool. This chapter
+also sets up a simple web server for testing, and demonstrates several
+aspects of how Varnish behaves.
 
-The focus, however, is not Varnish itself, but HTTP caching and how we can
-debug it and affect it without modifying the proxy or browser.
+The focus, however, is not the individual tools, but HTTP caching and how
+we can debug it and affect it without modifying the proxy or browser.
 
-After the tools are covered and demonstrated, we'll go through the basics
-of controlling cache through the means of HTTP headers, both for browsers
-and proxies like Varnish, using `RFC2616`_ as the obvious reference.
+After the tools are covered and demonstrated, we will go through how you
+can control cache through the means of HTTP headers, both for browsers
+and proxies like Varnish, using the mechanisms provided through
+`RFC2616`_.
 
 Tools: The browser
 ------------------
 
-You wont understand modern caching until you learn how to use your browser
-to debug.
-
-Most browsers have a "developer console" or "debug console" today, and we
-will focus on Chrome and Firefox.
+Your browser is a powerful tool, because it does a great deal of caching
+and HTTP. Most browsers have a developer- or debug console, but we will
+focus on Chrome and Firefox.
 
 Both Firefox and Chrome will open the debug console if you hit ``<F12>``.
 It's a good habit to test and experiment with more than one browser, and
 luckily these consoles are very similar. A strong case in favor of Chrome
-is the existence of `Incognito Mode`, activated through
-``<Ctrl>+<Shit>+N``. This is an advantage for us both because it gives us a
-clean slate with regards to cookies, and because it generally doesn't run
-any extensions you might have running.
+is `Incognito Mode`, activated through ``<Ctrl>+<Shit>+N``. This is an
+advantage both because it removes old cookies and because most extensions
+are disabled.
 
 An argument for Firefox is that it's fairly easy to operate with
 multiple profiles. One of these profiles could be used to run Firefox
@@ -87,28 +85,30 @@ with the actual content instead of an empty ``304 Not Modified``.
 Tools: The command line tool
 ----------------------------
 
-As we just saw, the browser does a lot more than just issue HTTP requests,
-specially with regards to cache. It's important to have a good grip on at
-least one tool to issue custom HTTP requests to a web server. There are too
-many tools to mention them all.
+The browser does a lot more than issue HTTP requests, specially with
+regards to cache. A good request synthesizer is a must to debug and
+experiment with HTTP and HTTP caching without stumbling over the browser.
+There are countless alternatives available.
 
-Some suggestions for Windows users are ``curl`` in Powershell, Charles Web
-Debugging Proxy, the "Test and Rest Client" in PhpStorm, a "Adanced RST
-client" Chrome extension, or simply SSH'ing to a GNU/Linux VM and using one
-of the many tools available there. Your requirement for a simple HTTP
-request synthesizer should be:
+Your requirement for a simple HTTP request synthesizer should be:
 
 - Complete control over request headers and request method - even invalid
   input.
 - Stateless behavior - no caching at all
 - Show complete response headers.
 
-We will use `httpie`, a small CLI tool that has these properties. It's
-chosen because it is a good tool, but also because it's easy to see what's
-going on even for those who do not use it them self.
+Some suggestions for Windows users are ``curl`` in Powershell, Charles Web
+Debugging Proxy, the "Test and Rest Client" in PhpStorm, an "Adanced RST
+client" Chrome extension, or simply SSH'ing to a GNU/Linux VM and using one
+of the many tools available there. The list goes on, and so it could for
+Mac OS X and Linux too.
 
-Httpie is available on Linux, Mac OS X and Windows. On a Debian or Ubuntu
-system httpie can be installed with ``apt-get install httpie``. For other
+`HTTPie` is a small CLI tool which has the above properties. It's used
+throughout this book because it is a good tool, but also because it's easy
+to see what's going on without knowledge of the tool.
+
+HTTPie is available on Linux, Mac OS X and Windows. On a Debian or Ubuntu
+system HTTPie can be installed with ``apt-get install httpie``. For other
 platforms, see http://httpie.org. Testing httpie is simple::
 
         $ http http://kly.no/misc/dummy.png
@@ -131,8 +131,9 @@ platforms, see http://httpie.org. Testing httpie is simple::
         | NOTE: binary data not shown in terminal |
         +-----------------------------------------+
 
-In our case, the actual data is often not that interesting, while a full
-set of request headers are very interesting, so let's try that one again::
+In many situations, the actual data is often not that interesting, while a
+full set of request headers are very interesting. HTTPie can show us
+exactly what we want::
 
         $ http -p Hh http://kly.no/misc/dummy.png
         GET /misc/dummy.png HTTP/1.1
@@ -162,18 +163,13 @@ The ``-p`` option to ``http`` can be used to control output. Specifically:
 - ``-p B`` will print request body.
 - ``-p b`` will print response body.
 
-These can combined, as in the above example with ``-p Hh``. See ``http
---help`` and ``man http`` for details.
+These can combined. In the above example ``-p H`` and ``-p h`` combine to
+form ``-p Hh``. See ``http --help`` and ``man http`` for details. Be aware
+that there has been some mismatch between actual command line arguments and
+what the documentation claims in the past, this depends on the version of
+HTTPie.
 
-In the example we can now see the original request headers and full
-response headers. This example happens to take place behind a transparent
-HTTP proxy at a hotel, which creates some mildly interesting results for
-us. We won't dive to much into them right now, but you'll notice the
-obvious reference in ``X-Cache``, but the advanced reader might also notice
-that ``Age`` has a value of 81 despite Varnish reporting a cache miss,
-revealed by the ``X-Varnish`` header having just one number. For now, just
-make a mental note of this - we'll cover the ``Age`` header later in this
-chapter.
+The example shows the original request headers and full response headers.
 
 An other thing you'll want to do is use a fake ``Host``-header. If you are
 setting up a Varnish server - or any other Web server - it's useful to test
