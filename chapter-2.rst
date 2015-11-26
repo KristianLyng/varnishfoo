@@ -52,11 +52,11 @@ is a test with a typical Chrome session:
 .. image:: img/chromium-dev-plugins.png
 
 Notice the multiple extensions that are active, one of them is inserting a
-bogus call to socialwidgets.css. The exact same test in Incognito Mode:
+bogus call to ``socialwidgets.css``. The exact same test in Incognito Mode:
 
 .. image:: img/chromium-dev-incognito.png
 
-Now the extra reuest is gone.
+The extra request is gone.
 
 You will also quickly learn that a refresh isn't always just a refresh.
 In both Firefox and Chrome, a refresh triggered by ``<F5>`` or
@@ -69,7 +69,7 @@ actually had the image in cache already and issued what is known as a
 
 .. image:: img/chromium-dev-304-1.png
 
-Our browser is sending ``Cache-Control: max-age=0`` and an
+The browser is sending ``Cache-Control: max-age=0`` and an
 ``If-Modified-Since``-header, and the web server correctly responds with
 ``304 Not Modified``.  We'll shortly look closer at those, but for now,
 let's use a different type of refresh: ``<Shift>+<F5>`` in Chrome or
@@ -77,7 +77,7 @@ let's use a different type of refresh: ``<Shift>+<F5>`` in Chrome or
 
 .. image:: img/chromium-dev-304-2.png
 
-Our cache-related headers have changed somewhat, and our browser is no
+The cache-related headers have changed somewhat, and the browser is no
 longer sending a ``If-Modified-Since`` header. The result is a ``200 OK``
 with the actual content instead of an empty ``304 Not Modified``.
 
@@ -267,7 +267,7 @@ commands starting with ``$`` can be run as a regular user. This means you
 either have to login as root directly, through ``su -`` or ``sudo -i``, or
 prefix the command with ``sudo`` if you've set up sudo on your system.
 
-Our first step is getting it installed and configured::
+The first step is getting it installed and configured::
 
         # apt-get install apache2
         (...)
