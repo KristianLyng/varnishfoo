@@ -549,17 +549,18 @@ agenda.
         Hopefully our demo also illustrates that supplying static ``Etag``
         headers or bogus ``Last-Modified`` headers can have unexpected side
         effects. In our example, ``foo.sh`` clearly provides new content
-        every time. Talking directly to the web server will result in the
-        wanted behavior of the client getting the updated content simply
-        because the web server happens to ignore the conditional part of
-        the request.
+        every time. Talking directly to the web server resulted in the
+        desired behavior of the client getting the updated content, but
+        only because the web server ignored the conditional part of the
+        request.
 
-        The danger here is not Varnish, but proxy servers outside of our
-        control sitting between the client and the web server. Even if your
-        web server ignores ``If-None-Match`` and ``If-Modified-Since``
-        headers, there's no guarantee that other proxies do! Make sure you
-        only provide ``Etag`` and ``Last-Modified``-headers that are
-        correct, or don't provide them at all.
+        The danger is not Varnish - which we can control -  but proxy
+        servers outside of our control sitting between the client and the
+        web server. Even if your web server ignores ``If-None-Match`` and
+        ``If-Modified-Since`` headers, there's no guarantee that other
+        proxies do! Make sure you only provide ``Etag`` and
+        ``Last-Modified``-headers that are correct, or don't provide them
+        at all.
 
 Cache control and age
 ---------------------
