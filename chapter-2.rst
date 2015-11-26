@@ -31,13 +31,11 @@ You wont understand modern caching until you learn how to use your browser
 to debug.
 
 Most browsers have a "developer console" or "debug console" today, and we
-will focus on Chromium and Firefox (or Iceweasel, for the Debian-users out
-there). For the uninitiated, Chromium is the Open Source variant of the
-Google Chrome browser, and for our purposes they are identical.
+will focus on Chrome and Firefox.
 
-Both Firefox and Chromium will open the debug console if you hit ``<F12>``.
+Both Firefox and Chrome will open the debug console if you hit ``<F12>``.
 It's a good habit to test and experiment with more than one browser, and
-luckily these consoles are very similar. A strong case in favor of Chromium
+luckily these consoles are very similar. A strong case in favor of Chrome
 is the existence of `Incognito Mode`, activated through
 ``<Ctrl>+<Shit>+N``. This is an advantage for us both because it gives us a
 clean slate with regards to cookies, and because it generally doesn't run
@@ -51,7 +49,7 @@ this by running Firefox with ``--no-remote --ProfileManager`` (FIXME:
 Windows?).
 
 The importance of Incognito Mode can be easily demonstrated. The following
-is a test with a typical Chromium session:
+is a test with a typical Chrome session:
 
 .. image:: img/chromium-dev-plugins.png
 
@@ -63,7 +61,7 @@ bogus call to socialwidgets.css. The exact same test in Incognito Mode:
 Now the extra reuest is gone.
 
 You will also quickly learn that a refresh isn't always just a refresh.
-In both Firefox and Chromium, a refresh triggered by ``<F5>`` or
+In both Firefox and Chrome, a refresh triggered by ``<F5>`` or
 ``<Ctrl>+r`` will be "cache aware". What does that mean?
 
 Look closer on the screenshots above, specially the return code. The return
@@ -76,7 +74,8 @@ actually had the image in cache already and issued what is known as a
 Our browser is sending ``Cache-Control: max-age=0`` and an
 ``If-Modified-Since``-header, and the web server correctly responds with
 ``304 Not Modified``.  We'll shortly look closer at those, but for now,
-let's use a different type of refresh: ``<Shift>+<F5>``:
+let's use a different type of refresh: ``<Shift>+<F5>`` in Chrome or
+``<Shift>+<Ctrl>+r`` in Firefox:
 
 .. image:: img/chromium-dev-304-2.png
 
@@ -90,21 +89,27 @@ Tools: The command line tool
 
 As we just saw, the browser does a lot more than just issue HTTP requests,
 specially with regards to cache. It's important to have a good grip on at
-least one tool to issue custom HTTP requests to a web server. There are
-many of these, and it's also possible to hand-craft HTTP requests with
-``telnet`` or ``netcat``, but today that's usually a bit tricky due to
-various timeouts that tend to hit you before you finish the request - just
-in case it wasn't just impractical in general.
+least one tool to issue custom HTTP requests to a web server. There are too
+many tools to mention them all.
 
-FIXME: Windows.
+Some suggestions for Windows users are ``curl`` in Powershell, Charles Web
+Debugging Proxy, the "Test and Rest Client" in PhpStorm, a "Adanced RST
+client" Chrome extension, or simply SSH'ing to a GNU/Linux VM and using one
+of the many tools available there. Your requirement for a simple HTTP
+request synthesizer should be:
 
-While tools such as ``wget`` and ``curl`` can be used, they are designed to
-be HTTP clients, not HTTP debugging tools. The ``lwp-request`` tool has
-been somewhat popular in the Varnish-community, but has some shortcomings
-(notably that it inserts fake headers in the response and doesn't support
-gzip), so we will focus on `httpie`. On a Debian or Ubuntu system this is
-easily installed with ``apt-get install httpie``. Testing httpie is
-simple::
+- Complete control over request headers and request method - even invalid
+  input.
+- Stateless behavior - no caching at all
+- Show complete response headers.
+
+We will use `httpie`, a small CLI tool that has these properties. It's
+chosen because it is a good tool, but also because it's easy to see what's
+going on even for those who do not use it them self.
+
+Httpie is available on Linux, Mac OS X and Windows. On a Debian or Ubuntu
+system httpie can be installed with ``apt-get install httpie``. For other
+platforms, see http://httpie.org. Testing httpie is simple::
 
         $ http http://kly.no/misc/dummy.png
         HTTP/1.1 200 OK
