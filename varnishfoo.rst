@@ -3,7 +3,7 @@ Varnish Foo
 ===========
 
 .. class:: centered
-        
+
         A book about Varnish Cache-stuff.
 
 .. raw:: pdf
