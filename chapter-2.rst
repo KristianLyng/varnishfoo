@@ -412,23 +412,22 @@ client - typically a browser - to verify that they have the most up-to-date
 version of the HTTP object. There are two different types of conditional
 GET requests: ``If-Modified-Since`` and ``If-None-Match``.
 
-If a server sends ``Last-Modified``-header, the client can issue a
+If a server sends a ``Last-Modified``-header, the client can issue a
 ``If-Modified-Since`` header on later requests for the same content,
-indicating that the server only needs to transmit this content if it's been
-updated.
+indicating that the server only needs to transmit the response body if it's
+been updated.
 
 Some times it isn't trivial to know the modification time, but you might be
 able to uniquely identify the content anyway. For that matter, the content
 might have been changed back to the original state. This is where the
-response header ``Etag`` comes into the picture.
+`entity tag`, or ``ETag`` response header
 
 An ``Etag`` header can be used to provide an arbitrary ID to an HTTP
 object, and the client can then re-use that in a ``If-None-Match`` request
 header.
 
-Let's test this out for ourself. Let's modify our dummy-backend, that we
-created in ``/usr/lib/cgi-bin/foo.sh`` (or your equivalent). The goal is to
-send a static ``Etag`` header. Here's a modified version::
+Modifying the dummy-backend in ``/usr/lib/cgi-bin/foo.sh`` (or your
+equivalent), we can make it provide a static ``ETag`` header.
 
         #!/bin/bash
         echo "Content-type: text/plain"
@@ -541,9 +540,17 @@ Let's try to change our ``If-None-Match`` header a bit::
 
 Content!
 
-The observant reader will have noticed several other things that Varnish
-did. Suddenly there's an ``Age`` header, for instance. That's next on our
-agenda.
+To summarize:
+
++-------------------+-----------------------+------------------------+
+| Server            | Client                | Server                 |
++===================+=======================+========================+
+| ``Last-Modified`` | ``If-Modified-Since`` | ``200 OK`` or          |
+|                   |                       | ``304 Not Modified``   |
++-------------------+-----------------------+                        |
+| ``ETag``          | ``If-Non-Match``      |                        |
+|                   |                       |                        |
++-------------------+-----------------------+------------------------+
 
 .. Warning::
 
