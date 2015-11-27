@@ -569,8 +569,8 @@ To summarize:
         ``Last-Modified``-headers that are correct, or don't provide them
         at all.
 
-Cache control and age
----------------------
+Cache control, age and grace
+----------------------------
 
 An HTTP object has an age. This is how long it is since the object was
 updated from whatever origin source. In most cases, an objects starts
@@ -591,5 +591,260 @@ and response-header, but is most useful in the response header. Most web
 servers and many intermediary caches (including Varnish), ignores a
 ``max-age`` field received in a HTTP request-header.
 
-To demonstrate the ``max-age``
+Setting ``max-age=0`` effectively disables caching, assuming the cache
+obeys::
+
+        # http http://localhost:6081/cgi-bin/foo.sh
+        HTTP/1.1 200 OK
+        Accept-Ranges: bytes
+        Age: 0
+        Cache-Control: max-age=0
+        Connection: keep-alive
+        Content-Length: 57
+        Content-Type: text/plain
+        Date: Fri, 27 Nov 2015 15:41:53 GMT
+        Server: Apache/2.4.10 (Debian)
+        Via: 1.1 varnish-v4
+        X-Varnish: 32776
+
+        Hello. Random number: 21126
+        Fri Nov 27 15:41:53 UTC 2015
+
+        # http http://localhost:6081/cgi-bin/foo.sh
+        HTTP/1.1 200 OK
+        Accept-Ranges: bytes
+        Age: 0
+        Cache-Control: max-age=0
+        Connection: keep-alive
+        Content-Length: 57
+        Content-Type: text/plain
+        Date: Fri, 27 Nov 2015 15:41:57 GMT
+        Server: Apache/2.4.10 (Debian)
+        Via: 1.1 varnish-v4
+        X-Varnish: 32779
+
+        Hello. Random number: 21126
+        Fri Nov 27 15:41:57 UTC 2015
+
+This examples issues two requests to against a modified
+`http://localhost:6081/cgi-bin/foo.sh`. The modified version has set
+``max-age=0`` to tell Varnish - and browsers - not to cache the content at
+all. A similar example can be used for ``max-age=10``::
+
+        # http http://localhost:6081/cgi-bin/foo.sh
+        HTTP/1.1 200 OK
+        Accept-Ranges: bytes
+        Age: 0
+        Cache-Control: max-age=10
+        Connection: keep-alive
+        Content-Length: 57
+        Content-Type: text/plain
+        Date: Fri, 27 Nov 2015 15:44:32 GMT
+        Server: Apache/2.4.10 (Debian)
+        Via: 1.1 varnish-v4
+        X-Varnish: 14
+
+        Hello. Random number: 21126
+        Fri Nov 27 15:44:32 UTC 2015
+
+        # http http://localhost:6081/cgi-bin/foo.sh
+        HTTP/1.1 200 OK
+        Accept-Ranges: bytes
+        Age: 8
+        Cache-Control: max-age=10
+        Connection: keep-alive
+        Content-Length: 57
+        Content-Type: text/plain
+        Date: Fri, 27 Nov 2015 15:44:32 GMT
+        Server: Apache/2.4.10 (Debian)
+        Via: 1.1 varnish-v4
+        X-Varnish: 32782 15
+
+        Hello. Random number: 21126
+        Fri Nov 27 15:44:32 UTC 2015
+
+        # http http://localhost:6081/cgi-bin/foo.sh
+        HTTP/1.1 200 OK
+        Accept-Ranges: bytes
+        Age: 12
+        Cache-Control: max-age=10
+        Connection: keep-alive
+        Content-Length: 57
+        Content-Type: text/plain
+        Date: Fri, 27 Nov 2015 15:44:32 GMT
+        Server: Apache/2.4.10 (Debian)
+        Via: 1.1 varnish-v4
+        X-Varnish: 19 15
+
+        Hello. Random number: 21126
+        Fri Nov 27 15:44:32 UTC 2015
+
+        # http http://localhost:6081/cgi-bin/foo.sh
+        HTTP/1.1 200 OK
+        Accept-Ranges: bytes
+        Age: 2
+        Cache-Control: max-age=10
+        Connection: keep-alive
+        Content-Length: 57
+        Content-Type: text/plain
+        Date: Fri, 27 Nov 2015 15:44:44 GMT
+        Server: Apache/2.4.10 (Debian)
+        Via: 1.1 varnish-v4
+        X-Varnish: 65538 20
+
+        Hello. Random number: 21126
+        Fri Nov 27 15:44:44 UTC 2015
+
+This example demonstrates several things at once:
+
+- Varnish emits an ``Age`` header, telling you how old the object is.
+- Varnish now caches.
+- Varnish delivers a 12-second old object, despite ``max-age=10``!
+- Varnish then deliver a 2 second old object?
+
+What this example is showing, is Varnish' default grace mode. This has
+changed slightly for Varnish version 4. The simple explanation is that
+Varnish keeps an object a little longer (10 seconds by default) than the
+regular cache duration. If the object is requested during this period, the
+cached variant of the object is sent to the client, while Varnish issues a
+request to the backend server in parallel. This can also be described as
+`stale while updating`. This happens even with zero configuration for
+Varnish, and is covered detailed in later chapters. For now, it's good to
+just get used to issuing an extra request to Varnish after the expiry time
+to see the update take place.
+
+Let's do an other example of this, using a browser, and 60 seconds of max
+age and an ETag header set to something random so our browser can do
+conditional GET requests:
+
+.. image:: img/c2/age-1.png
+
+On the first request we get a 27 second old object.
+
+.. image:: img/c2/age-2.png
+
+The second request is a conditional GET request because we had it in cache.
+Note that our browser has already exceeded the max-age, but still made a
+conditional GET request. A cache (browser or otherwise) may keep an object
+longer than the suggested ``max-age``, as long as it verifies the content
+before using it. The result is the same object, now with an age of 65
+seconds.
+
+.. image:: img/c2/age-3.png
+
+The third request, which takes place just 18 seconds later. This is not a
+conditional GET request, most likely because our browser correctly saw that
+the ``Age`` of the previous object was 65, while ``max-age=60`` instructed
+the browser to only keep the object until it reached an age of 60 - a time
+which had already past. Our browser thus did not keep the object at all
+this time.
+
+Similarly, we can modify our ``foo.sh`` to emit ``max-age=3600`` and ``Age:
+3590``, pretending to be a cache. Speaking directly to Apache::
+
+        # http http://localhost:8080/cgi-bin/foo.sh
+        HTTP/1.1 200 OK
+        Age: 3590
+        Cache-Control: max-age=3600
+        Connection: Keep-Alive
+        Content-Length: 57
+        Content-Type: text/plain
+        Date: Fri, 27 Nov 2015 16:07:36 GMT
+        ETag: 11235
+        Keep-Alive: timeout=5, max=100
+        Server: Apache/2.4.10 (Debian)
+
+        Hello. Random number: 21126
+        Fri Nov 27 16:07:36 UTC 2015
+
+        # http http://localhost:8080/cgi-bin/foo.sh
+        HTTP/1.1 200 OK
+        Age: 3590
+        Cache-Control: max-age=3600
+        Connection: Keep-Alive
+        Content-Length: 57
+        Content-Type: text/plain
+        Date: Fri, 27 Nov 2015 16:07:54 GMT
+        ETag: 12583
+        Keep-Alive: timeout=5, max=100
+        Server: Apache/2.4.10 (Debian)
+
+        Hello. Random number: 21126
+        Fri Nov 27 16:07:54 UTC 2015
+
+Let's try three requests through Varnish::
+
+        # http http://localhost:6081/cgi-bin/foo.sh
+        HTTP/1.1 200 OK
+        Accept-Ranges: bytes
+        Age: 3590
+        Cache-Control: max-age=3600
+        Connection: keep-alive
+        Content-Length: 57
+        Content-Type: text/plain
+        Date: Fri, 27 Nov 2015 16:08:50 GMT
+        ETag: 9315
+        Server: Apache/2.4.10 (Debian)
+        Via: 1.1 varnish-v4
+        X-Varnish: 65559
+
+        Hello. Random number: 21126
+        Fri Nov 27 16:08:50 UTC 2015
+
+The first request is almost identical to the one we issued to Apache,
+except a few added headers.
+
+15 seconds later, we issue the same command again::
+
+        # http http://localhost:6081/cgi-bin/foo.sh
+        HTTP/1.1 200 OK
+        Accept-Ranges: bytes
+        Age: 3605
+        Cache-Control: max-age=3600
+        Connection: keep-alive
+        Content-Length: 57
+        Content-Type: text/plain
+        Date: Fri, 27 Nov 2015 16:08:50 GMT
+        ETag: 9315
+        Server: Apache/2.4.10 (Debian)
+        Via: 1.1 varnish-v4
+        X-Varnish: 32803 65560
+
+        Hello. Random number: 21126
+        Fri Nov 27 16:08:50 UTC 2015
+
+Varnish replies with a version from grace, and has issued an update to
+Apache in the background. Note that the ``Age`` header is now increased,
+and is clearly beyond the age limit of 3600.
+
+4 seconds later, the third request::
+
+        # http http://localhost:6081/cgi-bin/foo.sh
+        HTTP/1.1 200 OK
+        Accept-Ranges: bytes
+        Age: 3594
+        Cache-Control: max-age=3600
+        Connection: keep-alive
+        Content-Length: 57
+        Content-Type: text/plain
+        Date: Fri, 27 Nov 2015 16:09:05 GMT
+        ETag: 24072
+        Server: Apache/2.4.10 (Debian)
+        Via: 1.1 varnish-v4
+        X-Varnish: 65564 32804
+
+        Hello. Random number: 21126
+        Fri Nov 27 16:09:05 UTC 2015
+
+Updated content!
+
+The lesson to pick up from this is:
+
+- ``Age`` is not just an informative header. It is used by intermediary
+  caches and by browser caches.
+- ``max-age`` is relative to ``Age`` and *not* to when the request was
+  made.
+- You can have multiple tiers of caches, and ``max-age=x`` will be correct
+  for the end user if all intermediary  caches correctly obey it and adds
+  to ``Age``.
 
