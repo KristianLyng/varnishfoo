@@ -2,7 +2,7 @@
 Varnish Foo
 ===========
 
-.. class:: centered
+.. class:: center
 
         A book about Varnish Cache-stuff.
 
@@ -29,7 +29,7 @@ Varnish Foo
       .. class:: headertable
 
       +---+-----------------------+------------------+
-      |   | .. class:: centered   | .. class:: right |
+      |   | .. class:: center     | .. class:: right |
       |   |                       |                  |
       |   | Chapter ###Section### | Page ###Page###  |
       +---+-----------------------+------------------+
@@ -37,7 +37,7 @@ Varnish Foo
       .. class:: headertable
 
       +---------------+---------------------+---+
-      |               |.. class:: centered  |   |
+      |               |.. class:: center    |   |
       |               |                     |   |
       |Page ###Page###|Chapter ###Section###|   |
       +---------------+---------------------+---+
