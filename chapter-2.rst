@@ -545,32 +545,51 @@ To summarize:
 +-------------------+-----------------------+------------------------+
 | Server            | Client                | Server                 |
 +===================+=======================+========================+
-| ``Last-Modified`` | ``If-Modified-Since`` | ``200 OK`` or          |
-|                   |                       | ``304 Not Modified``   |
-+-------------------+-----------------------+                        |
-| ``ETag``          | ``If-Non-Match``      |                        |
+| ``Last-Modified`` | ``If-Modified-Since`` | ``200 OK`` with full   |
+|                   |                       | response body, or      |
++-------------------+-----------------------+ ``304 Not Modified``   |
+| ``ETag``          | ``If-Non-Match``      | with no response body. |
 |                   |                       |                        |
 +-------------------+-----------------------+------------------------+
 
 .. Warning::
 
-        Hopefully our demo also illustrates that supplying static ``Etag``
+        The examples above also demonstrates that supplying static ``Etag``
         headers or bogus ``Last-Modified`` headers can have unexpected side
-        effects. In our example, ``foo.sh`` clearly provides new content
-        every time. Talking directly to the web server resulted in the
-        desired behavior of the client getting the updated content, but
-        only because the web server ignored the conditional part of the
-        request.
+        effects. ``foo.sh`` provides new content every time. Talking
+        directly to the web server resulted in the desired behavior of the
+        client getting the updated content, but only because the web server
+        ignored the conditional part of the request.
 
-        The danger is not Varnish - which we can control -  but proxy
-        servers outside of our control sitting between the client and the
-        web server. Even if your web server ignores ``If-None-Match`` and
-        ``If-Modified-Since`` headers, there's no guarantee that other
-        proxies do! Make sure you only provide ``Etag`` and
+        The danger is not necessarily Varnish, but proxy servers outside of
+        the control of the web site, sitting between the client and the web
+        server. Even if a web server ignores ``If-None-Match`` and
+        ``If-Modified-Since`` headers, there is no guarantee that other
+        proxies do! Make sure to only provide ``Etag`` and
         ``Last-Modified``-headers that are correct, or don't provide them
         at all.
 
 Cache control and age
 ---------------------
 
-FIXME: Write this :p
+An HTTP object has an age. This is how long it is since the object was
+updated from whatever origin source. In most cases, an objects starts
+acquiring age once it leaves a web server.
+
+Age is measured in seconds. The HTTP response header ``Age`` is used to
+forward the information regarding age to HTTP clients. You can specify
+maximum age allowed both from a client and server. The most interesting
+aspect of this is the HTTP header ``Cache-Control``. This both a response-
+and request-header, which means that both clients and servers will emit
+this header.
+
+The ``Age`` header has a single value: the age of the object returned,
+measured in seconds. The ``Cache-Control`` header, on the other hand, has a
+multitude of variables and options. We'll begin with the simplest:
+``max-age=``. This is a variable that can be used both in a request-header
+and response-header, but is most useful in the response header. Most web
+servers and many intermediary caches (including Varnish), ignores a
+``max-age`` field received in a HTTP request-header.
+
+To demonstrate the ``max-age``
+
