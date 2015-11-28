@@ -7,44 +7,40 @@ Before we dig into the inner workings of Varnish, it's important to
 make sure we have the tools we need and some background information on
 basic caching.
 
-In this chapter, we will look at how HTTP caching works on multiple points
-in the HTTP delivery chain, and how these mechanisms work together.
+This chapter looks at how HTTP caching works on multiple points in the HTTP
+delivery chain, and how these mechanisms work together. Not every aspect of
+HTTP caching is covered, but those relevant to Varnish are. Including
+several browser-related concerns.
 
 There are a multitude of tools to chose from when you are working with
-Varnish. This chapter provides a few suggestions, but makes no claim on
-whether one tool is better than the other. We will go through two different
-type of client tools: The browser and a command line tool. This chapter
-also sets up a simple web server for testing, and demonstrates several
-aspects of how Varnish behaves.
+Varnish. This chapter provides a few suggestions and a quick guide to each
+tool, but makes no claim on whether one tool is better than the other. We
+will go through two different type of client tools: The browser and a
+command line tool. This chapter also sets up a simple web server for
+testing, and demonstrates several aspects of how Varnish behaves.
 
 The focus, however, is not the individual tools, but HTTP caching and how
-we can debug it and affect it without modifying the proxy or browser.
+it can be debugged and affected it without modifying the proxy or browser.
 
-After the tools are covered and demonstrated, we will go through how you
-can control cache through the means of HTTP headers, both for browsers
-and proxies like Varnish, using the mechanisms provided through
-`RFC2616`_.
+Only the absolute minimum of actual Varnish configuration is covered - yet
+several mechanisms to control Varnish through backend responses are
+provided. Most of these mechanisms are well defined in `RFC2616`_.
 
 Tools: The browser
 ------------------
 
-Your browser is a powerful tool, because it does a great deal of caching
-and HTTP. Most browsers have a developer- or debug console, but we will
-focus on Chrome and Firefox.
+A browser is an important tool. Most of todays web traffic is,
+unsurprisingly, through a web browser. Therefor, it is important to be able
+to dig deeper into how they work with regards to cache. Most browsers have
+a developer- or debug console, but we will focus on Chrome and Firefox.
 
 Both Firefox and Chrome will open the debug console if you hit ``<F12>``.
 It's a good habit to test and experiment with more than one browser, and
 luckily these consoles are very similar. A strong case in favor of Chrome
 is `Incognito Mode`, activated through ``<Ctrl>+<Shit>+N``. This is an
 advantage both because it removes old cookies and because most extensions
-are disabled.
-
-An argument for Firefox is that it's fairly easy to operate with
-multiple profiles. One of these profiles could be used to run Firefox
-through a SOCKS proxy for example to test a HTTP service that's not yet put
-in production for example, or otherwise behind a firewall. You can achieve
-this by running Firefox with ``--no-remote --ProfileManager`` (FIXME:
-Windows?).
+are disabled. Most examples use Chrome to keep things consistent and
+simple, but could just as well have been performed on Firefox.
 
 The importance of Incognito Mode can be easily demonstrated. The following
 is a test with a typical Chrome session:
@@ -56,7 +52,9 @@ bogus call to ``socialwidgets.css``. The exact same test in Incognito Mode:
 
 .. image:: img/chromium-dev-incognito.png
 
-The extra request is gone.
+The extra request is gone. Regardless of browser choice, your testing
+environment should be devoid of most extensions and let you easily get rid
+of all cookies.
 
 You will also quickly learn that a refresh isn't always just a refresh.
 In both Firefox and Chrome, a refresh triggered by ``<F5>`` or
@@ -81,6 +79,9 @@ The cache-related headers have changed somewhat, and the browser is no
 longer sending a ``If-Modified-Since`` header. The result is a ``200 OK``
 with the actual content instead of an empty ``304 Not Modified``.
 
+These details are both the reason you need to test with a browser - because
+this is how they operate - and why a simpler tool is needed in addition to
+the browser.
 
 Tools: The command line tool
 ----------------------------
@@ -171,10 +172,9 @@ HTTPie.
 
 The example shows the original request headers and full response headers.
 
-An other thing you'll want to do is use a fake ``Host``-header. If you are
-setting up a Varnish server - or any other Web server - it's useful to test
-it properly without pointing the real DNS name at the development server.
-Here's an example of how to do that::
+Faking a ``Host``-header is frequently necessary to avoid changing DNS just
+to test a Varnish setup. A decent request synthesizer like HTTPie does
+this::
 
         $ http -p Hh http://kly.no/ "Host: example.com"
         GET / HTTP/1.1
@@ -198,7 +198,7 @@ Here's an example of how to do that::
         X-Cache: MISS from access-gateway.hospitality.swisscom.com
         X-Varnish: 15577233
 
-We can also add some other headers too. Let's make it interesting::
+Adding other headers is done the same way::
 
         $ http -p Hh http://kly.no/ "If-Modified-Since: Tue, 24 Nov 2015 20:51:14 GMT"
         GET / HTTP/1.1
@@ -222,8 +222,8 @@ We can also add some other headers too. Let's make it interesting::
         X-Varnish: 15880392 15904200
 
 We just simulated what our browser did, and verified that it really was the
-``If-Modified-Since`` header that made the difference earlier. You can have
-multiple headers by just listing them after each other::
+``If-Modified-Since`` header that made the difference earlier. To have
+multiple headers, just list them one after an other::
 
         $ http -p Hh http://kly.no/ "Host: example.com" "User-Agent: foo" "X-demo: bar"
         GET / HTTP/1.1
@@ -251,16 +251,16 @@ multiple headers by just listing them after each other::
 Tools: A web server
 -------------------
 
-This one is a bit obvious, and regardless of what example is used in a
-book, it's the wrong one. So we'll just pick one: Apache.
+Regardless of what web server is picked as an example in this book, it's
+the wrong one. So the first on an alphabetical list was chosen: Apache.
 
-You can do the same with any half-decent web server, but what you want is a
-web server where you can easily modify response headers to some degree. If
-you are comfortable doing that with NodeJS or some other slightly more
-modern tool than Apache, then go ahead. If you really don't care and just
-want a test environment, then keep reading. To save some time, these
-examples are oriented around Debian and/or Ubuntu-systems, but largely
-apply to any modern GNU/Linux distribution (and other UNIX-like systems).
+Any decent web server will do what you need. What you want is a web server
+where you can easily modify response headers. If you are comfortable doing
+that with NodeJS or some other slightly more modern tool than Apache, then
+go ahead. If you really don't care and just want a test environment, then
+keep reading. To save some time, these examples are oriented around Debian
+and/or Ubuntu-systems, but largely apply to any modern GNU/Linux
+distribution (and other UNIX-like systems).
 
 Note that commands that start with ``#`` are executed as root, while
 commands starting with ``$`` can be run as a regular user. This means you
@@ -277,9 +277,10 @@ The first step is getting it installed and configured::
         # service apache2 restart
 
 
-In short, what we just did is install Apache httpd, enable the CGI module,
-change the listening port from port 80 to 8080, then restart the web
-server. We changed the listening port to prepare for things to come.
+This installs Apache httpd, enables the CGI module, changes the listening
+port from port 80 to 8080, then restarts the web server. The listening port
+is changed because eventually Varnish will take up residence on port 80.
+
 You can verify that it works through two means::
 
         # netstat -nlpt
@@ -307,7 +308,12 @@ You can verify that it works through two means::
         Server: Apache/2.4.10 (Debian)
         Vary: Accept-Encoding
 
-Now let's make a CGI script to test some custom-headers::
+The first reveals that ``apache2`` is listening on port 8080. The second
+command issues an actual request. Both are useful to ensure the correct
+service is answering.
+
+To provide a platform for experimenting with response header, it's time to
+drop in a CGI script::
 
         # cd /usr/lib/cgi-bin
         # cat > foo.sh <<_EOF_
@@ -324,9 +330,9 @@ Now let's make a CGI script to test some custom-headers::
         Hello. Random number: 21126
         Wed Nov 25 20:26:59 UTC 2015
 
-You may want to use an actual editor, like ``vim``, ``emacs`` or ``nano``
-instead of using ``cat`` of course. To clarify, the exact content of
-``foo.sh`` should be::
+You may want to use a proper editor, like ``vim`` or ``emacs``. Or you
+could use ``nano`` instead of using ``cat`` of course. To clarify, the
+exact content of ``foo.sh`` should be::
 
          #!/bin/bash
          echo "Content-type: text/plain"
@@ -334,9 +340,11 @@ instead of using ``cat`` of course. To clarify, the exact content of
          echo "Hello. Random number: ${RANDOM}"
          date
 
-We then change permissions for it, making it executable by all users, then
-verify that it does what it's supposed to. Next up, let's test if we can
-run it through Apache::
+We then change permissions for ``foo.sh``, making it executable by all
+users, then verify that it does what it's supposed to. Next up, let's test
+if we can run it through Apache. If everything is set up correctly, scripts
+under ``/usr/lib/cgi-bin`` are accessible through
+``http://localhost:8080/cgi-bin/``::
 
         # http -p Hhb http://localhost:8080/cgi-bin/foo.sh
         GET /cgi-bin/foo.sh HTTP/1.1
@@ -838,7 +846,7 @@ and is clearly beyond the age limit of 3600.
 
 Updated content!
 
-The lesson to pick up from this is:
+The lessons to pick up from this is:
 
 - ``Age`` is not just an informative header. It is used by intermediary
   caches and by browser caches.
@@ -848,3 +856,334 @@ The lesson to pick up from this is:
   for the end user if all intermediary  caches correctly obey it and adds
   to ``Age``.
 
+The ``Cache-Control`` header
+----------------------------
+
+The ``Cache-Control`` header has a multitude of possible values, and can be
+supplied as both a request-header and response-header. Varnish ignores any
+Cache-Control header received from a client - other caches might obey them.
+
+It is defined in `RFC2616`_, 14.9. As Varnish ignores all ``Cache-Control``
+headers in a client request, we will focus on the parts relevant to a HTTP
+response, here's an excerpt from `RFC2616`_::
+
+        Cache-Control   = "Cache-Control" ":" 1#cache-directive
+
+        cache-directive = cache-request-directive
+             | cache-response-directive
+
+        (...)
+
+         cache-response-directive =
+               "public"                               ; Section 14.9.1
+             | "private" [ "=" <"> 1#field-name <"> ] ; Section 14.9.1
+             | "no-cache" [ "=" <"> 1#field-name <"> ]; Section 14.9.1
+             | "no-store"                             ; Section 14.9.2
+             | "no-transform"                         ; Section 14.9.5
+             | "must-revalidate"                      ; Section 14.9.4
+             | "proxy-revalidate"                     ; Section 14.9.4
+             | "max-age" "=" delta-seconds            ; Section 14.9.3
+             | "s-maxage" "=" delta-seconds           ; Section 14.9.3
+             | cache-extension                        ; Section 14.9.6
+
+        cache-extension = token [ "=" ( token | quoted-string ) ]
+
+Of the above headers, Varnish only obeys ``s-maxage`` and ``max-age`` by
+default. It's worth looking closer specially at ``must-revalidate``. This
+allows a client to cache the content, but requires it to send a conditional
+GET request before actually using the content.
+
+``s-maxage`` is of special interest to Varnish users. It is intended to
+instruct intermediate caches, but not clients (e.g.: browsers). Varnish
+will pick the value of ``s-maxage`` over ``max-age``, which makes it
+possible for a web server to emit a ``Cache-Control`` header that gives
+different instructions to browsers and Varnish::
+
+        # http http://localhost:6081/cgi-bin/foo.sh
+        HTTP/1.1 200 OK
+        Accept-Ranges: bytes
+        Age: 0
+        Cache-Control: s-maxage=3600,max-age=5
+        Connection: keep-alive
+        Content-Type: text/plain
+        Date: Fri, 27 Nov 2015 23:21:47 GMT
+        Server: Apache/2.4.10 (Debian)
+        Transfer-Encoding: chunked
+        Via: 1.1 varnish-v4
+        X-Varnish: 2
+
+        Hello. Random number: 21126
+        Fri Nov 27 23:21:47 UTC 2015
+
+        # http http://localhost:6081/cgi-bin/foo.sh
+        HTTP/1.1 200 OK
+        Accept-Ranges: bytes
+        Age: 8
+        Cache-Control: s-maxage=3600,max-age=5
+        Connection: keep-alive
+        Content-Length: 57
+        Content-Type: text/plain
+        Date: Fri, 27 Nov 2015 23:21:47 GMT
+        Server: Apache/2.4.10 (Debian)
+        Via: 1.1 varnish-v4
+        X-Varnish: 5 3
+
+        Hello. Random number: 21126
+        Fri Nov 27 23:21:47 UTC 2015
+
+        # http http://localhost:6081/cgi-bin/foo.sh
+        HTTP/1.1 200 OK
+        Accept-Ranges: bytes
+        Age: 16
+        Cache-Control: s-maxage=3600,max-age=5
+        Connection: keep-alive
+        Content-Length: 57
+        Content-Type: text/plain
+        Date: Fri, 27 Nov 2015 23:21:47 GMT
+        Server: Apache/2.4.10 (Debian)
+        Via: 1.1 varnish-v4
+        X-Varnish: 7 3
+
+        Hello. Random number: 21126
+        Fri Nov 27 23:21:47 UTC 2015
+
+The first request populates the cache, the second returns a cache hit after
+8 seconds, while the third confirms that no background fetch has caused an
+update by returning the same object a third time.
+
+Two important things to note here:
+
+- The ``Age`` header is accurately reported. This effectively disables
+  client-side caching after ``Age`` has reached 5 seconds.
+- There could be other intermediate caches that would also use
+  ``s-maxage``.
+
+The solution to both these issues is the same: Remove or reset the
+``Age``-header and remove or reset the ``s-maxage``-part of the
+``Cache-Control`` header. Varnish does not do this by default, but we will
+do both in later chapters. For now, just know that these are challenges.
+
+Vary
+----
+
+The ``Vary``-header is exclusively meant for intermediate caches, such as
+Varnish. It is a comma-separated list of references to request headers that
+will cause the web server to produce a different variant of the same
+content. An example is needed::
+
+        # http -p Hhb http://localhost:6081/cgi-bin/foo.sh "X-demo: foo"
+        GET /cgi-bin/foo.sh HTTP/1.1
+        Accept: */*
+        Accept-Encoding: gzip, deflate
+        Connection: keep-alive
+        Host: localhost:6081
+        User-Agent: HTTPie/0.8.0
+        X-demo:  foo
+
+        HTTP/1.1 200 OK
+        Accept-Ranges: bytes
+        Age: 6
+        Cache-Control: s-maxage=3600
+        Connection: keep-alive
+        Content-Length: 57
+        Content-Type: text/plain
+        Date: Fri, 27 Nov 2015 23:56:47 GMT
+        Server: Apache/2.4.10 (Debian)
+        Vary: X-demo
+        Via: 1.1 varnish-v4
+        X-Varnish: 12 32771
+
+        Hello. Random number: 21126
+        Fri Nov 27 23:56:47 UTC 2015
+
+        # http -p Hhb http://localhost:6081/cgi-bin/foo.sh "X-demo: bar"
+        GET /cgi-bin/foo.sh HTTP/1.1
+        Accept: */*
+        Accept-Encoding: gzip, deflate
+        Connection: keep-alive
+        Host: localhost:6081
+        User-Agent: HTTPie/0.8.0
+        X-demo:  bar
+
+        HTTP/1.1 200 OK
+        Accept-Ranges: bytes
+        Age: 0
+        Cache-Control: s-maxage=3600
+        Connection: keep-alive
+        Content-Length: 57
+        Content-Type: text/plain
+        Date: Fri, 27 Nov 2015 23:56:57 GMT
+        Server: Apache/2.4.10 (Debian)
+        Vary: X-demo
+        Via: 1.1 varnish-v4
+        X-Varnish: 32773
+
+        Hello. Random number: 21126
+        Fri Nov 27 23:56:57 UTC 2015
+
+        # http -p Hhb http://localhost:6081/cgi-bin/foo.sh "X-demo: foo"
+        GET /cgi-bin/foo.sh HTTP/1.1
+        Accept: */*
+        Accept-Encoding: gzip, deflate
+        Connection: keep-alive
+        Host: localhost:6081
+        User-Agent: HTTPie/0.8.0
+        X-demo:  foo
+
+        HTTP/1.1 200 OK
+        Accept-Ranges: bytes
+        Age: 15
+        Cache-Control: s-maxage=3600
+        Connection: keep-alive
+        Content-Length: 57
+        Content-Type: text/plain
+        Date: Fri, 27 Nov 2015 23:56:47 GMT
+        Server: Apache/2.4.10 (Debian)
+        Vary: X-demo
+        Via: 1.1 varnish-v4
+        X-Varnish: 14 32771
+
+        Hello. Random number: 21126
+        Fri Nov 27 23:56:47 UTC 2015
+
+        # http -p Hhb http://localhost:6081/cgi-bin/foo.sh "X-demo: bar"
+        GET /cgi-bin/foo.sh HTTP/1.1
+        Accept: */*
+        Accept-Encoding: gzip, deflate
+        Connection: keep-alive
+        Host: localhost:6081
+        User-Agent: HTTPie/0.8.0
+        X-demo:  bar
+
+        HTTP/1.1 200 OK
+        Accept-Ranges: bytes
+        Age: 8
+        Cache-Control: s-maxage=3600
+        Connection: keep-alive
+        Content-Length: 57
+        Content-Type: text/plain
+        Date: Fri, 27 Nov 2015 23:56:57 GMT
+        Server: Apache/2.4.10 (Debian)
+        Vary: X-demo
+        Via: 1.1 varnish-v4
+        X-Varnish: 32776 32774
+
+        Hello. Random number: 21126
+        Fri Nov 27 23:56:57 UTC 2015
+
+These four requests demonstrates that two objects are entered into the
+cache for the same URL, accessible by modifying the arbitrarily chosen
+``X-demo`` request header - which is obviously not a real header.
+
+The most important use-case for Vary is to support content encoding such as
+`gzip`. In earlier versions of Varnish, the web server needed to do the
+compression and Varnish would store the compressed content and (assuming a
+client asked for it), the uncompressed content. This was supported through
+the Vary header, which the server would set to ``Vary: Accept-Encoding``.
+Today, Varnish understands gzip and this isn't needed. There are two more
+examples of ``Vary``-usage.
+
+Mobile devices are often served different variants of the same contents, so
+called mobile-friendly pages. To make sure intermediate caches supports
+this, Varnish must emit a ``Vary: User-Agent`` string, suggesting that for
+each different ``User-Agent`` header sent, a unique variant of the cache
+must be made.
+
+The second such header is the nefarious ``Cookie`` header. Whenever a page
+is rendered differently based on a cookie, the web server should send
+``Vary: Cookie``. However, nobody actually does this in the real world,
+which has resulted in cookies being treated differently. Varnish does not
+cache any content if it's requested with a cookie by default, nor does it
+cache any response with a ``Set-Cookie``-header. This clearly needs to be
+overridden, and will be covered in detail in later chapters.
+
+The biggest problem with the ``Vary``-header is the lack of semantic
+details. The ``Vary`` header simply states that any variation in the
+request header, however small, mandates a new object in the cache. This
+causes numerous headaches. Here are some examples:
+
+- ``Accept-Enoding: gzip,deflate`` and ``Accept-Encoding: deflate,gzip``
+  will result in two different variants.
+- ``Vary: User-Agent`` will cause a tremendous amount of variants, since
+  the level of detail in modern ``User-Agent`` headers is extreme.
+- It's impossible to say that only THAT cookie will matter, not the others.
+
+Many of these things can be remedied or at least worked around in Varnish.
+All of it will be covered in detail in separate chapters.
+
+Request methods
+---------------
+
+Only the ``GET`` request method is cached. However, Varnish will re-write a
+``HEAD`` request to a ``GET`` request, cache the result and strip the
+response body before answering the client. A ``HEAD`` request is supposed
+to be exactl the same as a ``GET`` request, with the response body
+stripped, so this makes sense. To see this effect, issue a HEAD request
+first directly to Apache::
+
+        # http -p Hhb HEAD http://localhost:8080/cgi-bin/foo.sh
+        HEAD /cgi-bin/foo.sh HTTP/1.1
+        Accept: */*
+        Accept-Encoding: gzip, deflate
+        Connection: keep-alive
+        Host: localhost:8080
+        User-Agent: HTTPie/0.8.0
+
+        HTTP/1.1 200 OK
+        Connection: Keep-Alive
+        Content-Length: 29
+        Content-Type: text/plain
+        Date: Sat, 28 Nov 2015 00:30:33 GMT
+        Keep-Alive: timeout=5, max=100
+        Server: Apache/2.4.10 (Debian)
+
+        # tail -n1 /var/log/apache2/access.log 
+        ::1 - - [28/Nov/2015:00:30:33 +0000] "HEAD /cgi-bin/foo.sh HTTP/1.1" 200 190 "-" "HTTPie/0.8.0"
+
+The access log shows a ``HEAD`` request. Issuing the same request to
+Varnish::
+
+        # http -p Hhb HEAD http://localhost:6081/cgi-bin/foo.sh
+        HEAD /cgi-bin/foo.sh HTTP/1.1
+        Accept: */*
+        Accept-Encoding: gzip, deflate
+        Connection: keep-alive
+        Host: localhost:6081
+        User-Agent: HTTPie/0.8.0
+
+        HTTP/1.1 200 OK
+        Age: 0
+        Connection: keep-alive
+        Content-Length: 29
+        Content-Type: text/plain
+        Date: Sat, 28 Nov 2015 00:32:05 GMT
+        Server: Apache/2.4.10 (Debian)
+        Via: 1.1 varnish-v4
+        X-Varnish: 2
+
+        # tail -n1 /var/log/apache2/access.log 
+        127.0.0.1 - - [28/Nov/2015:00:32:05 +0000] "GET /cgi-bin/foo.sh HTTP/1.1" 200 163 "-" "HTTPie/0.8.0"
+
+The client sees the same result, but the web server has logged a ``GET``
+request. Please note that ``HEAD``-requests include a ``Content-Lenght`` as
+if a ``GET``-request was issued. It is only the response body itself that
+is absent.
+
+Cached status codes
+-------------------
+
+Not all status codes are cached, even if an ``s-maxage`` or similar is
+provided. So
+
+Summary
+-------
+
+There are a few other headers worth mentioning. The ancient ``Pragma``
+header is still seen, and completely ignored by Varnish and generally
+replaced by ``Cache-Control``. One header Varnish does care about is
+``Expires``. Expires is generally deprecated, but still valid.
+
+If ``s-maxage`` and ``max-age`` is missing from ``Cache-Control``, then
+Varnish will use an ``Expires`` header. The format of the ``Expires``
+header is that of an absolute date - the same format as ``Date`` and
+``Last-Modified``. Don't use this unless you want a headache.
