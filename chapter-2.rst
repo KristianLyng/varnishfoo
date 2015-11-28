@@ -1073,7 +1073,7 @@ content. An example is needed::
 
 These four requests demonstrates that two objects are entered into the
 cache for the same URL, accessible by modifying the arbitrarily chosen
-``X-demo`` request header - which is obviously not a real header.
+``X-demo`` request header - which is not a real header.
 
 The most important use-case for Vary is to support content encoding such as
 `gzip`. In earlier versions of Varnish, the web server needed to do the
