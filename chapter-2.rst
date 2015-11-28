@@ -427,7 +427,7 @@ object, and the client can then re-use that in a ``If-None-Match`` request
 header.
 
 Modifying the dummy-backend in ``/usr/lib/cgi-bin/foo.sh`` (or your
-equivalent), we can make it provide a static ``ETag`` header.
+equivalent), we can make it provide a static ``ETag`` header::
 
         #!/bin/bash
         echo "Content-type: text/plain"
