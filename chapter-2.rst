@@ -35,7 +35,7 @@ focus on Chrome and Firefox.
 Both Firefox and Chrome will open the debug console if you hit ``<F12>``.
 It's a good habit to test and experiment with more than one browser, and
 luckily these consoles are very similar. A strong case in favor of Chrome
-is `Incognito Mode`, activated through ``<Ctrl>+<Shit>+N``. This is an
+is `Incognito Mode`, activated through ``<Ctrl>+<Shift>+N``. This is an
 advantage both because it removes old cookies and because most extensions
 are disabled.
 
