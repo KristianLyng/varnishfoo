@@ -2,6 +2,7 @@ Working with HTTP caching
 =========================
 
 .. _RFC2616: https://www.ietf.org/rfc/rfc2616.txt
+.. _RFC5861: https://www.ietf.org/rfc/rfc5861.txt
 
 Before we dig into the inner workings of Varnish, it's important to
 make sure we have the tools we need and some background information on
@@ -9,8 +10,8 @@ basic caching.
 
 This chapter looks at how HTTP caching works on multiple points in the HTTP
 delivery chain, and how these mechanisms work together. Not every aspect of
-HTTP caching is covered, but those relevant to Varnish are. Including
-several browser-related concerns.
+HTTP caching is covered, but those relevant to Varnish are covered in
+detail. Including several browser-related concerns.
 
 There are a multitude of tools to chose from when you are working with
 Varnish. This chapter provides a few suggestions and a quick guide to each
@@ -20,7 +21,7 @@ command line tool. This chapter also sets up a simple web server for
 testing, and demonstrates several aspects of how Varnish behaves.
 
 The focus, however, is not the individual tools, but HTTP caching and how
-it can be debugged and affected it without modifying the proxy or browser.
+it can be debugged and controlled without modifying the proxy or browser.
 
 Only the absolute minimum of actual Varnish configuration is covered - yet
 several mechanisms to control Varnish through backend responses are
@@ -963,6 +964,115 @@ The solution to both these issues is the same: Remove or reset the
 ``Cache-Control`` header. Varnish does not do this by default, but we will
 do both in later chapters. For now, just know that these are challenges.
 
+``stale-while-revalidate``
+--------------------------
+
+In addition to `RFC2616`_, there's also the more recent `RFC5861`_ defines
+two additional variables for ``Cache-Control``::
+
+     stale-while-revalidate = "stale-while-revalidate" "=" delta-seconds
+
+and::
+
+     stale-if-error = "stale-if-error" "=" delta-seconds
+
+These two variables map very well to Varnish' `grace` mechanics, which
+existed a few years before `RFC5861`_ came about.
+
+Varnish 4.1 implements ``stale-while-revalidate`` for the first time, but
+not ``stale-if-error``. Varnish has a default ``stale-while-revalidate``
+value of 10 seconds.  Earlier examples ran into this: You could see
+responses that were a few seconds older than max-age, while a request to
+revalidate the response was happening in the background.
+
+A demo of default grace, pay attention to the ``Age`` header::
+
+        # http -p h http://localhost:6081/cgi-bin/foo.sh
+        HTTP/1.1 200 OK
+        Accept-Ranges: bytes
+        Age: 0
+        Cache-Control: max-age=5
+        Connection: keep-alive
+        Content-Length: 56
+        Content-Type: text/plain
+        Date: Sun, 29 Nov 2015 15:10:56 GMT
+        Server: Apache/2.4.10 (Debian)
+        Via: 1.1 varnish-v4
+        X-Varnish: 2
+
+        # http -p h http://localhost:6081/cgi-bin/foo.sh
+        HTTP/1.1 200 OK
+        Accept-Ranges: bytes
+        Age: 4
+        Cache-Control: max-age=5
+        Connection: keep-alive
+        Content-Length: 56
+        Content-Type: text/plain
+        Date: Sun, 29 Nov 2015 15:10:56 GMT
+        Server: Apache/2.4.10 (Debian)
+        Via: 1.1 varnish-v4
+        X-Varnish: 5 3
+
+        # http -p h http://localhost:6081/cgi-bin/foo.sh
+        HTTP/1.1 200 OK
+        Accept-Ranges: bytes
+        Age: 8
+        Cache-Control: max-age=5
+        Connection: keep-alive
+        Content-Length: 56
+        Content-Type: text/plain
+        Date: Sun, 29 Nov 2015 15:10:56 GMT
+        Server: Apache/2.4.10 (Debian)
+        Via: 1.1 varnish-v4
+        X-Varnish: 32770 3
+
+        # http -p h http://localhost:6081/cgi-bin/foo.sh
+        HTTP/1.1 200 OK
+        Accept-Ranges: bytes
+        Age: 4
+        Cache-Control: max-age=5
+        Connection: keep-alive
+        Content-Length: 56
+        Content-Type: text/plain
+        Date: Sun, 29 Nov 2015 15:11:03 GMT
+        Server: Apache/2.4.10 (Debian)
+        Via: 1.1 varnish-v4
+        X-Varnish: 65538 32771
+
+On the third request, Varnish is returning an object that is 8 seconds old,
+despite the ``max-age=5`` second. When this request was received, Varnish
+immediately fired off a request to the web server to revalidate the object,
+but returned the result from cache. This is also demonstrated by the fourth
+request, where ``Age`` is already 4. The fourth request gets the result
+from the backend-request started when the third request was received. So:
+
+1. Request: Nothing in cache. Varnish requests content from backend, waits,
+   and responds with that result.
+2. Request: Standard cache hit.
+3. Request: Varnish sees that the object in cache is `stale`, initiates a
+   request to a backend server, but does NOT wait for the response.
+   Instead, the result from cache is returned.
+4. Request: By now, the backend-request initiated from the third request is
+   complete. This is thus a standard cache hit.
+
+This behavior means that slow backends will not affect client requests if
+content is cached.
+
+If this behavior is unwanted, we can disable grace by setting
+``stale-while-revalidate=0``::
+
+ FIXME: Add demo (!@# 4.0)
+
+This was added in Varnish 4.1.0. We can now see that no background fetching
+was done at all, and no stale objects were delivered. In other words:
+
+1. Request: Nothing in cache. Varnish requests content from backend, waits,
+   and responds with that result.
+2. Request: Standard cache hit.
+3. Request: Nothing in cache. Varnish fetches content form backend, waits
+   and responds with that result.
+4. Request: Standard cache hit.
+
 Vary
 ----
 
@@ -1111,6 +1221,9 @@ causes numerous headaches. Here are some examples:
 Many of these things can be remedied or at least worked around in Varnish.
 All of it will be covered in detail in separate chapters.
 
+On a last note, Varnish has a special case were it refuse to cache any
+content with a response header of ``Vary: *``.
+
 Request methods
 ---------------
 
@@ -1173,7 +1286,54 @@ Cached status codes
 -------------------
 
 Not all status codes are cached, even if an ``s-maxage`` or similar is
-provided. So
+provided. Quoting directly from Varnish source code, specifically
+``bin/varnishd/cache/cache_rfc2616.c``, the list is::
+
+	case 200: /* OK */
+	case 203: /* Non-Authoritative Information */
+	case 204: /* No Content */
+	case 300: /* Multiple Choices */
+	case 301: /* Moved Permanently */
+	case 304: /* Not Modified - handled like 200 */
+	case 404: /* Not Found */
+	case 410: /* Gone */
+	case 414: /* Request-URI Too Large */
+
+That means that if you provide ``s-maxage`` on a ``500 Internal Server
+Error``, Varnish will still not cache it by default. Varnish will cache the
+above status codes even without any cache control headers. The default
+cache duration is 2 minutes.
+
+In addition to the above, there are two more status codes worth
+mentioning::
+
+	case 302: /* Moved Temporarily */
+	case 307: /* Temporary Redirect */
+		/*
+		 * https://tools.ietf.org/html/rfc7231#section-6.1
+		 *
+		 * Do not apply the default ttl, only set a ttl if Cache-Control
+		 * or Expires are present. Uncacheable otherwise.
+		 */
+		expp->ttl = -1.;
+
+Responses with status codes ``302 Moved Temporarily`` or ``307 Temporary
+Redirect`` are only cached if ``Cache-Control`` or ``Expires`` explicitly
+allows it, but not cached by default.
+
+Cookies and authorization
+-------------------------
+
+Requests with a cookie-header or HTTP basic authorization header are tricky
+at best to cache. Varnish takes a "better safe than sorry" approach, and
+never caches content with either a ``Cookie``-header,
+``Authorization``-header by default. Similarly, responses with
+``Set-Cookie`` are not cached.
+
+This will generally mean that any modern site is not cached by default,
+unfortunately, because cookies are so common. Fortunately, Varnish has the
+means to override that default. We will investigate that in detail in later
+chapters.
 
 Summary
 -------
@@ -1187,3 +1347,27 @@ If ``s-maxage`` and ``max-age`` is missing from ``Cache-Control``, then
 Varnish will use an ``Expires`` header. The format of the ``Expires``
 header is that of an absolute date - the same format as ``Date`` and
 ``Last-Modified``. Don't use this unless you want a headache.
+
+In other words, to cache by default:
+
+- The request method must be ``GET`` or ``HEAD``.
+- There can be no ``Cookie``-header or ``Authorize``-header in the request.
+- There can be no ``Set-Cookie`` on the reply.
+- The status code needs to be 200, 203, 204, 300, 301, 304, 404, 410, 414.
+- ``Vary`` must NOT be ``*``.
+- OR the status code can be 302 or 307 IF ``Cache-Control`` or ``Expires``
+  enables caching.
+
+Varnish decides cache duration (TTL) in the following order:
+
+- If ``Cache-Control`` has ``s-maxage``, that value is used.
+- Otherwise, if ``Cache-Control`` has ``max-age``, that value is used.
+- Otherwise, if ``Expires`` is present, that value is used.
+- Lastly, Varnish uses default fall-back value. This is 2 minutes by
+  default, as dictated by the ``default_ttl`` parameter.
+
+Our goal when designing cache policies is to push as much of the logic to
+the right place. The right place for setting cache duration is usually in
+the application, not in Varnish. A good policy is to use ``s-maxage``.
+
+
