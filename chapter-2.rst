@@ -8,20 +8,16 @@ Before we dig into the inner workings of Varnish, it's important to
 make sure we have the tools we need and some background information on
 basic caching.
 
-This chapter looks at how HTTP caching works on multiple points in the HTTP
+This chapter looks at how HTTP caching works on multiple points in the
 delivery chain, and how these mechanisms work together. Not every aspect of
 HTTP caching is covered, but those relevant to Varnish are covered in
 detail. Including several browser-related concerns.
 
 There are a multitude of tools to chose from when you are working with
 Varnish. This chapter provides a few suggestions and a quick guide to each
-tool, but makes no claim on whether one tool is better than the other. We
-will go through two different type of client tools: The browser and a
-command line tool. This chapter also sets up a simple web server for
-testing, and demonstrates several aspects of how Varnish behaves.
-
-The focus, however, is not the individual tools, but HTTP caching and how
-it can be debugged and controlled without modifying the proxy or browser.
+tool, but makes no claim on whether one tool is better than the other. The
+goal is to establish what sort of tasks your chosen tool needs to be able
+to accomplish.
 
 Only the absolute minimum of actual Varnish configuration is covered - yet
 several mechanisms to control Varnish through backend responses are
