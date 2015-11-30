@@ -35,7 +35,7 @@ focus on Chrome and Firefox.
 Both Firefox and Chrome will open the debug console if you hit ``<F12>``.
 It's a good habit to test and experiment with more than one browser, and
 luckily these consoles are very similar. A strong case in favor of Chrome
-is `Incognito Mode`, activated through ``<Ctrl>+<Shit>+N``. This is an
+is `Incognito Mode`, activated through ``<Ctrl>+<Shift>+N``. This is an
 advantage both because it removes old cookies and because most extensions
 are disabled.
 
@@ -427,7 +427,7 @@ object, and the client can then re-use that in a ``If-None-Match`` request
 header.
 
 Modifying the dummy-backend in ``/usr/lib/cgi-bin/foo.sh`` (or your
-equivalent), we can make it provide a static ``ETag`` header.
+equivalent), we can make it provide a static ``ETag`` header::
 
         #!/bin/bash
         echo "Content-type: text/plain"
@@ -579,8 +579,8 @@ acquiring age once it leaves a web server.
 Age is measured in seconds. The HTTP response header ``Age`` is used to
 forward the information regarding age to HTTP clients. You can specify
 maximum age allowed both from a client and server. The most interesting
-aspect of this is the HTTP header ``Cache-Control``. This both a response-
-and request-header, which means that both clients and servers will emit
+aspect of this is the HTTP header ``Cache-Control``. This is both a response-
+and request-header, which means that both clients and servers can emit
 this header.
 
 The ``Age`` header has a single value: the age of the object returned,
@@ -626,7 +626,7 @@ obeys::
         Hello. Random number: 21126
         Fri Nov 27 15:41:57 UTC 2015
 
-This examples issues two requests to against a modified
+This examples issues two requests against a modified
 `http://localhost:6081/cgi-bin/foo.sh`. The modified version has set
 ``max-age=0`` to tell Varnish - and browsers - not to cache the content at
 all. A similar example can be used for ``max-age=10``::
@@ -702,7 +702,7 @@ This example demonstrates several things at once:
 - Varnish delivers a 12-second old object, despite ``max-age=10``!
 - Varnish then deliver a 2 second old object?
 
-What this example is showing, is Varnish' default grace mode. This has
+What this example is showing, is Varnish's default grace mode. This has
 changed slightly for Varnish version 4. The simple explanation is that
 Varnish keeps an object a little longer (10 seconds by default) than the
 regular cache duration. If the object is requested during this period, the
