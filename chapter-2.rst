@@ -324,7 +324,7 @@ drop in a CGI script::
         # ./foo.sh
         Content-type: text/plain
 
-        Hello. Random number: 21126
+        Hello. Random number: 12111
         Wed Nov 25 20:26:59 UTC 2015
 
 You may want to use a proper editor, like ``vim`` or ``emacs``. Or you
@@ -359,7 +359,7 @@ under ``/usr/lib/cgi-bin`` are accessible through
         Keep-Alive: timeout=5, max=100
         Server: Apache/2.4.10 (Debian)
 
-        Hello. Random number: 21126
+        Hello. Random number: 12126
         Wed Nov 25 20:31:00 UTC 2015
 
 If you've been able to reproduce the above example, you're ready to start
@@ -396,7 +396,7 @@ Varnish uses a web server on port 8080 by default::
         Via: 1.1 varnish-v4
         X-Varnish: 5
 
-        Hello. Random number: 21126
+        Hello. Random number: 26
         Wed Nov 25 20:38:09 UTC 2015
 
 As you can see from the above example, a typical Varnish installation
@@ -438,7 +438,7 @@ equivalent), we can make it provide a static ``ETag`` header::
         echo "Content-type: text/plain"
         echo "Etag: testofetagnumber1"
         echo
-        echo "Hello. Random number: 21126"
+        echo "Hello. Random number: ${RANDOM}"
         date
 
 Let's see what happens when we talk directly to Apache::
@@ -453,7 +453,7 @@ Let's see what happens when we talk directly to Apache::
         Keep-Alive: timeout=5, max=100
         Server: Apache/2.4.10 (Debian)
 
-        Hello. Random number: 21126
+        Hello. Random number: 51126
         Wed Nov 25 20:43:25 UTC 2015
 
         # http http://localhost:8080/cgi-bin/foo.sh
@@ -466,7 +466,7 @@ Let's see what happens when we talk directly to Apache::
         Keep-Alive: timeout=5, max=100
         Server: Apache/2.4.10 (Debian)
 
-        Hello. Random number: 21126
+        Hello. Random number: 12112
         Wed Nov 25 20:43:28 UTC 2015
 
 Two successive requests yielded updated content, but with the same Etag.
@@ -485,7 +485,7 @@ Now let's see how Varnish handles this::
         Via: 1.1 varnish-v4
         X-Varnish: 32770
 
-        Hello. Random number: 21126
+        Hello. Random number: 5213
         Wed Nov 25 20:44:53 UTC 2015
 
         # http http://localhost:6081/cgi-bin/foo.sh
@@ -501,7 +501,7 @@ Now let's see how Varnish handles this::
         Via: 1.1 varnish-v4
         X-Varnish: 32773 32771
 
-        Hello. Random number: 21126
+        Hello. Random number: 5213
         Wed Nov 25 20:44:53 UTC 2015
 
 It's pretty easy to see the difference in the output. However, there are
@@ -540,7 +540,7 @@ Let's try to change our ``If-None-Match`` header a bit::
         Via: 1.1 varnish-v4
         X-Varnish: 11
 
-        Hello. Random number: 21126
+        Hello. Random number: 12942
         Wed Nov 25 20:51:10 UTC 2015
 
 Content!
@@ -612,7 +612,7 @@ obeys::
         Via: 1.1 varnish-v4
         X-Varnish: 32776
 
-        Hello. Random number: 21126
+        Hello. Random number: 19972
         Fri Nov 27 15:41:53 UTC 2015
 
         # http http://localhost:6081/cgi-bin/foo.sh
@@ -628,11 +628,11 @@ obeys::
         Via: 1.1 varnish-v4
         X-Varnish: 32779
 
-        Hello. Random number: 21126
+        Hello. Random number: 92124
         Fri Nov 27 15:41:57 UTC 2015
 
-This examples issues two requests against a modified
-`http://localhost:6081/cgi-bin/foo.sh`. The modified version has set
+This example issues two requests against a modified
+``http://localhost:6081/cgi-bin/foo.sh``. The modified version has set
 ``max-age=0`` to tell Varnish - and browsers - not to cache the content at
 all. A similar example can be used for ``max-age=10``::
 
@@ -649,7 +649,7 @@ all. A similar example can be used for ``max-age=10``::
         Via: 1.1 varnish-v4
         X-Varnish: 14
 
-        Hello. Random number: 21126
+        Hello. Random number: 19982
         Fri Nov 27 15:44:32 UTC 2015
 
         # http http://localhost:6081/cgi-bin/foo.sh
@@ -665,7 +665,7 @@ all. A similar example can be used for ``max-age=10``::
         Via: 1.1 varnish-v4
         X-Varnish: 32782 15
 
-        Hello. Random number: 21126
+        Hello. Random number: 19982
         Fri Nov 27 15:44:32 UTC 2015
 
         # http http://localhost:6081/cgi-bin/foo.sh
@@ -681,7 +681,7 @@ all. A similar example can be used for ``max-age=10``::
         Via: 1.1 varnish-v4
         X-Varnish: 19 15
 
-        Hello. Random number: 21126
+        Hello. Random number: 19982
         Fri Nov 27 15:44:32 UTC 2015
 
         # http http://localhost:6081/cgi-bin/foo.sh
@@ -697,7 +697,7 @@ all. A similar example can be used for ``max-age=10``::
         Via: 1.1 varnish-v4
         X-Varnish: 65538 20
 
-        Hello. Random number: 21126
+        Hello. Random number: 9126
         Fri Nov 27 15:44:44 UTC 2015
 
 This example demonstrates several things at once:
@@ -713,7 +713,7 @@ Varnish keeps an object a little longer (10 seconds by default) than the
 regular cache duration. If the object is requested during this period, the
 cached variant of the object is sent to the client, while Varnish issues a
 request to the backend server in parallel. This can also be described as
-`stale while updating`. This happens even with zero configuration for
+`stale while revalidate`. This happens even with zero configuration for
 Varnish, and is covered detailed in later chapters. For now, it's good to
 just get used to issuing an extra request to Varnish after the expiry time
 to see the update take place.
@@ -759,7 +759,7 @@ Similarly, we can modify our ``foo.sh`` to emit ``max-age=3600`` and ``Age:
         Keep-Alive: timeout=5, max=100
         Server: Apache/2.4.10 (Debian)
 
-        Hello. Random number: 21126
+        Hello. Random number: 54251
         Fri Nov 27 16:07:36 UTC 2015
 
         # http http://localhost:8080/cgi-bin/foo.sh
@@ -774,7 +774,7 @@ Similarly, we can modify our ``foo.sh`` to emit ``max-age=3600`` and ``Age:
         Keep-Alive: timeout=5, max=100
         Server: Apache/2.4.10 (Debian)
 
-        Hello. Random number: 21126
+        Hello. Random number: 68323
         Fri Nov 27 16:07:54 UTC 2015
 
 Let's try three requests through Varnish::
@@ -793,7 +793,7 @@ Let's try three requests through Varnish::
         Via: 1.1 varnish-v4
         X-Varnish: 65559
 
-        Hello. Random number: 21126
+        Hello. Random number: 22609
         Fri Nov 27 16:08:50 UTC 2015
 
 The first request is almost identical to the one we issued to Apache,
@@ -815,7 +815,7 @@ except a few added headers.
         Via: 1.1 varnish-v4
         X-Varnish: 32803 65560
 
-        Hello. Random number: 21126
+        Hello. Random number: 22609
         Fri Nov 27 16:08:50 UTC 2015
 
 Varnish replies with a version from grace, and has issued an update to
@@ -838,7 +838,7 @@ and is clearly beyond the age limit of 3600.
         Via: 1.1 varnish-v4
         X-Varnish: 65564 32804
 
-        Hello. Random number: 21126
+        Hello. Random number: 76434
         Fri Nov 27 16:09:05 UTC 2015
 
 Updated content!
@@ -909,7 +909,7 @@ different instructions to browsers and Varnish::
         Via: 1.1 varnish-v4
         X-Varnish: 2
 
-        Hello. Random number: 21126
+        Hello. Random number: 7684
         Fri Nov 27 23:21:47 UTC 2015
 
         # http http://localhost:6081/cgi-bin/foo.sh
@@ -925,7 +925,7 @@ different instructions to browsers and Varnish::
         Via: 1.1 varnish-v4
         X-Varnish: 5 3
 
-        Hello. Random number: 21126
+        Hello. Random number: 7684
         Fri Nov 27 23:21:47 UTC 2015
 
         # http http://localhost:6081/cgi-bin/foo.sh
@@ -941,7 +941,7 @@ different instructions to browsers and Varnish::
         Via: 1.1 varnish-v4
         X-Varnish: 7 3
 
-        Hello. Random number: 21126
+        Hello. Random number: 7684
         Fri Nov 27 23:21:47 UTC 2015
 
 The first request populates the cache, the second returns a cache hit after
@@ -1124,7 +1124,7 @@ content. An example is needed::
         Via: 1.1 varnish-v4
         X-Varnish: 32773
 
-        Hello. Random number: 21126
+        Hello. Random number: 126
         Fri Nov 27 23:56:57 UTC 2015
 
         # http -p Hhb http://localhost:6081/cgi-bin/foo.sh "X-demo: foo"
@@ -1174,7 +1174,7 @@ content. An example is needed::
         Via: 1.1 varnish-v4
         X-Varnish: 32776 32774
 
-        Hello. Random number: 21126
+        Hello. Random number: 126
         Fri Nov 27 23:56:57 UTC 2015
 
 These four requests demonstrates that two objects are entered into the
