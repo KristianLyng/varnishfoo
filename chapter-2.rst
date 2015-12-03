@@ -1418,7 +1418,7 @@ Varnish decides cache duration (TTL) in the following order:
 - If ``Cache-Control`` has ``s-maxage``, that value is used.
 - Otherwise, if ``Cache-Control`` has ``max-age``, that value is used.
 - Otherwise, if ``Expires`` is present, that value is used.
-- Lastly, Varnish uses default fall-back value. This is 2 minutes by
+- Lastly, Varnish uses a default fall-back value. This is 2 minutes by
   default, as dictated by the ``default_ttl`` parameter.
 
 Our goal when designing cache policies is to push as much of the logic to
