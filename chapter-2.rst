@@ -4,8 +4,8 @@ Working with HTTP caching
 .. _RFC2616: https://www.ietf.org/rfc/rfc2616.txt
 .. _RFC5861: https://www.ietf.org/rfc/rfc5861.txt
 
-Before we dig into the inner workings of Varnish, it's important to
-make sure we have the tools we need and some background information on
+Before you dig into the inner workings of Varnish, it's important to
+make sure you have the tools we need and some background information on
 basic caching.
 
 This chapter looks at how HTTP caching works on multiple points in the
@@ -21,7 +21,8 @@ to accomplish.
 
 Only the absolute minimum of actual Varnish configuration is covered - yet
 several mechanisms to control Varnish through backend responses are
-provided. Most of these mechanisms are well defined in `RFC2616`_.
+provided. Most of these mechanisms are well defined in the HTTP 1.1
+standard, as defined in `RFC2616`_.
 
 Tools: The browser
 ------------------
@@ -29,7 +30,7 @@ Tools: The browser
 A browser is an important tool. Most of todays web traffic is,
 unsurprisingly, through a web browser. Therefor, it is important to be able
 to dig deeper into how they work with regards to cache. Most browsers have
-a developer- or debug console, but we will focus on Chrome and Firefox.
+a developer- or debug console, but we will focus on Chrome.
 
 Both Firefox and Chrome will open the debug console if you hit ``<F12>``.
 It's a good habit to test and experiment with more than one browser, and
@@ -49,7 +50,7 @@ bogus call to ``socialwidgets.css``. The exact same test in Incognito Mode:
 
 .. image:: img/chromium-dev-incognito.png
 
-The extra request is gone. Regardless of browser choice, your testing
+The extra request is gone. Regardless of browser choice, your test
 environment should be devoid of most extensions and let you easily get rid
 of all cookies.
 
@@ -58,15 +59,15 @@ In both Firefox and Chrome, a refresh triggered by ``<F5>`` or
 ``<Ctrl>+r`` will be "cache aware". What does that mean?
 
 Look closer on the screenshots above, specially the return code. The return
-code is a ``304 Not Modified``, not a ``200 OK``. This means our browser
-actually had the image in cache already and issued what is known as a
-`conditional GET request`. A closer inspection:
+code is a ``304 Not Modified``, not a ``200 OK``. The browser had the image
+in cache already and issued a `conditional GET request`. A closer
+inspection:
 
 .. image:: img/chromium-dev-304-1.png
 
-The browser is sending ``Cache-Control: max-age=0`` and an
-``If-Modified-Since``-header, and the web server correctly responds with
-``304 Not Modified``.  We'll shortly look closer at those, but for now,
+The browser sends ``Cache-Control: max-age=0`` and an
+``If-Modified-Since``-header. The web server correctly responds with
+``304 Not Modified``.  We'll look closer at those, but for now,
 let's use a different type of refresh: ``<Shift>+<F5>`` in Chrome or
 ``<Shift>+<Ctrl>+r`` in Firefox:
 
@@ -74,7 +75,7 @@ let's use a different type of refresh: ``<Shift>+<F5>`` in Chrome or
 
 The cache-related headers have changed somewhat, and the browser is no
 longer sending a ``If-Modified-Since`` header. The result is a ``200 OK``
-with the actual content instead of an empty ``304 Not Modified``.
+with response body instead of an empty ``304 Not Modified``.
 
 These details are both the reason you need to test with a browser - because
 this is how they operate - and why a simpler tool is needed in addition to
@@ -305,7 +306,7 @@ You can verify that it works through two means::
         Server: Apache/2.4.10 (Debian)
         Vary: Accept-Encoding
 
-The first reveals that ``apache2`` is listening on port 8080. The second
+``netstat`` reveals that ``apache2`` is listening on port 8080. The second
 command issues an actual request. Both are useful to ensure the correct
 service is answering.
 
@@ -327,9 +328,8 @@ drop in a CGI script::
         Hello. Random number: 12111
         Wed Nov 25 20:26:59 UTC 2015
 
-You may want to use a proper editor, like ``vim`` or ``emacs``. Or you
-could use ``nano`` instead of using ``cat`` of course. To clarify, the
-exact content of ``foo.sh`` should be::
+You may want to use an editor, like ``nano``, ``vim`` or ``emacs`` instead
+of using ``cat``. To clarify, the exact content of ``foo.sh`` is::
 
          #!/bin/bash
          echo "Content-type: text/plain"
@@ -338,9 +338,8 @@ exact content of ``foo.sh`` should be::
          date
 
 We then change permissions for ``foo.sh``, making it executable by all
-users, then verify that it does what it's supposed to. Next up, let's test
-if we can run it through Apache. If everything is set up correctly, scripts
-under ``/usr/lib/cgi-bin`` are accessible through
+users, then verify that it does what it's supposed to. If everything is set
+up correctly, scripts under ``/usr/lib/cgi-bin`` are accessible through
 ``http://localhost:8080/cgi-bin/``::
 
         # http -p Hhb http://localhost:8080/cgi-bin/foo.sh
@@ -411,8 +410,8 @@ later chapters.
 Conditional GET requests
 ------------------------
 
-In the tool-examples earlier we saw a real example of a `conditional GET
-request`. In many ways, they are quite simple mechanisms to allow a HTTP
+In the tool-examples earlier we saw real examples of a `conditional GET
+requests`. In many ways, they are quite simple mechanisms to allow a HTTP
 client - typically a browser - to verify that they have the most up-to-date
 version of the HTTP object. There are two different types of conditional
 GET requests: ``If-Modified-Since`` and ``If-None-Match``.
@@ -424,15 +423,15 @@ been updated.
 
 Some times it isn't trivial to know the modification time, but you might be
 able to uniquely identify the content anyway. For that matter, the content
-might have been changed back to the original state. This is where the
-`entity tag`, or ``ETag`` response header
+might have been changed back to a previous state. This is where the
+`entity tag`, or ``ETag`` response header is useful.
 
 An ``Etag`` header can be used to provide an arbitrary ID to an HTTP
-object, and the client can then re-use that in a ``If-None-Match`` request
-header.
+response, and the client can then re-use that in a ``If-None-Match``
+request header.
 
-Modifying the dummy-backend in ``/usr/lib/cgi-bin/foo.sh`` (or your
-equivalent), we can make it provide a static ``ETag`` header::
+Modifying ``/usr/lib/cgi-bin/foo.sh``, we can make it provide a static
+``ETag`` header::
 
         #!/bin/bash
         echo "Content-type: text/plain"
@@ -578,21 +577,21 @@ Cache control, age and grace
 ----------------------------
 
 An HTTP object has an age. This is how long it is since the object was
-updated from whatever origin source. In most cases, an objects starts
-acquiring age once it leaves a web server.
+fetched or validated from the origin source. In most cases, an object
+starts acquiring age once it leaves a web server.
 
 Age is measured in seconds. The HTTP response header ``Age`` is used to
 forward the information regarding age to HTTP clients. You can specify
 maximum age allowed both from a client and server. The most interesting
-aspect of this is the HTTP header ``Cache-Control``. This is both a response-
-and request-header, which means that both clients and servers can emit
-this header.
+aspect of this is the HTTP header ``Cache-Control``. This is both a
+response- and request-header, which means that both clients and servers can
+emit this header.
 
-The ``Age`` header has a single value: the age of the object returned,
-measured in seconds. The ``Cache-Control`` header, on the other hand, has a
-multitude of variables and options. We'll begin with the simplest:
-``max-age=``. This is a variable that can be used both in a request-header
-and response-header, but is most useful in the response header. Most web
+The ``Age`` header has a single value: the age of the object measured in
+seconds. The ``Cache-Control`` header, on the other hand, has a multitude
+of variables and options. We'll begin with the simplest: ``max-age=``. This
+is a variable that can be used both in a request-header and
+response-header, but is most useful in the response header. Most web
 servers and many intermediary caches (including Varnish), ignores a
 ``max-age`` field received in a HTTP request-header.
 
@@ -700,23 +699,23 @@ all. A similar example can be used for ``max-age=10``::
         Hello. Random number: 9126
         Fri Nov 27 15:44:44 UTC 2015
 
-This example demonstrates several things at once:
+This example demonstrates several things:
 
 - Varnish emits an ``Age`` header, telling you how old the object is.
 - Varnish now caches.
 - Varnish delivers a 12-second old object, despite ``max-age=10``!
-- Varnish then deliver a 2 second old object?
+- Varnish then deliver a 2 second old object? Despite no other request
+  in-between.
 
-What this example is showing, is Varnish's default grace mode. This has
-changed slightly for Varnish version 4. The simple explanation is that
-Varnish keeps an object a little longer (10 seconds by default) than the
-regular cache duration. If the object is requested during this period, the
-cached variant of the object is sent to the client, while Varnish issues a
-request to the backend server in parallel. This can also be described as
-`stale while revalidate`. This happens even with zero configuration for
-Varnish, and is covered detailed in later chapters. For now, it's good to
-just get used to issuing an extra request to Varnish after the expiry time
-to see the update take place.
+What this example is showing, is Varnish's default grace mode. The simple
+explanation is that Varnish keeps an object a little longer (10 seconds by
+default) than the regular cache duration. If the object is requested during
+this period, the cached variant of the object is sent to the client, while
+Varnish issues a request to the backend server in parallel. This is also
+called `stale while revalidate`. This happens even with zero configuration
+for Varnish, and is covered detailed in later chapters. For now, it's good
+to just get used to issuing an extra request to Varnish after the expiry
+time to see the update take place.
 
 Let's do an other example of this, using a browser, and 60 seconds of max
 age and an ETag header set to something random so our browser can do
@@ -737,14 +736,14 @@ seconds.
 
 .. image:: img/c2/age-3.png
 
-The third request, which takes place just 18 seconds later. This is not a
+The third request takes place just 18 seconds later. This is not a
 conditional GET request, most likely because our browser correctly saw that
 the ``Age`` of the previous object was 65, while ``max-age=60`` instructed
 the browser to only keep the object until it reached an age of 60 - a time
 which had already past. Our browser thus did not keep the object at all
 this time.
 
-Similarly, we can modify our ``foo.sh`` to emit ``max-age=3600`` and ``Age:
+Similarly, we can modify ``foo.sh`` to emit ``max-age=3600`` and ``Age:
 3590``, pretending to be a cache. Speaking directly to Apache::
 
         # http http://localhost:8080/cgi-bin/foo.sh
@@ -776,6 +775,9 @@ Similarly, we can modify our ``foo.sh`` to emit ``max-age=3600`` and ``Age:
 
         Hello. Random number: 68323
         Fri Nov 27 16:07:54 UTC 2015
+
+Nothing too exciting, but the requests returns what we should have learned
+to expect by now.
 
 Let's try three requests through Varnish::
 
@@ -885,16 +887,16 @@ response, here's an excerpt from `RFC2616`_::
 
         cache-extension = token [ "=" ( token | quoted-string ) ]
 
-Of the above headers, Varnish only obeys ``s-maxage`` and ``max-age`` by
-default. It's worth looking closer specially at ``must-revalidate``. This
-allows a client to cache the content, but requires it to send a conditional
-GET request before actually using the content.
+Among the above directives, Varnish only obeys ``s-maxage`` and ``max-age``
+by default. It's worth looking closer specially at ``must-revalidate``.
+This allows a client to cache the content, but requires it to send a
+conditional GET request before actually using the content.
 
-``s-maxage`` is of special interest to Varnish users. It is intended to
-instruct intermediate caches, but not clients (e.g.: browsers). Varnish
-will pick the value of ``s-maxage`` over ``max-age``, which makes it
-possible for a web server to emit a ``Cache-Control`` header that gives
-different instructions to browsers and Varnish::
+``s-maxage`` is of special interest to Varnish users. It instructs
+intermediate caches, but not clients (e.g.: browsers). Varnish will pick
+the value of ``s-maxage`` over ``max-age``, which makes it possible for a
+web server to emit a ``Cache-Control`` header that gives different
+instructions to browsers and Varnish::
 
         # http http://localhost:6081/cgi-bin/foo.sh
         HTTP/1.1 200 OK
@@ -1054,10 +1056,60 @@ from the backend-request started when the third request was received. So:
 This behavior means that slow backends will not affect client requests if
 content is cached.
 
-If this behavior is unwanted, we can disable grace by setting
+If this behavior is unwanted, you can disable grace by setting
 ``stale-while-revalidate=0``::
 
- FIXME: Add demo (!@# 4.0)
+        # http -p h http://localhost:6081/cgi-bin/foo.sh
+        HTTP/1.1 200 OK
+        Accept-Ranges: bytes
+        Age: 0
+        Cache-Control: max-age=5, stale-while-revalidate=0
+        Connection: keep-alive
+        Content-Length: 57
+        Content-Type: text/plain
+        Date: Thu, 03 Dec 2015 12:50:36 GMT
+        Server: Apache/2.4.10 (Debian)
+        Via: 1.1 varnish-v4
+        X-Varnish: 12
+
+        # http -p h http://localhost:6081/cgi-bin/foo.sh
+        HTTP/1.1 200 OK
+        Accept-Ranges: bytes
+        Age: 3
+        Cache-Control: max-age=5, stale-while-revalidate=0
+        Connection: keep-alive
+        Content-Length: 57
+        Content-Type: text/plain
+        Date: Thu, 03 Dec 2015 12:50:36 GMT
+        Server: Apache/2.4.10 (Debian)
+        Via: 1.1 varnish-v4
+        X-Varnish: 32773 13
+
+        # http -p h http://localhost:6081/cgi-bin/foo.sh
+        HTTP/1.1 200 OK
+        Accept-Ranges: bytes
+        Age: 0
+        Cache-Control: max-age=5, stale-while-revalidate=0
+        Connection: keep-alive
+        Content-Length: 57
+        Content-Type: text/plain
+        Date: Thu, 03 Dec 2015 12:50:42 GMT
+        Server: Apache/2.4.10 (Debian)
+        Via: 1.1 varnish-v4
+        X-Varnish: 32775
+
+        # http -p h http://localhost:6081/cgi-bin/foo.sh
+        HTTP/1.1 200 OK
+        Accept-Ranges: bytes
+        Age: 1
+        Cache-Control: max-age=5, stale-while-revalidate=0
+        Connection: keep-alive
+        Content-Length: 57
+        Content-Type: text/plain
+        Date: Thu, 03 Dec 2015 12:50:42 GMT
+        Server: Apache/2.4.10 (Debian)
+        Via: 1.1 varnish-v4
+        X-Varnish: 15 32776
 
 This was added in Varnish 4.1.0. We can now see that no background fetching
 was done at all, and no stale objects were delivered. In other words:
@@ -1197,7 +1249,7 @@ must be made.
 
 The second such header is the nefarious ``Cookie`` header. Whenever a page
 is rendered differently based on a cookie, the web server should send
-``Vary: Cookie``. However, nobody actually does this in the real world,
+``Vary: Cookie``. However, hardly anyone do this in the real world,
 which has resulted in cookies being treated differently. Varnish does not
 cache any content if it's requested with a cookie by default, nor does it
 cache any response with a ``Set-Cookie``-header. This clearly needs to be
@@ -1281,9 +1333,9 @@ is absent.
 Cached status codes
 -------------------
 
-Not all status codes are cached, even if an ``s-maxage`` or similar is
-provided. Quoting directly from Varnish source code, specifically
-``bin/varnishd/cache/cache_rfc2616.c``, the list is::
+Only a subset of response odes allow cacheing, even if an ``s-maxage`` or
+similar is provided. Quoting directly from Varnish source code,
+specifically ``bin/varnishd/cache/cache_rfc2616.c``, the list is::
 
 	case 200: /* OK */
 	case 203: /* Non-Authoritative Information */
@@ -1317,18 +1369,25 @@ Responses with status codes ``302 Moved Temporarily`` or ``307 Temporary
 Redirect`` are only cached if ``Cache-Control`` or ``Expires`` explicitly
 allows it, but not cached by default.
 
+In other words:
+
+- ``max-age=10`` + ``500 Internal Server Error``: Not cached
+- ``max-age=10`` + ``302 Moved Temporarily``: Cached
+- No ``Cache-Control`` + ``302 Moved Temporarily``: Not cached
+- No ``Cache-Control`` + ``404 Not Found``: Cached
+
 Cookies and authorization
 -------------------------
 
 Requests with a cookie-header or HTTP basic authorization header are tricky
 at best to cache. Varnish takes a "better safe than sorry" approach, and
-never caches content with either a ``Cookie``-header,
-``Authorization``-header by default. Similarly, responses with
+does not cache responses to requests with either a ``Cookie``-header,
+``Authorization``-header by default. Responses with
 ``Set-Cookie`` are not cached.
 
-This will generally mean that any modern site is not cached by default,
-unfortunately, because cookies are so common. Fortunately, Varnish has the
-means to override that default. We will investigate that in detail in later
+Because cookies are so common, this will generally mean that any modern
+site is not cached by default. Fortunately, Varnish has the means to
+override that default. We will investigate that in detail in later
 chapters.
 
 Summary
@@ -1350,9 +1409,9 @@ In other words, to cache by default:
 - There can be no ``Cookie``-header or ``Authorize``-header in the request.
 - There can be no ``Set-Cookie`` on the reply.
 - The status code needs to be 200, 203, 204, 300, 301, 304, 404, 410, 414.
-- ``Vary`` must NOT be ``*``.
 - OR the status code can be 302 or 307 IF ``Cache-Control`` or ``Expires``
   enables caching.
+- ``Vary`` must NOT be ``*``.
 
 Varnish decides cache duration (TTL) in the following order:
 
