@@ -5,7 +5,7 @@ Working with HTTP caching
 .. _RFC5861: https://www.ietf.org/rfc/rfc5861.txt
 
 Before you dig into the inner workings of Varnish, it's important to
-make sure you have the tools we need and some background information on
+make sure you have the tools you need and some background information on
 basic caching.
 
 This chapter looks at how HTTP caching works on multiple points in the
@@ -131,8 +131,8 @@ platforms, see http://httpie.org. Testing httpie is simple::
         +-----------------------------------------+
 
 In many situations, the actual data is often not that interesting, while a
-full set of request headers are very interesting. HTTPie can show us
-exactly what we want::
+full set of request headers are very interesting. HTTPie can show you
+exactly what you want::
 
         $ http -p Hh http://kly.no/misc/dummy.png
         GET /misc/dummy.png HTTP/1.1
