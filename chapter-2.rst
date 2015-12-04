@@ -552,7 +552,7 @@ To summarize:
 | ``Last-Modified`` | ``If-Modified-Since`` | ``200 OK`` with full   |
 |                   |                       | response body, or      |
 +-------------------+-----------------------+ ``304 Not Modified``   |
-| ``ETag``          | ``If-Non-Match``      | with no response body. |
+| ``ETag``          | ``If-None-Match``     | with no response body. |
 |                   |                       |                        |
 +-------------------+-----------------------+------------------------+
 
