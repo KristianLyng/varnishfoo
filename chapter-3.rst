@@ -33,8 +33,10 @@ mostly not relevant for every-day operation. Neither will you see much of
 the Varnish Configuration Language (VCL). VCL requires a chapter or two all
 by itself.
 
-The chapter starts off with some theory, before digging into the more
-practical aspects of Varnish.
+It's worth taking a look at Appendix A, or go directly to
+https://www.varnish-cache.org/trac/wiki/VTLA and review some of the three
+letter acronyms that are all too common in Varnish. They are used to some
+degree in this chapter, though hopefully with a decent explanation.
 
 Architecture
 ------------
@@ -53,10 +55,11 @@ The management process, which is also the parent process, handles
 initialization, parsing of VCL, interactive administration through the CLI
 interface, and basic monitoring of the child process.
 
-You will notice that the log file lives right on the edge of the child
-process. Varnish has two different logging mechanisms. The manager process
-will typically log to `syslog`, like you would expect, but the child logs
-to a shared memory log instead. This saves Varnish the trouble of worrying
+You will notice that the log file is drawn with a dotted line next to the
+child process. It might be more correct to draw it directly into the child.
+Varnish has two different logging mechanisms. The manager process will
+typically log to `syslog`, like you would expect, but the child logs to a
+shared memory log instead. This saves Varnish the trouble of worrying
 about file locks and generally speeds things up greatly.
 
 The shared memory log, abbreviated shmlog, is a round-robin style log file
@@ -65,8 +68,6 @@ The smallest bit is the part for counters, used to keep track of any part
 of Varnish that could be covered by a number, e.g. number of cache hits,
 number of objects, and so forth. This part of the shmlog is named the VSM
 and is 1MB by default.
-
-FIXME: VTLA.
 
 The biggest part of the shmlog is reserved for fifo-tyle VSL log entries,
 directly related to requests typically. This is 80MB by default. Once those
@@ -77,10 +78,16 @@ this.
 
 The other note-worthy part of the diagram above is how VCL is handled. VCL
 is not a traditionally parsed configuration format, but a shim layer on top
-of C and the varnish run time library (VRT). You are not so much
+of C and the Varnish run time library (VRT). You are not so much
 configuring Varnish with VCL as programming it. Once you've written your
 VCL file, Varnish will translate it to C and compile it, then link it
 directly into the child process.
 
+The observant reader might also have noticed that ``varnish-agent`` is
+listed twice. That is because the Varnish agent both reads the logs and
+communicates with Varnish over the CLI protocol. Both ``varnishadm`` and
+``varnish-agent`` are tools that can influence a running Varnish instance,
+while any tool that only works on the shmlog is purely informational and
+has no impact on the running Varnish instance.
 
 
