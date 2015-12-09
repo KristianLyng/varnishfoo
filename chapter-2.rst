@@ -43,12 +43,12 @@ simple, but could just as well have been performed on Firefox.
 The importance of Incognito Mode can be easily demonstrated. The following
 is a test with a typical Chrome session:
 
-.. image:: img/chromium-dev-plugins.png
+.. image:: img/c2/chromium-dev-plugins.png
 
 Notice the multiple extensions that are active, one of them is inserting a
 bogus call to ``socialwidgets.css``. The exact same test in Incognito Mode:
 
-.. image:: img/chromium-dev-incognito.png
+.. image:: img/c2/chromium-dev-incognito.png
 
 The extra request is gone. Regardless of browser choice, your test
 environment should be devoid of most extensions and let you easily get rid
@@ -63,7 +63,7 @@ code is a ``304 Not Modified``, not a ``200 OK``. The browser had the image
 in cache already and issued a `conditional GET request`. A closer
 inspection:
 
-.. image:: img/chromium-dev-304-1.png
+.. image:: img/c2/chromium-dev-304-1.png
 
 The browser sends ``Cache-Control: max-age=0`` and an
 ``If-Modified-Since``-header. The web server correctly responds with
@@ -71,7 +71,7 @@ The browser sends ``Cache-Control: max-age=0`` and an
 let's use a different type of refresh: ``<Shift>+<F5>`` in Chrome or
 ``<Shift>+<Ctrl>+r`` in Firefox:
 
-.. image:: img/chromium-dev-304-2.png
+.. image:: img/c2/chromium-dev-304-2.png
 
 The cache-related headers have changed somewhat, and the browser is no
 longer sending a ``If-Modified-Since`` header. The result is a ``200 OK``

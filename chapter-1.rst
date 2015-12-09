@@ -231,7 +231,7 @@ chapters.
 cache_req_fsm.png
 .................
 
-.. image:: img/cache_req_fsm.png
+.. image:: img/c1/cache_req_fsm.png
 
 ``cache_req_fsm`` details the client-specific part of the VCL state engine.
 And can be used when writing VCL. You want to look for the blocks that
@@ -244,7 +244,7 @@ are available where.
 cache_fetch.png
 ...............
 
-.. image:: img/cache_fetch.png
+.. image:: img/c1/cache_fetch.png
 
 ``cache_fetch`` has the same format as the ``cache_req_fsm.png``, but
 from the perspective of a backend request.
@@ -252,7 +252,7 @@ from the perspective of a backend request.
 cache_http1_fsm.png
 ...................
 
-.. image:: img/cache_http1_fsm.png
+.. image:: img/c1/cache_http1_fsm.png
 
 Of the three, this is the least practical flow chart, mainly included for
 completeness. It does not document much related to VCL or practical Varnish
