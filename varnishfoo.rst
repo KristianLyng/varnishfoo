@@ -51,3 +51,5 @@ Varnish Foo
 .. include:: chapter-2.rst
 
 .. include:: chapter-3.rst
+
+.. include:: appendix-1.rst

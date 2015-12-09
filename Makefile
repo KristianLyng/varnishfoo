@@ -1,6 +1,6 @@
-CHAPTERS=chapter-1.rst chapter-2.rst
+CHAPTERS=chapter-1.rst chapter-2.rst chapter-3.rst appendix-1.rst
 MISC=pdf.style version.rst
-PICS=img/c3/*png
+PICS=img/c3/*png img/c1/*png img/c2/*png
 
 varnishfoo.pdf: varnishfoo.rst ${MISC} ${CHAPTERS} ${PICS}
 	rst2pdf -b2 -s pdf.style varnishfoo.rst -o $@
