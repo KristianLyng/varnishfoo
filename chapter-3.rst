@@ -49,8 +49,6 @@ overview:
 
 .. image:: img/c3/architecture.png
 
-FIXME: New graphics.
-
 The management process, which is also the parent process, handles
 initialization, parsing of VCL, interactive administration through the CLI
 interface, and basic monitoring of the child process.
