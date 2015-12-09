@@ -1,4 +1,4 @@
-CHAPTERS=chapter-1.rst chapter-2.rst chapter-3.rst appendix-1.rst
+CHAPTERS=chapter-1.rst chapter-2.rst chapter-3.rst appendix-1.rst appendix-N.rst
 MISC=pdf.style version.rst
 PICS=img/c3/*png img/c1/*png img/c2/*png
 
