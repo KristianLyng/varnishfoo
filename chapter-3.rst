@@ -91,6 +91,72 @@ while any tool that only works on the shmlog is purely informational and
 has no impact on the running Varnish instance. We will look at the agent
 shortly.
 
+The different types of configuration
+------------------------------------
+
+Varnish uses three different types of configuration types. Certain things
+must be configured before Varnish starts and can't be changed during
+run-time. These settings are very limited, and are provided on the command
+line. Even among command line arguments, several can be changed during run
+time to some degree. Examples of command line arguments are things like
+which working directory to use and how the management interface should be
+configured.
+
+The second type configuration primitive Varnish uses is run-time
+parameters. These can be changed after Varnish has started, but depending
+on the nature of the parameter it could take some time before the change is
+visible. Parameters can be changed through the CLI, but need to be added as
+a command line argument in a startup script to be permanent.
+
+Parameters usually change some purely operational aspect of Varnish, not
+policy. Default values for Varnish parameters are frequently tuned between
+Varnish releases as feedback from real-world use reaches developers. As
+such, most parameters can be left to the default values. Some examples of
+what parameters can modify is the number of threads Varnish can use, the
+size of the shared memory log, what user to run as and default timeout
+values.
+
+It's worth mentioning that many of the command line arguments passed to
+``varnishd`` are really just short-hands for their respective parameters.
+
+The third type of configuration primitive is the Varnish Configuration
+Language script, usually just referred to as your VCL or VCL file. This is
+where you will specify caching policies, what backends you have and how to
+pick a backend. VCL can be changed at run-time with little or no penalty to
+performance, but are not retroactive. If your VCL says "cache this for 5
+years" and the content is cached, then changing to a CL that says "cache
+this for 1 minute" isn't going to alter the content that has already been
+cached.
+
+VCL is easily the most complex part of Varnish, but you can get a lot done
+with very basic knowledge and a few tools. In this chapter, VCL is not a
+focus, but is only briefly mentioned and used to avoid building bad habits.
+
+
+Command line arguments
+        Stored in startup-scripts. Takes effect on (re)starting Varnish.
+        Some can be modified after startup, some can not. Often just a
+        short-hand for setting default values for parameters. Examples:
+        "how much memory should Varnish use", "what port should the
+        management interface use", "what are the initial values for
+        parameters"
+
+Parameters
+        Stored in startup-scripts, but can be changed at run-time. Upon
+        re-start, the values from the startup scripts are used. Changes
+        operational aspects of Varnish, often in great detail. Examples:
+        "how large should the stack for a thread be", "what are the default
+        values for cache duration", "what is the maximum amount of headers
+        Varnish supports".
+
+Varnish Configuration Language
+        Stored in a separate VCL file, usually in ``/etc/varnish/``. Can be
+        changed on-the-fly. Uses a custom-made configuration language to
+        define caching policies. Examples: "Retrieve content for
+        www.example.com from backend server at prod01.example.net", "Strip
+        Cookie headers for these requests", "Output an error message for
+        this URL".
+
 Basic pre-runtime configuration
 -------------------------------
 
