@@ -1,0 +1,1706 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+<meta name="generator" content="Docutils 0.12: http://docutils.sourceforge.net/" />
+<title>Working with HTTP caching</title>
+<style type="text/css">
+
+/*
+:Author: David Goodger (goodger@python.org)
+:Id: $Id: html4css1.css 7614 2013-02-21 15:55:51Z milde $
+:Copyright: This stylesheet has been placed in the public domain.
+
+Default cascading style sheet for the HTML output of Docutils.
+
+See http://docutils.sf.net/docs/howto/html-stylesheets.html for how to
+customize this style sheet.
+*/
+
+/* used to remove borders from tables and images */
+.borderless, table.borderless td, table.borderless th {
+  border: 0 }
+
+table.borderless td, table.borderless th {
+  /* Override padding for "table.docutils td" with "! important".
+     The right padding separates the table cells. */
+  padding: 0 0.5em 0 0 ! important }
+
+.first {
+  /* Override more specific margin styles with "! important". */
+  margin-top: 0 ! important }
+
+.last, .with-subtitle {
+  margin-bottom: 0 ! important }
+
+.hidden {
+  display: none }
+
+a.toc-backref {
+  text-decoration: none ;
+  color: black }
+
+blockquote.epigraph {
+  margin: 2em 5em ; }
+
+dl.docutils dd {
+  margin-bottom: 0.5em }
+
+object[type="image/svg+xml"], object[type="application/x-shockwave-flash"] {
+  overflow: hidden;
+}
+
+/* Uncomment (and remove this text!) to get bold-faced definition list terms
+dl.docutils dt {
+  font-weight: bold }
+*/
+
+div.abstract {
+  margin: 2em 5em }
+
+div.abstract p.topic-title {
+  font-weight: bold ;
+  text-align: center }
+
+div.admonition, div.attention, div.caution, div.danger, div.error,
+div.hint, div.important, div.note, div.tip, div.warning {
+  margin: 2em ;
+  border: medium outset ;
+  padding: 1em }
+
+div.admonition p.admonition-title, div.hint p.admonition-title,
+div.important p.admonition-title, div.note p.admonition-title,
+div.tip p.admonition-title {
+  font-weight: bold ;
+  font-family: sans-serif }
+
+div.attention p.admonition-title, div.caution p.admonition-title,
+div.danger p.admonition-title, div.error p.admonition-title,
+div.warning p.admonition-title, .code .error {
+  color: red ;
+  font-weight: bold ;
+  font-family: sans-serif }
+
+/* Uncomment (and remove this text!) to get reduced vertical space in
+   compound paragraphs.
+div.compound .compound-first, div.compound .compound-middle {
+  margin-bottom: 0.5em }
+
+div.compound .compound-last, div.compound .compound-middle {
+  margin-top: 0.5em }
+*/
+
+div.dedication {
+  margin: 2em 5em ;
+  text-align: center ;
+  font-style: italic }
+
+div.dedication p.topic-title {
+  font-weight: bold ;
+  font-style: normal }
+
+div.figure {
+  margin-left: 2em ;
+  margin-right: 2em }
+
+div.footer, div.header {
+  clear: both;
+  font-size: smaller }
+
+div.line-block {
+  display: block ;
+  margin-top: 1em ;
+  margin-bottom: 1em }
+
+div.line-block div.line-block {
+  margin-top: 0 ;
+  margin-bottom: 0 ;
+  margin-left: 1.5em }
+
+div.sidebar {
+  margin: 0 0 0.5em 1em ;
+  border: medium outset ;
+  padding: 1em ;
+  background-color: #ffffee ;
+  width: 40% ;
+  float: right ;
+  clear: right }
+
+div.sidebar p.rubric {
+  font-family: sans-serif ;
+  font-size: medium }
+
+div.system-messages {
+  margin: 5em }
+
+div.system-messages h1 {
+  color: red }
+
+div.system-message {
+  border: medium outset ;
+  padding: 1em }
+
+div.system-message p.system-message-title {
+  color: red ;
+  font-weight: bold }
+
+div.topic {
+  margin: 2em }
+
+h1.section-subtitle, h2.section-subtitle, h3.section-subtitle,
+h4.section-subtitle, h5.section-subtitle, h6.section-subtitle {
+  margin-top: 0.4em }
+
+h1.title {
+  text-align: center }
+
+h2.subtitle {
+  text-align: center }
+
+hr.docutils {
+  width: 75% }
+
+img.align-left, .figure.align-left, object.align-left {
+  clear: left ;
+  float: left ;
+  margin-right: 1em }
+
+img.align-right, .figure.align-right, object.align-right {
+  clear: right ;
+  float: right ;
+  margin-left: 1em }
+
+img.align-center, .figure.align-center, object.align-center {
+  display: block;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.align-left {
+  text-align: left }
+
+.align-center {
+  clear: both ;
+  text-align: center }
+
+.align-right {
+  text-align: right }
+
+/* reset inner alignment in figures */
+div.align-right {
+  text-align: inherit }
+
+/* div.align-center * { */
+/*   text-align: left } */
+
+ol.simple, ul.simple {
+  margin-bottom: 1em }
+
+ol.arabic {
+  list-style: decimal }
+
+ol.loweralpha {
+  list-style: lower-alpha }
+
+ol.upperalpha {
+  list-style: upper-alpha }
+
+ol.lowerroman {
+  list-style: lower-roman }
+
+ol.upperroman {
+  list-style: upper-roman }
+
+p.attribution {
+  text-align: right ;
+  margin-left: 50% }
+
+p.caption {
+  font-style: italic }
+
+p.credits {
+  font-style: italic ;
+  font-size: smaller }
+
+p.label {
+  white-space: nowrap }
+
+p.rubric {
+  font-weight: bold ;
+  font-size: larger ;
+  color: maroon ;
+  text-align: center }
+
+p.sidebar-title {
+  font-family: sans-serif ;
+  font-weight: bold ;
+  font-size: larger }
+
+p.sidebar-subtitle {
+  font-family: sans-serif ;
+  font-weight: bold }
+
+p.topic-title {
+  font-weight: bold }
+
+pre.address {
+  margin-bottom: 0 ;
+  margin-top: 0 ;
+  font: inherit }
+
+pre.literal-block, pre.doctest-block, pre.math, pre.code {
+  margin-left: 2em ;
+  margin-right: 2em }
+
+pre.code .ln { color: grey; } /* line numbers */
+pre.code, code { background-color: #eeeeee }
+pre.code .comment, code .comment { color: #5C6576 }
+pre.code .keyword, code .keyword { color: #3B0D06; font-weight: bold }
+pre.code .literal.string, code .literal.string { color: #0C5404 }
+pre.code .name.builtin, code .name.builtin { color: #352B84 }
+pre.code .deleted, code .deleted { background-color: #DEB0A1}
+pre.code .inserted, code .inserted { background-color: #A3D289}
+
+span.classifier {
+  font-family: sans-serif ;
+  font-style: oblique }
+
+span.classifier-delimiter {
+  font-family: sans-serif ;
+  font-weight: bold }
+
+span.interpreted {
+  font-family: sans-serif }
+
+span.option {
+  white-space: nowrap }
+
+span.pre {
+  white-space: pre }
+
+span.problematic {
+  color: red }
+
+span.section-subtitle {
+  /* font-size relative to parent (h1..h6 element) */
+  font-size: 80% }
+
+table.citation {
+  border-left: solid 1px gray;
+  margin-left: 1px }
+
+table.docinfo {
+  margin: 2em 4em }
+
+table.docutils {
+  margin-top: 0.5em ;
+  margin-bottom: 0.5em }
+
+table.footnote {
+  border-left: solid 1px black;
+  margin-left: 1px }
+
+table.docutils td, table.docutils th,
+table.docinfo td, table.docinfo th {
+  padding-left: 0.5em ;
+  padding-right: 0.5em ;
+  vertical-align: top }
+
+table.docutils th.field-name, table.docinfo th.docinfo-name {
+  font-weight: bold ;
+  text-align: left ;
+  white-space: nowrap ;
+  padding-left: 0 }
+
+/* "booktabs" style (no vertical lines) */
+table.docutils.booktabs {
+  border: 0px;
+  border-top: 2px solid;
+  border-bottom: 2px solid;
+  border-collapse: collapse;
+}
+table.docutils.booktabs * {
+  border: 0px;
+}
+table.docutils.booktabs th {
+  border-bottom: thin solid;
+  text-align: left;
+}
+
+h1 tt.docutils, h2 tt.docutils, h3 tt.docutils,
+h4 tt.docutils, h5 tt.docutils, h6 tt.docutils {
+  font-size: 100% }
+
+ul.auto-toc {
+  list-style-type: none }
+
+</style>
+</head>
+<body>
+<div class="document" id="working-with-http-caching">
+<h1 class="title">Working with HTTP caching</h1>
+
+<p>Before you dig into the inner workings of Varnish, it's important to
+make sure you have the tools you need and some background information on
+basic caching.</p>
+<p>This chapter looks at how HTTP caching works on multiple points in the
+delivery chain, and how these mechanisms work together. Not every aspect of
+HTTP caching is covered, but those relevant to Varnish are covered in
+detail. Including several browser-related concerns.</p>
+<p>There are a multitude of tools to chose from when you are working with
+Varnish. This chapter provides a few suggestions and a quick guide to each
+tool, but makes no claim on whether one tool is better than the other. The
+goal is to establish what sort of tasks your chosen tool needs to be able
+to accomplish.</p>
+<p>Only the absolute minimum of actual Varnish configuration is covered - yet
+several mechanisms to control Varnish through backend responses are
+provided. Most of these mechanisms are well defined in the HTTP 1.1
+standard, as defined in <a class="reference external" href="https://www.ietf.org/rfc/rfc2616.txt">RFC2616</a>.</p>
+<div class="section" id="tools-the-browser">
+<h1>Tools: The browser</h1>
+<p>A browser is an important tool. Most of todays web traffic is,
+unsurprisingly, through a web browser. Therefor, it is important to be able
+to dig deeper into how they work with regards to cache. Most browsers have
+a developer- or debug console, but we will focus on Chrome.</p>
+<p>Both Firefox and Chrome will open the debug console if you hit <tt class="docutils literal">&lt;F12&gt;</tt>.
+It's a good habit to test and experiment with more than one browser, and
+luckily these consoles are very similar. A strong case in favor of Chrome
+is <cite>Incognito Mode</cite>, activated through <tt class="docutils literal"><span class="pre">&lt;Ctrl&gt;+&lt;Shift&gt;+N</span></tt>. This is an
+advantage both because it removes old cookies and because most extensions
+are disabled. Most examples use Chrome to keep things consistent and
+simple, but could just as well have been performed on Firefox.</p>
+<p>The importance of Incognito Mode can be easily demonstrated. The following
+is a test with a typical Chrome session:</p>
+<img alt="img/c2/chromium-dev-plugins.png" src="img/c2/chromium-dev-plugins.png" />
+<p>Notice the multiple extensions that are active, one of them is inserting a
+bogus call to <tt class="docutils literal">socialwidgets.css</tt>. The exact same test in Incognito Mode:</p>
+<img alt="img/c2/chromium-dev-incognito.png" src="img/c2/chromium-dev-incognito.png" />
+<p>The extra request is gone. Regardless of browser choice, your test
+environment should be devoid of most extensions and let you easily get rid
+of all cookies.</p>
+<p>You will also quickly learn that a refresh isn't always just a refresh.
+In both Firefox and Chrome, a refresh triggered by <tt class="docutils literal">&lt;F5&gt;</tt> or
+<tt class="docutils literal"><span class="pre">&lt;Ctrl&gt;+r</span></tt> will be &quot;cache aware&quot;. What does that mean?</p>
+<p>Look closer on the screenshots above, specially the return code. The return
+code is a <tt class="docutils literal">304 Not Modified</tt>, not a <tt class="docutils literal">200 OK</tt>. The browser had the image
+in cache already and issued a <cite>conditional GET request</cite>. A closer
+inspection:</p>
+<img alt="img/c2/chromium-dev-304-1.png" src="img/c2/chromium-dev-304-1.png" />
+<p>The browser sends <tt class="docutils literal"><span class="pre">Cache-Control:</span> <span class="pre">max-age=0</span></tt> and an
+<tt class="docutils literal"><span class="pre">If-Modified-Since</span></tt>-header. The web server correctly responds with
+<tt class="docutils literal">304 Not Modified</tt>.  We'll look closer at those, but for now,
+let's use a different type of refresh: <tt class="docutils literal"><span class="pre">&lt;Shift&gt;+&lt;F5&gt;</span></tt> in Chrome or
+<tt class="docutils literal"><span class="pre">&lt;Shift&gt;+&lt;Ctrl&gt;+r</span></tt> in Firefox:</p>
+<img alt="img/c2/chromium-dev-304-2.png" src="img/c2/chromium-dev-304-2.png" />
+<p>The cache-related headers have changed somewhat, and the browser is no
+longer sending a <tt class="docutils literal"><span class="pre">If-Modified-Since</span></tt> header. The result is a <tt class="docutils literal">200 OK</tt>
+with response body instead of an empty <tt class="docutils literal">304 Not Modified</tt>.</p>
+<p>These details are both the reason you need to test with a browser - because
+this is how they operate - and why a simpler tool is needed in addition to
+the browser.</p>
+</div>
+<div class="section" id="tools-the-command-line-tool">
+<h1>Tools: The command line tool</h1>
+<p>The browser does a lot more than issue HTTP requests, specially with
+regards to cache. A good request synthesizer is a must to debug and
+experiment with HTTP and HTTP caching without stumbling over the browser.
+There are countless alternatives available.</p>
+<p>Your requirement for a simple HTTP request synthesizer should be:</p>
+<ul class="simple">
+<li>Complete control over request headers and request method - even invalid
+input.</li>
+<li>Stateless behavior - no caching at all</li>
+<li>Show complete response headers.</li>
+</ul>
+<p>Some suggestions for Windows users are <tt class="docutils literal">curl</tt> in Powershell, Charles Web
+Debugging Proxy, the &quot;Test and Rest Client&quot; in PhpStorm, an &quot;Adanced RST
+client&quot; Chrome extension, or simply SSH'ing to a GNU/Linux VM and using one
+of the many tools available there. The list goes on, and so it could for
+Mac OS X and Linux too.</p>
+<p><cite>HTTPie</cite> is a small CLI tool which has the above properties. It's used
+throughout this book because it is a good tool, but also because it's easy
+to see what's going on without knowledge of the tool.</p>
+<p>HTTPie is available on Linux, Mac OS X and Windows. On a Debian or Ubuntu
+system HTTPie can be installed with <tt class="docutils literal"><span class="pre">apt-get</span> install httpie</tt>. For other
+platforms, see <a class="reference external" href="http://httpie.org">http://httpie.org</a>. Testing httpie is simple:</p>
+<pre class="literal-block">
+$ http http://kly.no/misc/dummy.png
+HTTP/1.1 200 OK
+Accept-Ranges: bytes
+Age: 0
+Connection: keep-alive
+Content-Length: 178
+Content-Type: image/png
+Date: Wed, 25 Nov 2015 18:49:33 GMT
+Last-Modified: Wed, 02 Sep 2015 06:46:21 GMT
+Server: Really new stuff so people don't complain
+Via: 1.1 varnish-v4
+X-Cache: MISS from access-gateway.hospitality.swisscom.com
+X-Varnish: 15849590
+
+
+
++-----------------------------------------+
+| NOTE: binary data not shown in terminal |
++-----------------------------------------+
+</pre>
+<p>In many situations, the actual data is often not that interesting, while a
+full set of request headers are very interesting. HTTPie can show you
+exactly what you want:</p>
+<pre class="literal-block">
+$ http -p Hh http://kly.no/misc/dummy.png
+GET /misc/dummy.png HTTP/1.1
+Accept: */*
+Accept-Encoding: gzip, deflate
+Connection: keep-alive
+Host: kly.no
+User-Agent: HTTPie/0.8.0
+
+HTTP/1.1 200 OK
+Accept-Ranges: bytes
+Age: 81
+Connection: keep-alive
+Content-Length: 178
+Content-Type: image/png
+Date: Wed, 25 Nov 2015 18:49:33 GMT
+Last-Modified: Wed, 02 Sep 2015 06:46:21 GMT
+Server: Really new stuff so people don't complain
+Via: 1.1 varnish-v4
+X-Cache: HIT from access-gateway.hospitality.swisscom.com
+X-Varnish: 15849590
+</pre>
+<p>The <tt class="docutils literal"><span class="pre">-p</span></tt> option to <tt class="docutils literal">http</tt> can be used to control output. Specifically:</p>
+<ul class="simple">
+<li><tt class="docutils literal"><span class="pre">-p</span> H</tt> will print request headers.</li>
+<li><tt class="docutils literal"><span class="pre">-p</span> h</tt> will print response headers.</li>
+<li><tt class="docutils literal"><span class="pre">-p</span> B</tt> will print request body.</li>
+<li><tt class="docutils literal"><span class="pre">-p</span> b</tt> will print response body.</li>
+</ul>
+<p>These can combined. In the above example <tt class="docutils literal"><span class="pre">-p</span> H</tt> and <tt class="docutils literal"><span class="pre">-p</span> h</tt> combine to
+form <tt class="docutils literal"><span class="pre">-p</span> Hh</tt>. See <tt class="docutils literal">http <span class="pre">--help</span></tt> and <tt class="docutils literal">man http</tt> for details. Be aware
+that there has been some mismatch between actual command line arguments and
+what the documentation claims in the past, this depends on the version of
+HTTPie.</p>
+<p>The example shows the original request headers and full response headers.</p>
+<p>Faking a <tt class="docutils literal">Host</tt>-header is frequently necessary to avoid changing DNS just
+to test a Varnish setup. A decent request synthesizer like HTTPie does
+this:</p>
+<pre class="literal-block">
+$ http -p Hh http://kly.no/ &quot;Host: example.com&quot;
+GET / HTTP/1.1
+Accept: */*
+Accept-Encoding: gzip, deflate
+Connection: keep-alive
+Host:  example.com
+User-Agent: HTTPie/0.8.0
+
+HTTP/1.1 200 OK
+Accept-Ranges: bytes
+Age: 0
+Connection: keep-alive
+Content-Encoding: gzip
+Content-Type: text/html
+Date: Wed, 25 Nov 2015 18:58:10 GMT
+Last-Modified: Tue, 24 Nov 2015 20:51:14 GMT
+Server: Really new stuff so people don't complain
+Transfer-Encoding: chunked
+Via: 1.1 varnish-v4
+X-Cache: MISS from access-gateway.hospitality.swisscom.com
+X-Varnish: 15577233
+</pre>
+<p>Adding other headers is done the same way:</p>
+<pre class="literal-block">
+$ http -p Hh http://kly.no/ &quot;If-Modified-Since: Tue, 24 Nov 2015 20:51:14 GMT&quot;
+GET / HTTP/1.1
+Accept: */*
+Accept-Encoding: gzip, deflate
+Connection: keep-alive
+Host: kly.no
+If-Modified-Since:  Tue, 24 Nov 2015 20:51:14 GMT
+User-Agent: HTTPie/0.8.0
+
+HTTP/1.1 304 Not Modified
+Age: 5
+Connection: keep-alive
+Content-Encoding: gzip
+Content-Type: text/html
+Date: Wed, 25 Nov 2015 18:59:28 GMT
+Last-Modified: Tue, 24 Nov 2015 20:51:14 GMT
+Server: Really new stuff so people don't complain
+Via: 1.1 varnish-v4
+X-Cache: MISS from access-gateway.hospitality.swisscom.com
+X-Varnish: 15880392 15904200
+</pre>
+<p>We just simulated what our browser did, and verified that it really was the
+<tt class="docutils literal"><span class="pre">If-Modified-Since</span></tt> header that made the difference earlier. To have
+multiple headers, just list them one after an other:</p>
+<pre class="literal-block">
+$ http -p Hh http://kly.no/ &quot;Host: example.com&quot; &quot;User-Agent: foo&quot; &quot;X-demo: bar&quot;
+GET / HTTP/1.1
+Accept: */*
+Accept-Encoding: gzip, deflate
+Connection: keep-alive
+Host:  example.com
+User-Agent:  foo
+X-demo:  bar
+
+HTTP/1.1 200 OK
+Accept-Ranges: bytes
+Age: 10
+Connection: keep-alive
+Content-Encoding: gzip
+Content-Length: 24681
+Content-Type: text/html
+Date: Wed, 25 Nov 2015 19:01:08 GMT
+Last-Modified: Tue, 24 Nov 2015 20:51:14 GMT
+Server: Really new stuff so people don't complain
+Via: 1.1 varnish-v4
+X-Cache: MISS from access-gateway.hospitality.swisscom.com
+X-Varnish: 15759349 15809060
+</pre>
+</div>
+<div class="section" id="tools-a-web-server">
+<h1>Tools: A web server</h1>
+<p>Regardless of what web server is picked as an example in this book, it's
+the wrong one. So the first on an alphabetical list was chosen: Apache.</p>
+<p>Any decent web server will do what you need. What you want is a web server
+where you can easily modify response headers. If you are comfortable doing
+that with NodeJS or some other slightly more modern tool than Apache, then
+go ahead. If you really don't care and just want a test environment, then
+keep reading. To save some time, these examples are oriented around Debian
+and/or Ubuntu-systems, but largely apply to any modern GNU/Linux
+distribution (and other UNIX-like systems).</p>
+<p>Note that commands that start with <tt class="docutils literal">#</tt> are executed as root, while
+commands starting with <tt class="docutils literal">$</tt> can be run as a regular user. This means you
+either have to login as root directly, through <tt class="docutils literal">su -</tt> or <tt class="docutils literal">sudo <span class="pre">-i</span></tt>, or
+prefix the command with <tt class="docutils literal">sudo</tt> if you've set up sudo on your system.</p>
+<p>The first step is getting it installed and configured:</p>
+<pre class="literal-block">
+# apt-get install apache2
+(...)
+# a2enmod cgi
+# cd /etc/apache2
+# sed -i 's/80/8080/g' ports.conf sites-enabled/000-default.conf
+# service apache2 restart
+</pre>
+<p>This installs Apache httpd, enables the CGI module, changes the listening
+port from port 80 to 8080, then restarts the web server. The listening port
+is changed because eventually Varnish will take up residence on port 80.</p>
+<p>You can verify that it works through two means:</p>
+<pre class="literal-block">
+# netstat -nlpt
+Active Internet connections (only servers)
+Proto Recv-Q Send-Q Local Address           Foreign Address         State PID/Program name
+tcp6       0      0 :::8080                 :::*                    LISTEN 1101/apache2
+# http -p Hh http://localhost:8080/
+GET / HTTP/1.1
+Accept: */*
+Accept-Encoding: gzip, deflate
+Connection: keep-alive
+Host: localhost:8080
+User-Agent: HTTPie/0.8.0
+
+HTTP/1.1 200 OK
+Accept-Ranges: bytes
+Connection: Keep-Alive
+Content-Encoding: gzip
+Content-Length: 3078
+Content-Type: text/html
+Date: Wed, 25 Nov 2015 20:23:09 GMT
+ETag: &quot;2b60-525632b42b90d-gzip&quot;
+Keep-Alive: timeout=5, max=100
+Last-Modified: Wed, 25 Nov 2015 20:19:01 GMT
+Server: Apache/2.4.10 (Debian)
+Vary: Accept-Encoding
+</pre>
+<p><tt class="docutils literal">netstat</tt> reveals that <tt class="docutils literal">apache2</tt> is listening on port 8080. The second
+command issues an actual request. Both are useful to ensure the correct
+service is answering.</p>
+<p>To provide a platform for experimenting with response header, it's time to
+drop in a CGI script:</p>
+<pre class="literal-block">
+# cd /usr/lib/cgi-bin
+# cat &gt; foo.sh &lt;&lt;_EOF_
+ #!/bin/bash
+ echo &quot;Content-type: text/plain&quot;
+ echo
+ echo &quot;Hello. Random number: ${RANDOM}&quot;
+ date
+ _EOF_
+# chmod a+x foo.sh
+# ./foo.sh
+Content-type: text/plain
+
+Hello. Random number: 12111
+Wed Nov 25 20:26:59 UTC 2015
+</pre>
+<p>You may want to use an editor, like <tt class="docutils literal">nano</tt>, <tt class="docutils literal">vim</tt> or <tt class="docutils literal">emacs</tt> instead
+of using <tt class="docutils literal">cat</tt>. To clarify, the exact content of <tt class="docutils literal">foo.sh</tt> is:</p>
+<pre class="literal-block">
+#!/bin/bash
+echo &quot;Content-type: text/plain&quot;
+echo
+echo &quot;Hello. Random number: ${RANDOM}&quot;
+date
+</pre>
+<p>We then change permissions for <tt class="docutils literal">foo.sh</tt>, making it executable by all
+users, then verify that it does what it's supposed to. If everything is set
+up correctly, scripts under <tt class="docutils literal"><span class="pre">/usr/lib/cgi-bin</span></tt> are accessible through
+<tt class="docutils literal"><span class="pre">http://localhost:8080/cgi-bin/</span></tt>:</p>
+<pre class="literal-block">
+# http -p Hhb http://localhost:8080/cgi-bin/foo.sh
+GET /cgi-bin/foo.sh HTTP/1.1
+Accept: */*
+Accept-Encoding: gzip, deflate
+Connection: keep-alive
+Host: localhost:8080
+User-Agent: HTTPie/0.8.0
+
+HTTP/1.1 200 OK
+Connection: Keep-Alive
+Content-Length: 57
+Content-Type: text/plain
+Date: Wed, 25 Nov 2015 20:31:00 GMT
+Keep-Alive: timeout=5, max=100
+Server: Apache/2.4.10 (Debian)
+
+Hello. Random number: 12126
+Wed Nov 25 20:31:00 UTC 2015
+</pre>
+<p>If you've been able to reproduce the above example, you're ready to start
+start testing and experimenting.</p>
+</div>
+<div class="section" id="tools-varnish">
+<h1>Tools: Varnish</h1>
+<p>We need an intermediary cache, and what better example than Varnish? We'll
+refrain from configuring Varnish beyond the defaults for now, though.</p>
+<p>For now, let's just install Varnish. This assumes you're using a Debian or
+Ubuntu-system and that you have a web server listening on port 8080, as
+Varnish uses a web server on port 8080 by default:</p>
+<pre class="literal-block">
+# apt-get install varnish
+# service varnish start
+# http -p Hhb http://localhost:6081/cgi-bin/foo.sh
+GET /cgi-bin/foo.sh HTTP/1.1
+Accept: */*
+Accept-Encoding: gzip, deflate
+Connection: keep-alive
+Host: localhost:6081
+User-Agent: HTTPie/0.8.0
+
+HTTP/1.1 200 OK
+Accept-Ranges: bytes
+Age: 0
+Connection: keep-alive
+Content-Length: 57
+Content-Type: text/plain
+Date: Wed, 25 Nov 2015 20:38:09 GMT
+Server: Apache/2.4.10 (Debian)
+Via: 1.1 varnish-v4
+X-Varnish: 5
+
+Hello. Random number: 26
+Wed Nov 25 20:38:09 UTC 2015
+</pre>
+<p>As you can see from the above example, a typical Varnish installation
+listens to port 6081 by default, and uses <tt class="docutils literal">127.0.0.1:8080</tt> as the backend
+web server. If the above example doesn't work, you can change the listening
+port of Varnish by altering the <tt class="docutils literal"><span class="pre">-a</span></tt> argument in <tt class="docutils literal">/etc/default/varnish</tt>
+and issuing <tt class="docutils literal">service varnish restart</tt>, and the backend web server can be
+changed in <tt class="docutils literal">/etc/varnish/default.vcl</tt>, then issue a restart with
+<tt class="docutils literal">service varnish restart</tt>. We'll cover both of these files in detail in
+later chapters.</p>
+</div>
+<div class="section" id="conditional-get-requests">
+<h1>Conditional GET requests</h1>
+<p>In the tool-examples earlier we saw real examples of a <cite>conditional GET
+requests</cite>. In many ways, they are quite simple mechanisms to allow a HTTP
+client - typically a browser - to verify that they have the most up-to-date
+version of the HTTP object. There are two different types of conditional
+GET requests: <tt class="docutils literal"><span class="pre">If-Modified-Since</span></tt> and <tt class="docutils literal"><span class="pre">If-None-Match</span></tt>.</p>
+<p>If a server sends a <tt class="docutils literal"><span class="pre">Last-Modified</span></tt>-header, the client can issue a
+<tt class="docutils literal"><span class="pre">If-Modified-Since</span></tt> header on later requests for the same content,
+indicating that the server only needs to transmit the response body if it's
+been updated.</p>
+<p>Some times it isn't trivial to know the modification time, but you might be
+able to uniquely identify the content anyway. For that matter, the content
+might have been changed back to a previous state. This is where the
+<cite>entity tag</cite>, or <tt class="docutils literal">ETag</tt> response header is useful.</p>
+<p>An <tt class="docutils literal">Etag</tt> header can be used to provide an arbitrary ID to an HTTP
+response, and the client can then re-use that in a <tt class="docutils literal"><span class="pre">If-None-Match</span></tt>
+request header.</p>
+<p>Modifying <tt class="docutils literal"><span class="pre">/usr/lib/cgi-bin/foo.sh</span></tt>, we can make it provide a static
+<tt class="docutils literal">ETag</tt> header:</p>
+<pre class="literal-block">
+#!/bin/bash
+echo &quot;Content-type: text/plain&quot;
+echo &quot;Etag: testofetagnumber1&quot;
+echo
+echo &quot;Hello. Random number: ${RANDOM}&quot;
+date
+</pre>
+<p>Let's see what happens when we talk directly to Apache:</p>
+<pre class="literal-block">
+# http http://localhost:8080/cgi-bin/foo.sh
+HTTP/1.1 200 OK
+Connection: Keep-Alive
+Content-Length: 57
+Content-Type: text/plain
+Date: Wed, 25 Nov 2015 20:43:25 GMT
+Etag: testofetagnumber1
+Keep-Alive: timeout=5, max=100
+Server: Apache/2.4.10 (Debian)
+
+Hello. Random number: 51126
+Wed Nov 25 20:43:25 UTC 2015
+
+# http http://localhost:8080/cgi-bin/foo.sh
+HTTP/1.1 200 OK
+Connection: Keep-Alive
+Content-Length: 57
+Content-Type: text/plain
+Date: Wed, 25 Nov 2015 20:43:28 GMT
+Etag: testofetagnumber1
+Keep-Alive: timeout=5, max=100
+Server: Apache/2.4.10 (Debian)
+
+Hello. Random number: 12112
+Wed Nov 25 20:43:28 UTC 2015
+</pre>
+<p>Two successive requests yielded updated content, but with the same Etag.
+Now let's see how Varnish handles this:</p>
+<pre class="literal-block">
+# http http://localhost:6081/cgi-bin/foo.sh
+HTTP/1.1 200 OK
+Accept-Ranges: bytes
+Age: 0
+Connection: keep-alive
+Content-Length: 57
+Content-Type: text/plain
+Date: Wed, 25 Nov 2015 20:44:53 GMT
+Etag: testofetagnumber1
+Server: Apache/2.4.10 (Debian)
+Via: 1.1 varnish-v4
+X-Varnish: 32770
+
+Hello. Random number: 5213
+Wed Nov 25 20:44:53 UTC 2015
+
+# http http://localhost:6081/cgi-bin/foo.sh
+HTTP/1.1 200 OK
+Accept-Ranges: bytes
+Age: 2
+Connection: keep-alive
+Content-Length: 57
+Content-Type: text/plain
+Date: Wed, 25 Nov 2015 20:44:53 GMT
+Etag: testofetagnumber1
+Server: Apache/2.4.10 (Debian)
+Via: 1.1 varnish-v4
+X-Varnish: 32773 32771
+
+Hello. Random number: 5213
+Wed Nov 25 20:44:53 UTC 2015
+</pre>
+<p>It's pretty easy to see the difference in the output. However, there are
+two things happening here of interest. First, <tt class="docutils literal">Etag</tt> doesn't matter for
+this test because we never send <tt class="docutils literal"><span class="pre">If-None-Match</span></tt>! So our <tt class="docutils literal">http</tt>-command
+gets a <tt class="docutils literal">200 OK</tt>, not the <tt class="docutils literal">304 Not Modified</tt> that we were looking for.
+Let's try that again:</p>
+<pre class="literal-block">
+# http http://localhost:6081/cgi-bin/foo.sh &quot;If-None-Match:
+testofetagnumber1&quot;
+HTTP/1.1 304 Not Modified
+Age: 0
+Connection: keep-alive
+Content-Type: text/plain
+Date: Wed, 25 Nov 2015 20:48:52 GMT
+Etag: testofetagnumber1
+Server: Apache/2.4.10 (Debian)
+Via: 1.1 varnish-v4
+X-Varnish: 8
+</pre>
+<p>Now we see <tt class="docutils literal">Etag</tt> and <tt class="docutils literal"><span class="pre">If-None-Match</span></tt> at work. Also note the absence of
+a body: we just saved bandwidth.</p>
+<p>Let's try to change our <tt class="docutils literal"><span class="pre">If-None-Match</span></tt> header a bit:</p>
+<pre class="literal-block">
+# http http://localhost:6081/cgi-bin/foo.sh &quot;If-None-Match: testofetagnumber2&quot;
+HTTP/1.1 200 OK
+Accept-Ranges: bytes
+Age: 0
+Connection: keep-alive
+Content-Length: 57
+Content-Type: text/plain
+Date: Wed, 25 Nov 2015 20:51:10 GMT
+Etag: testofetagnumber1
+Server: Apache/2.4.10 (Debian)
+Via: 1.1 varnish-v4
+X-Varnish: 11
+
+Hello. Random number: 12942
+Wed Nov 25 20:51:10 UTC 2015
+</pre>
+<p>Content!</p>
+<p>To summarize:</p>
+<table border="1" class="docutils">
+<colgroup>
+<col width="29%" />
+<col width="35%" />
+<col width="36%" />
+</colgroup>
+<thead valign="bottom">
+<tr><th class="head">Server</th>
+<th class="head">Client</th>
+<th class="head">Server</th>
+</tr>
+</thead>
+<tbody valign="top">
+<tr><td><tt class="docutils literal"><span class="pre">Last-Modified</span></tt></td>
+<td><tt class="docutils literal"><span class="pre">If-Modified-Since</span></tt></td>
+<td rowspan="2"><tt class="docutils literal">200 OK</tt> with full
+response body, or
+<tt class="docutils literal">304 Not Modified</tt>
+with no response body.</td>
+</tr>
+<tr><td><tt class="docutils literal">ETag</tt></td>
+<td><tt class="docutils literal"><span class="pre">If-None-Match</span></tt></td>
+</tr>
+</tbody>
+</table>
+<div class="warning">
+<p class="first admonition-title">Warning</p>
+<p>The examples above also demonstrates that supplying static <tt class="docutils literal">Etag</tt>
+headers or bogus <tt class="docutils literal"><span class="pre">Last-Modified</span></tt> headers can have unexpected side
+effects. <tt class="docutils literal">foo.sh</tt> provides new content every time. Talking
+directly to the web server resulted in the desired behavior of the
+client getting the updated content, but only because the web server
+ignored the conditional part of the request.</p>
+<p class="last">The danger is not necessarily Varnish, but proxy servers outside of
+the control of the web site, sitting between the client and the web
+server. Even if a web server ignores <tt class="docutils literal"><span class="pre">If-None-Match</span></tt> and
+<tt class="docutils literal"><span class="pre">If-Modified-Since</span></tt> headers, there is no guarantee that other
+proxies do! Make sure to only provide <tt class="docutils literal">Etag</tt> and
+<tt class="docutils literal"><span class="pre">Last-Modified</span></tt>-headers that are correct, or don't provide them
+at all.</p>
+</div>
+</div>
+<div class="section" id="cache-control-age-and-grace">
+<h1>Cache control, age and grace</h1>
+<p>An HTTP object has an age. This is how long it is since the object was
+fetched or validated from the origin source. In most cases, an object
+starts acquiring age once it leaves a web server.</p>
+<p>Age is measured in seconds. The HTTP response header <tt class="docutils literal">Age</tt> is used to
+forward the information regarding age to HTTP clients. You can specify
+maximum age allowed both from a client and server. The most interesting
+aspect of this is the HTTP header <tt class="docutils literal"><span class="pre">Cache-Control</span></tt>. This is both a
+response- and request-header, which means that both clients and servers can
+emit this header.</p>
+<p>The <tt class="docutils literal">Age</tt> header has a single value: the age of the object measured in
+seconds. The <tt class="docutils literal"><span class="pre">Cache-Control</span></tt> header, on the other hand, has a multitude
+of variables and options. We'll begin with the simplest: <tt class="docutils literal"><span class="pre">max-age=</span></tt>. This
+is a variable that can be used both in a request-header and
+response-header, but is most useful in the response header. Most web
+servers and many intermediary caches (including Varnish), ignores a
+<tt class="docutils literal"><span class="pre">max-age</span></tt> field received in a HTTP request-header.</p>
+<p>Setting <tt class="docutils literal"><span class="pre">max-age=0</span></tt> effectively disables caching, assuming the cache
+obeys:</p>
+<pre class="literal-block">
+# http http://localhost:6081/cgi-bin/foo.sh
+HTTP/1.1 200 OK
+Accept-Ranges: bytes
+Age: 0
+Cache-Control: max-age=0
+Connection: keep-alive
+Content-Length: 57
+Content-Type: text/plain
+Date: Fri, 27 Nov 2015 15:41:53 GMT
+Server: Apache/2.4.10 (Debian)
+Via: 1.1 varnish-v4
+X-Varnish: 32776
+
+Hello. Random number: 19972
+Fri Nov 27 15:41:53 UTC 2015
+
+# http http://localhost:6081/cgi-bin/foo.sh
+HTTP/1.1 200 OK
+Accept-Ranges: bytes
+Age: 0
+Cache-Control: max-age=0
+Connection: keep-alive
+Content-Length: 57
+Content-Type: text/plain
+Date: Fri, 27 Nov 2015 15:41:57 GMT
+Server: Apache/2.4.10 (Debian)
+Via: 1.1 varnish-v4
+X-Varnish: 32779
+
+Hello. Random number: 92124
+Fri Nov 27 15:41:57 UTC 2015
+</pre>
+<p>This example issues two requests against a modified
+<tt class="docutils literal"><span class="pre">http://localhost:6081/cgi-bin/foo.sh</span></tt>. The modified version has set
+<tt class="docutils literal"><span class="pre">max-age=0</span></tt> to tell Varnish - and browsers - not to cache the content at
+all. A similar example can be used for <tt class="docutils literal"><span class="pre">max-age=10</span></tt>:</p>
+<pre class="literal-block">
+# http http://localhost:6081/cgi-bin/foo.sh
+HTTP/1.1 200 OK
+Accept-Ranges: bytes
+Age: 0
+Cache-Control: max-age=10
+Connection: keep-alive
+Content-Length: 57
+Content-Type: text/plain
+Date: Fri, 27 Nov 2015 15:44:32 GMT
+Server: Apache/2.4.10 (Debian)
+Via: 1.1 varnish-v4
+X-Varnish: 14
+
+Hello. Random number: 19982
+Fri Nov 27 15:44:32 UTC 2015
+
+# http http://localhost:6081/cgi-bin/foo.sh
+HTTP/1.1 200 OK
+Accept-Ranges: bytes
+Age: 8
+Cache-Control: max-age=10
+Connection: keep-alive
+Content-Length: 57
+Content-Type: text/plain
+Date: Fri, 27 Nov 2015 15:44:32 GMT
+Server: Apache/2.4.10 (Debian)
+Via: 1.1 varnish-v4
+X-Varnish: 32782 15
+
+Hello. Random number: 19982
+Fri Nov 27 15:44:32 UTC 2015
+
+# http http://localhost:6081/cgi-bin/foo.sh
+HTTP/1.1 200 OK
+Accept-Ranges: bytes
+Age: 12
+Cache-Control: max-age=10
+Connection: keep-alive
+Content-Length: 57
+Content-Type: text/plain
+Date: Fri, 27 Nov 2015 15:44:32 GMT
+Server: Apache/2.4.10 (Debian)
+Via: 1.1 varnish-v4
+X-Varnish: 19 15
+
+Hello. Random number: 19982
+Fri Nov 27 15:44:32 UTC 2015
+
+# http http://localhost:6081/cgi-bin/foo.sh
+HTTP/1.1 200 OK
+Accept-Ranges: bytes
+Age: 2
+Cache-Control: max-age=10
+Connection: keep-alive
+Content-Length: 57
+Content-Type: text/plain
+Date: Fri, 27 Nov 2015 15:44:44 GMT
+Server: Apache/2.4.10 (Debian)
+Via: 1.1 varnish-v4
+X-Varnish: 65538 20
+
+Hello. Random number: 9126
+Fri Nov 27 15:44:44 UTC 2015
+</pre>
+<p>This example demonstrates several things:</p>
+<ul class="simple">
+<li>Varnish emits an <tt class="docutils literal">Age</tt> header, telling you how old the object is.</li>
+<li>Varnish now caches.</li>
+<li>Varnish delivers a 12-second old object, despite <tt class="docutils literal"><span class="pre">max-age=10</span></tt>!</li>
+<li>Varnish then deliver a 2 second old object? Despite no other request
+in-between.</li>
+</ul>
+<p>What this example is showing, is Varnish's default grace mode. The simple
+explanation is that Varnish keeps an object a little longer (10 seconds by
+default) than the regular cache duration. If the object is requested during
+this period, the cached variant of the object is sent to the client, while
+Varnish issues a request to the backend server in parallel. This is also
+called <cite>stale while revalidate</cite>. This happens even with zero configuration
+for Varnish, and is covered detailed in later chapters. For now, it's good
+to just get used to issuing an extra request to Varnish after the expiry
+time to see the update take place.</p>
+<p>Let's do an other example of this, using a browser, and 60 seconds of max
+age and an ETag header set to something random so our browser can do
+conditional GET requests:</p>
+<img alt="img/c2/age-1.png" src="img/c2/age-1.png" />
+<p>On the first request we get a 27 second old object.</p>
+<img alt="img/c2/age-2.png" src="img/c2/age-2.png" />
+<p>The second request is a conditional GET request because we had it in cache.
+Note that our browser has already exceeded the max-age, but still made a
+conditional GET request. A cache (browser or otherwise) may keep an object
+longer than the suggested <tt class="docutils literal"><span class="pre">max-age</span></tt>, as long as it verifies the content
+before using it. The result is the same object, now with an age of 65
+seconds.</p>
+<img alt="img/c2/age-3.png" src="img/c2/age-3.png" />
+<p>The third request takes place just 18 seconds later. This is not a
+conditional GET request, most likely because our browser correctly saw that
+the <tt class="docutils literal">Age</tt> of the previous object was 65, while <tt class="docutils literal"><span class="pre">max-age=60</span></tt> instructed
+the browser to only keep the object until it reached an age of 60 - a time
+which had already past. Our browser thus did not keep the object at all
+this time.</p>
+<p>Similarly, we can modify <tt class="docutils literal">foo.sh</tt> to emit <tt class="docutils literal"><span class="pre">max-age=3600</span></tt> and <tt class="docutils literal">Age:
+3590</tt>, pretending to be a cache. Speaking directly to Apache:</p>
+<pre class="literal-block">
+# http http://localhost:8080/cgi-bin/foo.sh
+HTTP/1.1 200 OK
+Age: 3590
+Cache-Control: max-age=3600
+Connection: Keep-Alive
+Content-Length: 57
+Content-Type: text/plain
+Date: Fri, 27 Nov 2015 16:07:36 GMT
+ETag: 11235
+Keep-Alive: timeout=5, max=100
+Server: Apache/2.4.10 (Debian)
+
+Hello. Random number: 54251
+Fri Nov 27 16:07:36 UTC 2015
+
+# http http://localhost:8080/cgi-bin/foo.sh
+HTTP/1.1 200 OK
+Age: 3590
+Cache-Control: max-age=3600
+Connection: Keep-Alive
+Content-Length: 57
+Content-Type: text/plain
+Date: Fri, 27 Nov 2015 16:07:54 GMT
+ETag: 12583
+Keep-Alive: timeout=5, max=100
+Server: Apache/2.4.10 (Debian)
+
+Hello. Random number: 68323
+Fri Nov 27 16:07:54 UTC 2015
+</pre>
+<p>Nothing too exciting, but the requests returns what we should have learned
+to expect by now.</p>
+<p>Let's try three requests through Varnish:</p>
+<pre class="literal-block">
+# http http://localhost:6081/cgi-bin/foo.sh
+HTTP/1.1 200 OK
+Accept-Ranges: bytes
+Age: 3590
+Cache-Control: max-age=3600
+Connection: keep-alive
+Content-Length: 57
+Content-Type: text/plain
+Date: Fri, 27 Nov 2015 16:08:50 GMT
+ETag: 9315
+Server: Apache/2.4.10 (Debian)
+Via: 1.1 varnish-v4
+X-Varnish: 65559
+
+Hello. Random number: 22609
+Fri Nov 27 16:08:50 UTC 2015
+</pre>
+<p>The first request is almost identical to the one we issued to Apache,
+except a few added headers.</p>
+<p>15 seconds later, we issue the same command again:</p>
+<pre class="literal-block">
+# http http://localhost:6081/cgi-bin/foo.sh
+HTTP/1.1 200 OK
+Accept-Ranges: bytes
+Age: 3605
+Cache-Control: max-age=3600
+Connection: keep-alive
+Content-Length: 57
+Content-Type: text/plain
+Date: Fri, 27 Nov 2015 16:08:50 GMT
+ETag: 9315
+Server: Apache/2.4.10 (Debian)
+Via: 1.1 varnish-v4
+X-Varnish: 32803 65560
+
+Hello. Random number: 22609
+Fri Nov 27 16:08:50 UTC 2015
+</pre>
+<p>Varnish replies with a version from grace, and has issued an update to
+Apache in the background. Note that the <tt class="docutils literal">Age</tt> header is now increased,
+and is clearly beyond the age limit of 3600.</p>
+<p>4 seconds later, the third request:</p>
+<pre class="literal-block">
+# http http://localhost:6081/cgi-bin/foo.sh
+HTTP/1.1 200 OK
+Accept-Ranges: bytes
+Age: 3594
+Cache-Control: max-age=3600
+Connection: keep-alive
+Content-Length: 57
+Content-Type: text/plain
+Date: Fri, 27 Nov 2015 16:09:05 GMT
+ETag: 24072
+Server: Apache/2.4.10 (Debian)
+Via: 1.1 varnish-v4
+X-Varnish: 65564 32804
+
+Hello. Random number: 76434
+Fri Nov 27 16:09:05 UTC 2015
+</pre>
+<p>Updated content!</p>
+<p>The lessons to pick up from this is:</p>
+<ul class="simple">
+<li><tt class="docutils literal">Age</tt> is not just an informative header. It is used by intermediary
+caches and by browser caches.</li>
+<li><tt class="docutils literal"><span class="pre">max-age</span></tt> is relative to <tt class="docutils literal">Age</tt> and <em>not</em> to when the request was
+made.</li>
+<li>You can have multiple tiers of caches, and <tt class="docutils literal"><span class="pre">max-age=x</span></tt> will be correct
+for the end user if all intermediary  caches correctly obey it and adds
+to <tt class="docutils literal">Age</tt>.</li>
+</ul>
+</div>
+<div class="section" id="the-cache-control-header">
+<h1>The <tt class="docutils literal"><span class="pre">Cache-Control</span></tt> header</h1>
+<p>The <tt class="docutils literal"><span class="pre">Cache-Control</span></tt> header has a multitude of possible values, and can be
+supplied as both a request-header and response-header. Varnish ignores any
+Cache-Control header received from a client - other caches might obey them.</p>
+<p>It is defined in <a class="reference external" href="https://www.ietf.org/rfc/rfc2616.txt">RFC2616</a>, 14.9. As Varnish ignores all <tt class="docutils literal"><span class="pre">Cache-Control</span></tt>
+headers in a client request, we will focus on the parts relevant to a HTTP
+response, here's an excerpt from <a class="reference external" href="https://www.ietf.org/rfc/rfc2616.txt">RFC2616</a>:</p>
+<pre class="literal-block">
+Cache-Control   = &quot;Cache-Control&quot; &quot;:&quot; 1#cache-directive
+
+cache-directive = cache-request-directive
+     | cache-response-directive
+
+(...)
+
+ cache-response-directive =
+       &quot;public&quot;                               ; Section 14.9.1
+     | &quot;private&quot; [ &quot;=&quot; &lt;&quot;&gt; 1#field-name &lt;&quot;&gt; ] ; Section 14.9.1
+     | &quot;no-cache&quot; [ &quot;=&quot; &lt;&quot;&gt; 1#field-name &lt;&quot;&gt; ]; Section 14.9.1
+     | &quot;no-store&quot;                             ; Section 14.9.2
+     | &quot;no-transform&quot;                         ; Section 14.9.5
+     | &quot;must-revalidate&quot;                      ; Section 14.9.4
+     | &quot;proxy-revalidate&quot;                     ; Section 14.9.4
+     | &quot;max-age&quot; &quot;=&quot; delta-seconds            ; Section 14.9.3
+     | &quot;s-maxage&quot; &quot;=&quot; delta-seconds           ; Section 14.9.3
+     | cache-extension                        ; Section 14.9.6
+
+cache-extension = token [ &quot;=&quot; ( token | quoted-string ) ]
+</pre>
+<p>Among the above directives, Varnish only obeys <tt class="docutils literal"><span class="pre">s-maxage</span></tt> and <tt class="docutils literal"><span class="pre">max-age</span></tt>
+by default. It's worth looking closer specially at <tt class="docutils literal"><span class="pre">must-revalidate</span></tt>.
+This allows a client to cache the content, but requires it to send a
+conditional GET request before actually using the content.</p>
+<p><tt class="docutils literal"><span class="pre">s-maxage</span></tt> is of special interest to Varnish users. It instructs
+intermediate caches, but not clients (e.g.: browsers). Varnish will pick
+the value of <tt class="docutils literal"><span class="pre">s-maxage</span></tt> over <tt class="docutils literal"><span class="pre">max-age</span></tt>, which makes it possible for a
+web server to emit a <tt class="docutils literal"><span class="pre">Cache-Control</span></tt> header that gives different
+instructions to browsers and Varnish:</p>
+<pre class="literal-block">
+# http http://localhost:6081/cgi-bin/foo.sh
+HTTP/1.1 200 OK
+Accept-Ranges: bytes
+Age: 0
+Cache-Control: s-maxage=3600,max-age=5
+Connection: keep-alive
+Content-Type: text/plain
+Date: Fri, 27 Nov 2015 23:21:47 GMT
+Server: Apache/2.4.10 (Debian)
+Transfer-Encoding: chunked
+Via: 1.1 varnish-v4
+X-Varnish: 2
+
+Hello. Random number: 7684
+Fri Nov 27 23:21:47 UTC 2015
+
+# http http://localhost:6081/cgi-bin/foo.sh
+HTTP/1.1 200 OK
+Accept-Ranges: bytes
+Age: 8
+Cache-Control: s-maxage=3600,max-age=5
+Connection: keep-alive
+Content-Length: 57
+Content-Type: text/plain
+Date: Fri, 27 Nov 2015 23:21:47 GMT
+Server: Apache/2.4.10 (Debian)
+Via: 1.1 varnish-v4
+X-Varnish: 5 3
+
+Hello. Random number: 7684
+Fri Nov 27 23:21:47 UTC 2015
+
+# http http://localhost:6081/cgi-bin/foo.sh
+HTTP/1.1 200 OK
+Accept-Ranges: bytes
+Age: 16
+Cache-Control: s-maxage=3600,max-age=5
+Connection: keep-alive
+Content-Length: 57
+Content-Type: text/plain
+Date: Fri, 27 Nov 2015 23:21:47 GMT
+Server: Apache/2.4.10 (Debian)
+Via: 1.1 varnish-v4
+X-Varnish: 7 3
+
+Hello. Random number: 7684
+Fri Nov 27 23:21:47 UTC 2015
+</pre>
+<p>The first request populates the cache, the second returns a cache hit after
+8 seconds, while the third confirms that no background fetch has caused an
+update by returning the same object a third time.</p>
+<p>Two important things to note here:</p>
+<ul class="simple">
+<li>The <tt class="docutils literal">Age</tt> header is accurately reported. This effectively disables
+client-side caching after <tt class="docutils literal">Age</tt> has reached 5 seconds.</li>
+<li>There could be other intermediate caches that would also use
+<tt class="docutils literal"><span class="pre">s-maxage</span></tt>.</li>
+</ul>
+<p>The solution to both these issues is the same: Remove or reset the
+<tt class="docutils literal">Age</tt>-header and remove or reset the <tt class="docutils literal"><span class="pre">s-maxage</span></tt>-part of the
+<tt class="docutils literal"><span class="pre">Cache-Control</span></tt> header. Varnish does not do this by default, but we will
+do both in later chapters. For now, just know that these are challenges.</p>
+</div>
+<div class="section" id="stale-while-revalidate">
+<h1><tt class="docutils literal"><span class="pre">stale-while-revalidate</span></tt></h1>
+<p>In addition to <a class="reference external" href="https://www.ietf.org/rfc/rfc2616.txt">RFC2616</a>, there's also the more recent <a class="reference external" href="https://www.ietf.org/rfc/rfc5861.txt">RFC5861</a> defines
+two additional variables for <tt class="docutils literal"><span class="pre">Cache-Control</span></tt>:</p>
+<pre class="literal-block">
+stale-while-revalidate = &quot;stale-while-revalidate&quot; &quot;=&quot; delta-seconds
+</pre>
+<p>and:</p>
+<pre class="literal-block">
+stale-if-error = &quot;stale-if-error&quot; &quot;=&quot; delta-seconds
+</pre>
+<p>These two variables map very well to Varnish' <cite>grace</cite> mechanics, which
+existed a few years before <a class="reference external" href="https://www.ietf.org/rfc/rfc5861.txt">RFC5861</a> came about.</p>
+<p>Varnish 4.1 implements <tt class="docutils literal"><span class="pre">stale-while-revalidate</span></tt> for the first time, but
+not <tt class="docutils literal"><span class="pre">stale-if-error</span></tt>. Varnish has a default <tt class="docutils literal"><span class="pre">stale-while-revalidate</span></tt>
+value of 10 seconds.  Earlier examples ran into this: You could see
+responses that were a few seconds older than max-age, while a request to
+revalidate the response was happening in the background.</p>
+<p>A demo of default grace, pay attention to the <tt class="docutils literal">Age</tt> header:</p>
+<pre class="literal-block">
+# http -p h http://localhost:6081/cgi-bin/foo.sh
+HTTP/1.1 200 OK
+Accept-Ranges: bytes
+Age: 0
+Cache-Control: max-age=5
+Connection: keep-alive
+Content-Length: 56
+Content-Type: text/plain
+Date: Sun, 29 Nov 2015 15:10:56 GMT
+Server: Apache/2.4.10 (Debian)
+Via: 1.1 varnish-v4
+X-Varnish: 2
+
+# http -p h http://localhost:6081/cgi-bin/foo.sh
+HTTP/1.1 200 OK
+Accept-Ranges: bytes
+Age: 4
+Cache-Control: max-age=5
+Connection: keep-alive
+Content-Length: 56
+Content-Type: text/plain
+Date: Sun, 29 Nov 2015 15:10:56 GMT
+Server: Apache/2.4.10 (Debian)
+Via: 1.1 varnish-v4
+X-Varnish: 5 3
+
+# http -p h http://localhost:6081/cgi-bin/foo.sh
+HTTP/1.1 200 OK
+Accept-Ranges: bytes
+Age: 8
+Cache-Control: max-age=5
+Connection: keep-alive
+Content-Length: 56
+Content-Type: text/plain
+Date: Sun, 29 Nov 2015 15:10:56 GMT
+Server: Apache/2.4.10 (Debian)
+Via: 1.1 varnish-v4
+X-Varnish: 32770 3
+
+# http -p h http://localhost:6081/cgi-bin/foo.sh
+HTTP/1.1 200 OK
+Accept-Ranges: bytes
+Age: 4
+Cache-Control: max-age=5
+Connection: keep-alive
+Content-Length: 56
+Content-Type: text/plain
+Date: Sun, 29 Nov 2015 15:11:03 GMT
+Server: Apache/2.4.10 (Debian)
+Via: 1.1 varnish-v4
+X-Varnish: 65538 32771
+</pre>
+<p>On the third request, Varnish is returning an object that is 8 seconds old,
+despite the <tt class="docutils literal"><span class="pre">max-age=5</span></tt> second. When this request was received, Varnish
+immediately fired off a request to the web server to revalidate the object,
+but returned the result from cache. This is also demonstrated by the fourth
+request, where <tt class="docutils literal">Age</tt> is already 4. The fourth request gets the result
+from the backend-request started when the third request was received. So:</p>
+<ol class="arabic simple">
+<li>Request: Nothing in cache. Varnish requests content from backend, waits,
+and responds with that result.</li>
+<li>Request: Standard cache hit.</li>
+<li>Request: Varnish sees that the object in cache is <cite>stale</cite>, initiates a
+request to a backend server, but does NOT wait for the response.
+Instead, the result from cache is returned.</li>
+<li>Request: By now, the backend-request initiated from the third request is
+complete. This is thus a standard cache hit.</li>
+</ol>
+<p>This behavior means that slow backends will not affect client requests if
+content is cached.</p>
+<p>If this behavior is unwanted, you can disable grace by setting
+<tt class="docutils literal"><span class="pre">stale-while-revalidate=0</span></tt>:</p>
+<pre class="literal-block">
+# http -p h http://localhost:6081/cgi-bin/foo.sh
+HTTP/1.1 200 OK
+Accept-Ranges: bytes
+Age: 0
+Cache-Control: max-age=5, stale-while-revalidate=0
+Connection: keep-alive
+Content-Length: 57
+Content-Type: text/plain
+Date: Thu, 03 Dec 2015 12:50:36 GMT
+Server: Apache/2.4.10 (Debian)
+Via: 1.1 varnish-v4
+X-Varnish: 12
+
+# http -p h http://localhost:6081/cgi-bin/foo.sh
+HTTP/1.1 200 OK
+Accept-Ranges: bytes
+Age: 3
+Cache-Control: max-age=5, stale-while-revalidate=0
+Connection: keep-alive
+Content-Length: 57
+Content-Type: text/plain
+Date: Thu, 03 Dec 2015 12:50:36 GMT
+Server: Apache/2.4.10 (Debian)
+Via: 1.1 varnish-v4
+X-Varnish: 32773 13
+
+# http -p h http://localhost:6081/cgi-bin/foo.sh
+HTTP/1.1 200 OK
+Accept-Ranges: bytes
+Age: 0
+Cache-Control: max-age=5, stale-while-revalidate=0
+Connection: keep-alive
+Content-Length: 57
+Content-Type: text/plain
+Date: Thu, 03 Dec 2015 12:50:42 GMT
+Server: Apache/2.4.10 (Debian)
+Via: 1.1 varnish-v4
+X-Varnish: 32775
+
+# http -p h http://localhost:6081/cgi-bin/foo.sh
+HTTP/1.1 200 OK
+Accept-Ranges: bytes
+Age: 1
+Cache-Control: max-age=5, stale-while-revalidate=0
+Connection: keep-alive
+Content-Length: 57
+Content-Type: text/plain
+Date: Thu, 03 Dec 2015 12:50:42 GMT
+Server: Apache/2.4.10 (Debian)
+Via: 1.1 varnish-v4
+X-Varnish: 15 32776
+</pre>
+<p>This was added in Varnish 4.1.0. We can now see that no background fetching
+was done at all, and no stale objects were delivered. In other words:</p>
+<ol class="arabic simple">
+<li>Request: Nothing in cache. Varnish requests content from backend, waits,
+and responds with that result.</li>
+<li>Request: Standard cache hit.</li>
+<li>Request: Nothing in cache. Varnish fetches content form backend, waits
+and responds with that result.</li>
+<li>Request: Standard cache hit.</li>
+</ol>
+</div>
+<div class="section" id="vary">
+<h1>Vary</h1>
+<p>The <tt class="docutils literal">Vary</tt>-header is exclusively meant for intermediate caches, such as
+Varnish. It is a comma-separated list of references to request headers that
+will cause the web server to produce a different variant of the same
+content. An example is needed:</p>
+<pre class="literal-block">
+# http -p Hhb http://localhost:6081/cgi-bin/foo.sh &quot;X-demo: foo&quot;
+GET /cgi-bin/foo.sh HTTP/1.1
+Accept: */*
+Accept-Encoding: gzip, deflate
+Connection: keep-alive
+Host: localhost:6081
+User-Agent: HTTPie/0.8.0
+X-demo:  foo
+
+HTTP/1.1 200 OK
+Accept-Ranges: bytes
+Age: 6
+Cache-Control: s-maxage=3600
+Connection: keep-alive
+Content-Length: 57
+Content-Type: text/plain
+Date: Fri, 27 Nov 2015 23:56:47 GMT
+Server: Apache/2.4.10 (Debian)
+Vary: X-demo
+Via: 1.1 varnish-v4
+X-Varnish: 12 32771
+
+Hello. Random number: 21126
+Fri Nov 27 23:56:47 UTC 2015
+
+# http -p Hhb http://localhost:6081/cgi-bin/foo.sh &quot;X-demo: bar&quot;
+GET /cgi-bin/foo.sh HTTP/1.1
+Accept: */*
+Accept-Encoding: gzip, deflate
+Connection: keep-alive
+Host: localhost:6081
+User-Agent: HTTPie/0.8.0
+X-demo:  bar
+
+HTTP/1.1 200 OK
+Accept-Ranges: bytes
+Age: 0
+Cache-Control: s-maxage=3600
+Connection: keep-alive
+Content-Length: 57
+Content-Type: text/plain
+Date: Fri, 27 Nov 2015 23:56:57 GMT
+Server: Apache/2.4.10 (Debian)
+Vary: X-demo
+Via: 1.1 varnish-v4
+X-Varnish: 32773
+
+Hello. Random number: 126
+Fri Nov 27 23:56:57 UTC 2015
+
+# http -p Hhb http://localhost:6081/cgi-bin/foo.sh &quot;X-demo: foo&quot;
+GET /cgi-bin/foo.sh HTTP/1.1
+Accept: */*
+Accept-Encoding: gzip, deflate
+Connection: keep-alive
+Host: localhost:6081
+User-Agent: HTTPie/0.8.0
+X-demo:  foo
+
+HTTP/1.1 200 OK
+Accept-Ranges: bytes
+Age: 15
+Cache-Control: s-maxage=3600
+Connection: keep-alive
+Content-Length: 57
+Content-Type: text/plain
+Date: Fri, 27 Nov 2015 23:56:47 GMT
+Server: Apache/2.4.10 (Debian)
+Vary: X-demo
+Via: 1.1 varnish-v4
+X-Varnish: 14 32771
+
+Hello. Random number: 21126
+Fri Nov 27 23:56:47 UTC 2015
+
+# http -p Hhb http://localhost:6081/cgi-bin/foo.sh &quot;X-demo: bar&quot;
+GET /cgi-bin/foo.sh HTTP/1.1
+Accept: */*
+Accept-Encoding: gzip, deflate
+Connection: keep-alive
+Host: localhost:6081
+User-Agent: HTTPie/0.8.0
+X-demo:  bar
+
+HTTP/1.1 200 OK
+Accept-Ranges: bytes
+Age: 8
+Cache-Control: s-maxage=3600
+Connection: keep-alive
+Content-Length: 57
+Content-Type: text/plain
+Date: Fri, 27 Nov 2015 23:56:57 GMT
+Server: Apache/2.4.10 (Debian)
+Vary: X-demo
+Via: 1.1 varnish-v4
+X-Varnish: 32776 32774
+
+Hello. Random number: 126
+Fri Nov 27 23:56:57 UTC 2015
+</pre>
+<p>These four requests demonstrates that two objects are entered into the
+cache for the same URL, accessible by modifying the arbitrarily chosen
+<tt class="docutils literal"><span class="pre">X-demo</span></tt> request header - which is not a real header.</p>
+<p>The most important use-case for Vary is to support content encoding such as
+<cite>gzip</cite>. In earlier versions of Varnish, the web server needed to do the
+compression and Varnish would store the compressed content and (assuming a
+client asked for it), the uncompressed content. This was supported through
+the Vary header, which the server would set to <tt class="docutils literal">Vary: <span class="pre">Accept-Encoding</span></tt>.
+Today, Varnish understands gzip and this isn't needed. There are two more
+examples of <tt class="docutils literal">Vary</tt>-usage.</p>
+<p>Mobile devices are often served different variants of the same contents, so
+called mobile-friendly pages. To make sure intermediate caches supports
+this, Varnish must emit a <tt class="docutils literal">Vary: <span class="pre">User-Agent</span></tt> string, suggesting that for
+each different <tt class="docutils literal"><span class="pre">User-Agent</span></tt> header sent, a unique variant of the cache
+must be made.</p>
+<p>The second such header is the nefarious <tt class="docutils literal">Cookie</tt> header. Whenever a page
+is rendered differently based on a cookie, the web server should send
+<tt class="docutils literal">Vary: Cookie</tt>. However, hardly anyone do this in the real world,
+which has resulted in cookies being treated differently. Varnish does not
+cache any content if it's requested with a cookie by default, nor does it
+cache any response with a <tt class="docutils literal"><span class="pre">Set-Cookie</span></tt>-header. This clearly needs to be
+overridden, and will be covered in detail in later chapters.</p>
+<p>The biggest problem with the <tt class="docutils literal">Vary</tt>-header is the lack of semantic
+details. The <tt class="docutils literal">Vary</tt> header simply states that any variation in the
+request header, however small, mandates a new object in the cache. This
+causes numerous headaches. Here are some examples:</p>
+<ul class="simple">
+<li><tt class="docutils literal"><span class="pre">Accept-Enoding:</span> gzip,deflate</tt> and <tt class="docutils literal"><span class="pre">Accept-Encoding:</span> deflate,gzip</tt>
+will result in two different variants.</li>
+<li><tt class="docutils literal">Vary: <span class="pre">User-Agent</span></tt> will cause a tremendous amount of variants, since
+the level of detail in modern <tt class="docutils literal"><span class="pre">User-Agent</span></tt> headers is extreme.</li>
+<li>It's impossible to say that only THAT cookie will matter, not the others.</li>
+</ul>
+<p>Many of these things can be remedied or at least worked around in Varnish.
+All of it will be covered in detail in separate chapters.</p>
+<p>On a last note, Varnish has a special case were it refuse to cache any
+content with a response header of <tt class="docutils literal">Vary: *</tt>.</p>
+</div>
+<div class="section" id="request-methods">
+<h1>Request methods</h1>
+<p>Only the <tt class="docutils literal">GET</tt> request method is cached. However, Varnish will re-write a
+<tt class="docutils literal">HEAD</tt> request to a <tt class="docutils literal">GET</tt> request, cache the result and strip the
+response body before answering the client. A <tt class="docutils literal">HEAD</tt> request is supposed
+to be exactl the same as a <tt class="docutils literal">GET</tt> request, with the response body
+stripped, so this makes sense. To see this effect, issue a HEAD request
+first directly to Apache:</p>
+<pre class="literal-block">
+# http -p Hhb HEAD http://localhost:8080/cgi-bin/foo.sh
+HEAD /cgi-bin/foo.sh HTTP/1.1
+Accept: */*
+Accept-Encoding: gzip, deflate
+Connection: keep-alive
+Host: localhost:8080
+User-Agent: HTTPie/0.8.0
+
+HTTP/1.1 200 OK
+Connection: Keep-Alive
+Content-Length: 29
+Content-Type: text/plain
+Date: Sat, 28 Nov 2015 00:30:33 GMT
+Keep-Alive: timeout=5, max=100
+Server: Apache/2.4.10 (Debian)
+
+# tail -n1 /var/log/apache2/access.log
+::1 - - [28/Nov/2015:00:30:33 +0000] &quot;HEAD /cgi-bin/foo.sh HTTP/1.1&quot; 200 190 &quot;-&quot; &quot;HTTPie/0.8.0&quot;
+</pre>
+<p>The access log shows a <tt class="docutils literal">HEAD</tt> request. Issuing the same request to
+Varnish:</p>
+<pre class="literal-block">
+# http -p Hhb HEAD http://localhost:6081/cgi-bin/foo.sh
+HEAD /cgi-bin/foo.sh HTTP/1.1
+Accept: */*
+Accept-Encoding: gzip, deflate
+Connection: keep-alive
+Host: localhost:6081
+User-Agent: HTTPie/0.8.0
+
+HTTP/1.1 200 OK
+Age: 0
+Connection: keep-alive
+Content-Length: 29
+Content-Type: text/plain
+Date: Sat, 28 Nov 2015 00:32:05 GMT
+Server: Apache/2.4.10 (Debian)
+Via: 1.1 varnish-v4
+X-Varnish: 2
+
+# tail -n1 /var/log/apache2/access.log
+127.0.0.1 - - [28/Nov/2015:00:32:05 +0000] &quot;GET /cgi-bin/foo.sh HTTP/1.1&quot; 200 163 &quot;-&quot; &quot;HTTPie/0.8.0&quot;
+</pre>
+<p>The client sees the same result, but the web server has logged a <tt class="docutils literal">GET</tt>
+request. Please note that <tt class="docutils literal">HEAD</tt>-requests include a <tt class="docutils literal"><span class="pre">Content-Lenght</span></tt> as
+if a <tt class="docutils literal">GET</tt>-request was issued. It is only the response body itself that
+is absent.</p>
+</div>
+<div class="section" id="cached-status-codes">
+<h1>Cached status codes</h1>
+<p>Only a subset of response odes allow cacheing, even if an <tt class="docutils literal"><span class="pre">s-maxage</span></tt> or
+similar is provided. Quoting directly from Varnish source code,
+specifically <tt class="docutils literal">bin/varnishd/cache/cache_rfc2616.c</tt>, the list is:</p>
+<pre class="literal-block">
+case 200: /* OK */
+case 203: /* Non-Authoritative Information */
+case 204: /* No Content */
+case 300: /* Multiple Choices */
+case 301: /* Moved Permanently */
+case 304: /* Not Modified - handled like 200 */
+case 404: /* Not Found */
+case 410: /* Gone */
+case 414: /* Request-URI Too Large */
+</pre>
+<p>That means that if you provide <tt class="docutils literal"><span class="pre">s-maxage</span></tt> on a <tt class="docutils literal">500 Internal Server
+Error</tt>, Varnish will still not cache it by default. Varnish will cache the
+above status codes even without any cache control headers. The default
+cache duration is 2 minutes.</p>
+<p>In addition to the above, there are two more status codes worth
+mentioning:</p>
+<pre class="literal-block">
+case 302: /* Moved Temporarily */
+case 307: /* Temporary Redirect */
+        /*
+         * https://tools.ietf.org/html/rfc7231#section-6.1
+         *
+         * Do not apply the default ttl, only set a ttl if Cache-Control
+         * or Expires are present. Uncacheable otherwise.
+         */
+        expp-&gt;ttl = -1.;
+</pre>
+<p>Responses with status codes <tt class="docutils literal">302 Moved Temporarily</tt> or <tt class="docutils literal">307 Temporary
+Redirect</tt> are only cached if <tt class="docutils literal"><span class="pre">Cache-Control</span></tt> or <tt class="docutils literal">Expires</tt> explicitly
+allows it, but not cached by default.</p>
+<p>In other words:</p>
+<ul class="simple">
+<li><tt class="docutils literal"><span class="pre">max-age=10</span></tt> + <tt class="docutils literal">500 Internal Server Error</tt>: Not cached</li>
+<li><tt class="docutils literal"><span class="pre">max-age=10</span></tt> + <tt class="docutils literal">302 Moved Temporarily</tt>: Cached</li>
+<li>No <tt class="docutils literal"><span class="pre">Cache-Control</span></tt> + <tt class="docutils literal">302 Moved Temporarily</tt>: Not cached</li>
+<li>No <tt class="docutils literal"><span class="pre">Cache-Control</span></tt> + <tt class="docutils literal">404 Not Found</tt>: Cached</li>
+</ul>
+</div>
+<div class="section" id="cookies-and-authorization">
+<h1>Cookies and authorization</h1>
+<p>Requests with a cookie-header or HTTP basic authorization header are tricky
+at best to cache. Varnish takes a &quot;better safe than sorry&quot; approach, and
+does not cache responses to requests with either a <tt class="docutils literal">Cookie</tt>-header,
+<tt class="docutils literal">Authorization</tt>-header by default. Responses with
+<tt class="docutils literal"><span class="pre">Set-Cookie</span></tt> are not cached.</p>
+<p>Because cookies are so common, this will generally mean that any modern
+site is not cached by default. Fortunately, Varnish has the means to
+override that default. We will investigate that in detail in later
+chapters.</p>
+</div>
+<div class="section" id="summary">
+<h1>Summary</h1>
+<p>There are a few other headers worth mentioning. The ancient <tt class="docutils literal">Pragma</tt>
+header is still seen, and completely ignored by Varnish and generally
+replaced by <tt class="docutils literal"><span class="pre">Cache-Control</span></tt>. One header Varnish does care about is
+<tt class="docutils literal">Expires</tt>. Expires is generally deprecated, but still valid.</p>
+<p>If <tt class="docutils literal"><span class="pre">s-maxage</span></tt> and <tt class="docutils literal"><span class="pre">max-age</span></tt> is missing from <tt class="docutils literal"><span class="pre">Cache-Control</span></tt>, then
+Varnish will use an <tt class="docutils literal">Expires</tt> header. The format of the <tt class="docutils literal">Expires</tt>
+header is that of an absolute date - the same format as <tt class="docutils literal">Date</tt> and
+<tt class="docutils literal"><span class="pre">Last-Modified</span></tt>. Don't use this unless you want a headache.</p>
+<p>In other words, to cache by default:</p>
+<ul class="simple">
+<li>The request method must be <tt class="docutils literal">GET</tt> or <tt class="docutils literal">HEAD</tt>.</li>
+<li>There can be no <tt class="docutils literal">Cookie</tt>-header or <tt class="docutils literal">Authorize</tt>-header in the request.</li>
+<li>There can be no <tt class="docutils literal"><span class="pre">Set-Cookie</span></tt> on the reply.</li>
+<li>The status code needs to be 200, 203, 204, 300, 301, 304, 404, 410, 414.</li>
+<li>OR the status code can be 302 or 307 IF <tt class="docutils literal"><span class="pre">Cache-Control</span></tt> or <tt class="docutils literal">Expires</tt>
+enables caching.</li>
+<li><tt class="docutils literal">Vary</tt> must NOT be <tt class="docutils literal">*</tt>.</li>
+</ul>
+<p>Varnish decides cache duration (TTL) in the following order:</p>
+<ul class="simple">
+<li>If <tt class="docutils literal"><span class="pre">Cache-Control</span></tt> has <tt class="docutils literal"><span class="pre">s-maxage</span></tt>, that value is used.</li>
+<li>Otherwise, if <tt class="docutils literal"><span class="pre">Cache-Control</span></tt> has <tt class="docutils literal"><span class="pre">max-age</span></tt>, that value is used.</li>
+<li>Otherwise, if <tt class="docutils literal">Expires</tt> is present, that value is used.</li>
+<li>Lastly, Varnish uses a default fall-back value. This is 2 minutes by
+default, as dictated by the <tt class="docutils literal">default_ttl</tt> parameter.</li>
+</ul>
+<p>Our goal when designing cache policies is to push as much of the logic to
+the right place. The right place for setting cache duration is usually in
+the application, not in Varnish. A good policy is to use <tt class="docutils literal"><span class="pre">s-maxage</span></tt>.</p>
+</div>
+</div>
+</body>
+</html>
