@@ -91,6 +91,41 @@ while any tool that only works on the shmlog is purely informational and
 has no impact on the running Varnish instance. We will look at the agent
 shortly.
 
+Design principles in Varnish
+----------------------------
+
+Varnish changes frequently. Perhaps more frequently than a system
+administrator would like. This is part of the design principles of Varnish.
+
+Varnish is designed to work optimally for the most sensible use cases out
+there, with as little configuration as possible. It's designed to be fast
+and well behaving. But it is not designed to work for all scenarios
+perfectly.
+
+One of the consequences of this was that Varnish was designed with
+multi-core 64-bit processes from day one. In 2015 this is not particularly
+controversial, but it was not quite as easy to justify poor 32-bit support
+in 2006. Using potentially thousands of threads was also not very common
+back then.
+
+The good news for you is that there is little in Varnish which is the way
+it is because it was written once and can't be changed for fear of breaking
+configurations. The down side happens to be the same. With most upgrades,
+default values will change.
+
+Practical consequences of this is that you generally don't have to worry
+too much about explicitly turning on new features that just make sense. You
+don't have to fiddle with every tunable parameter because the defaults are
+changed as the Varnish community builds new knowledge on what constitute
+good defaults.
+
+If you have a normal computer, Varnish is built for that. If you wish to
+run Varnish on a Pentium 4 with a CF card as storage, then Varnish is not
+built for that. Patches to make it run better on platforms like that are
+rejected if they make a mess for the primary use case: Proper
+POSIX-operating systems (GNU/Linux, FreeBSD) running on proper hardware
+(or in a VM with proper specs).
+
 The different types of configuration
 ------------------------------------
 
@@ -188,61 +223,23 @@ changed from Varnish 4.0, notably adding `PROXY` support, which we will
 investigate in later chapters.
 
 The most important option is probably ``-a``, as it specifies what port
-Varnish listens to. The usage of ``varnishd`` has this to say about it::
-
-            -a address[:port][,proto]    # HTTP listen address and port (default: *:80)
-                                         #   address: defaults to loopback
-                                         #   port: port or service (default: 80)
-                                         #   proto: HTTP/1 (default), PROXY
+Varnish listens to. This argument differs somewhat between Varnish 4.0 and
+4.1, but for most use cases that change is irrelevant.
 
 For most practical purposes, you will just use ``-a :80``, but it's worth
 noting that you can have Varnish listening on multiple sockets. This is
 especially useful in Varnish 4.1 where you can have Varnish listen for
 regular HTTP traffic on port 80, and SSL-terminated traffic through the
-PROXY protocol on 127.0.0.1:1443 (for example).
+PROXY protocol on 127.0.0.1:1443 (for example). In Varnish 4.0, this was
+accomplished by having a white-space separated list of ``address:port``
+pairs::
 
-To accomplish this, you need to specify a white-separated listed of
-addresses and/or ports and/or protocols. This is one of those "gotcha's".
-You might assume that you can just add multiple ``-a`` options. Let's see
-how that works::
+        varnishd -b localhost:8080 ... -a "0.0.0.0:80 127.0.0.1:81"
 
-        # netstat -nlpt
-        Active Internet connections (only servers)
-        Proto Recv-Q Send-Q Local Address     Foreign Address   State PID/Program name
-        # varnishd -b localhost:8080 -a :80 -a :81 -a :82
-        # netstat -nlpt
-        Active Internet connections (only servers)
-        Proto Recv-Q Send-Q Local Address     Foreign Address   State PID/Program name
-        tcp        0      0 127.0.0.1:42395   0.0.0.0:*         LISTEN 524/varnishd    
-        tcp        0      0 0.0.0.0:82        0.0.0.0:*         LISTEN -               
-        tcp6       0      0 :::82             :::*              LISTEN -               
-        tcp6       0      0 ::1:46582         :::*              LISTEN 524/varnishd    
+In Varnish 4.1, you can supply multiple ``-a`` options instead.
 
-Note how ``varnishd`` reported no issues at all, but after it has started,
-it still just listens to port 82. Let's try that again::
-
-        # kill 524
-        # netstat -nlpt
-        Active Internet connections (only servers)
-        Proto Recv-Q Send-Q Local Address     Foreign Address   State PID/Program name
-        # varnishd -b localhost:8080 -a ":80 :81 :82"
-        # netstat -nlpt
-        Active Internet connections (only servers)
-        Proto Recv-Q Send-Q Local Address     Foreign Address   State PID/Program name
-        tcp        0      0 127.0.0.1:45053   0.0.0.0:*         LISTEN 756/varnishd    
-        tcp        0      0 0.0.0.0:80        0.0.0.0:*         LISTEN -               
-        tcp        0      0 0.0.0.0:81        0.0.0.0:*         LISTEN -               
-        tcp        0      0 0.0.0.0:82        0.0.0.0:*         LISTEN -               
-        tcp6       0      0 ::1:36621         :::*              LISTEN 756/varnishd    
-        tcp6       0      0 :::80             :::*              LISTEN -               
-        tcp6       0      0 :::81             :::*              LISTEN -               
-        tcp6       0      0 :::82             :::*              LISTEN -               
-
-Now it does what we expected. In reality, what's happening that ``-a`` is a
-shorthand for ``-p listen_address=...``. Supplying multiple ``-a``
-arguments simply sets the same underlying parameter over and over again.
-Not very helpful for us. As of Varnish 4.1, the manual page for
-``varnishd`` still gets this wrong, so don't worry, you're not alone.
+Be careful. Varnish 4.0 will still accept multiple ``-a`` options, but only
+the last one will be used.
 
 An other subtle detail worth noting is that the ``varnishd`` default value
 for ``-a`` is listening to port 80. But we have seen in previous
@@ -250,23 +247,26 @@ installations that a default Varnish installation listens on port 6081, not
 port 80.
 
 This is because port 6081 is a convention specified in
-``/etc/default/varnish`` etc. Here's an example from a default Debian
-Jessie installation's ``/lib/systemd/system/varnish.service``::
+``/etc/default/varnish`` and similar. Here's an example from a default
+Debian Jessie installation's ``/lib/systemd/system/varnish.service``::
 
-        ExecStart=/usr/sbin/varnishd -a :6081 -T localhost:6082 -f \
-                /etc/varnish/default.vcl -S /etc/varnish/secret -s malloc,256m
+        ExecStart=/usr/sbin/varnishd -a :6081 -T localhost:6082 \
+                        -f /etc/varnish/default.vcl \
+                        -S /etc/varnish/secret \
+                        -s malloc,256m
 
-You will usually find the same defaults on most distributions. It's a good
-habit to explicitly specify what you want for these settings.
+The Varnish community tries to keep roughly the same defaults across
+different platforms, so you will most likely find similar default values on
+your own platform, whatever it may be.
 
 In addition to telling Varnish where to listen, you need to tell it where
 to get content. In the example above ``varnishd -b localhost:8080`` was
-used. The ``-b <address[:port]>`` argument is mostly useful in testing. In
-almost all other cases you will want to specify an ``-f file`` option
-instead. ``-f file`` tells Varnish where to find the VCL file it should
-use, and that VCL file will have to list any and all backend servers
-Varnish uses. When you use ``-b``, Varnish generates a simple VCL file for
-you behind the scenes::
+used. The ``-b <address[:port]>`` argument is useful in testing, but not
+for much more. In almost all other cases you will want to specify an ``-f
+file`` option instead. ``-f file`` tells Varnish where to find the VCL file
+it should use, and that VCL file will have to list any and all backend
+servers Varnish uses. When you use ``-b``, Varnish generates a simple VCL
+file for you behind the scenes::
 
         # varnishd -b pathfinder.kly.no:6085 -d
         Platform: Linux,4.2.0-0.bpo.1-amd64,x86_64,-smalloc,-smalloc,-hcritbit
@@ -295,9 +295,11 @@ you behind the scenes::
 
 There are two more rather trivial, but important, options that all proper
 Varnish installations use: ``-T`` and ``-S``. The ``-T`` option specifies a
-listening socket for Varnish's management CLI. Traditionally this has been
-run on 127.0.0.1:6082, but the actual default for the ``varnishd`` binary
-in Version 4 and newer is a random port.
+listening socket for Varnish's management CLI. Since its introduction, the
+convention has been to run the CLI interface on ``127.0.0.1:6082``, and
+this is seen in most Varnish distributions. However the actual default for
+the ``varnishd`` binary in Version 4 and newer is a random port and secret
+file.
 
 The ``-S`` argument lets you specify a file which contains a shared secret
 that management tools can use to authenticate to Varnish. This is referred
@@ -337,8 +339,9 @@ up with multiple Varnish instances over multiple machines.
 
 To summarize:
 
-``-a <listen address[ listen address]>``
-        Listen address. Typically set to :80.
+``-a <listen address>``
+        Listen address. Typically set to :80. Format for multiple listening
+        sockets varies between Varnish 4.0 and 4.1.
 
 ``-b <address[:port]>``
         Specify backend address. Mostly for testing, mutually exclusive
