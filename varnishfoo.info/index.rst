@@ -10,15 +10,8 @@ The book is being written by `Kristian Lyngstøl`_, a long-time Varnish
 hacker. It is being published one chapter at a time under a Creative
 Commons non-commercial licence.
 
-A very crude (format-wise) copy of the book can be found here, updated
-periodically. The web-formatting will be cleaned up either when I find
-time, or someone does it for me (HINT HINT).
-
-A PDF version of the book is also provided, which is slightly prettier, but
-still has some formatting issues (notably with page breaks at awkward
-places).
-
-A more updated version can always be found at the Github repository.
+You can browse the content right here, but be warned: It is not yet
+finished.
 
 Found something that should be fixed?
 -------------------------------------

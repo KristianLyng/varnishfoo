@@ -54,4 +54,4 @@ Varnish Foo
 
 .. include:: appendix-2.rst
 
-.. include:: appendix-N.rst
+.. include:: appendix-n.rst
