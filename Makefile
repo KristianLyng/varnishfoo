@@ -8,13 +8,16 @@ varnishfoo.pdf: varnishfoo.rst ${MISC} ${CHAPTERS} ${PICS}
 	rst2pdf -b2 -s pdf.style varnishfoo.rst -o $@
 
 version.rst: ${CHAPTERS} Makefile .git/index
-	echo ":Version: $$(git describe --always --tags --dirty)" > version.rst
+	echo ":Author: Kristian Lyngstøl <kristian@bohemians.org>" > version.rst
+	echo ":Version: $$(git describe --always --tags --dirty)" >> version.rst
+	echo ":Date: $$(date --iso-8601)" >> version.rst
 
 ${W}/chapter-%.html: chapter-%.rst
 	rst2html $< > $@
 
-web: ${WA}
-	cp -a img ${W}/img
+web: ${WA} varnishfoo.pdf
+	cp -a img/ ${W}/
+	cp varnishfoo.pdf ${W}
 
 clean:
 	-rm varnishfoo.pdf version.rst

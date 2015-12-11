@@ -10,8 +10,6 @@ Varnish Foo
 
    PageBreak coverPage
 
-:Author: Kristian Lyngstøl <kristian@bohemians.org>
-
 .. include:: version.rst
 
 .. sectnum::
