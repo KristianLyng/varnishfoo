@@ -497,3 +497,65 @@ Perhaps not the prettiest syntax check, but it gets the job done.
 There are other options, but they are quite advanced and generally best
 left alone. We will cover them in more advanced chapters.
 
+Startup scripts
+---------------
+
+Use standard software packages from either your distribution of choice or
+Varnish Cache will provide you with a default startup script. Use it. Do
+not write your own.
+
+Varnish Cache development focuses on GNU/Linux and FreeBSD, with some
+occasional attention directed towards Solaris.
+
+But the vast majority of Varnish Cache operational focus is on GNU/Linux,
+more specifically on Fedora-derived systems, such as Red Hat Enterprise
+Linux (RHEL), Fedora, CentOS and Scientific Linux, or on Debian and Ubuntu.
+These are the distributions where Varnish packaging is best maintained and
+they deliver top-quality Varnish packages.
+
+This, combined with Varnish developers habit of frequently changing Varnish
+default behavior to the better means that very changes are needed to get a
+basic Varnish installation going.
+
+Since before GNU/Linux existed, System V-styled init scripts have been used
+to boot Unix-like machines. This has been the case for GNU/Linux too. Until
+recently, when ``upstart`` and ``systemd`` came around. By now, all the
+major GNU/Linux use or are preparing to use ``systemd``. That means that if
+you have older installations, the specific way Varnish is started will be
+different than how it's started on newer installations. In the end, though,
+it all boils down to one thing: you have to know into which file you need
+to add your ``varnishd`` start-up arguments, and what commands to use to
+start and stop it.
+
+Where your distribution keeps its configuration will vary, but in short:
+
+- They all keep VCL and secret files in ``/etc/varnish`` by default.
+- Before systemd, Debian/Ubuntu kept startup arguments in
+  ``/etc/default/varnish``.
+- Before systemd, Red Had Enterprise Linux/CentOS/Fedora kept startup
+  arguments in ``/etc/sysconfig/varnish``.
+- With systemd, startup arguments are kept in
+  ``/lib/systemd/system/varnish.service`` for both distribution families.
+  That file should be copied to ``/etc/systemd/system/varnish.service`` if
+  you mean to modify it.
+- Recent RHEL/Fedora packages use ``/etc/varnish/varnish.params``. A
+  similar strategy is expected for other distributions too in the future.
+
+For starting and stopping, it's a little simpler:
+
+- If you have systemd, use ``systemctl
+  <start|stop|reload|restart> varnish.service``.
+- If have System V scripts, use ``service varnish
+  <stop|start|reload|restart>``.
+
+To enable or disable starting Varnish at boot, you can use ``systemctl
+<enable|disable> varnish.service`` on Systemd-systems.
+
+The biggest benefit of using the distribution-provided startup script,
+beyond not having to write one yourself, is that all the little details are
+handled correctly according to your distribution. The most common mistake
+seen on systems using custom-scripts is to not issue ``ulimit -n``, which
+has often limited Varnish to only 1024 file descriptors. This will directly
+influence how many concurrent connections and threads Varnish can handle.
+The distribution-provided scripts handle this for you, and more.
+
