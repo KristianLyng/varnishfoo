@@ -35,8 +35,9 @@ by itself.
 
 It's worth taking a look at Appendix A, or go directly to
 https://www.varnish-cache.org/trac/wiki/VTLA and review some of the three
-letter acronyms that are all too common in Varnish. They are used to some
-degree in this chapter, though hopefully with a decent explanation.
+letter acronyms that are all too common in Varnish. They are used
+extensively in the Varnish community, but are often ambiguous and
+miss-leading. Because of this, we will use them sparsely.
 
 Architecture
 ------------
@@ -66,10 +67,9 @@ The shared memory log, abbreviated shmlog, is a round-robin style log file
 which is usually a little less than 100MB large. It is split in two parts.
 The smallest bit is the part for counters, used to keep track of any part
 of Varnish that could be covered by a number, e.g. number of cache hits,
-number of objects, and so forth. This part of the shmlog is named the VSM
-and is 1MB by default.
+number of objects, and so forth. This part of the shmlog is 1MB by default.
 
-The biggest part of the shmlog is reserved for fifo-style VSL log entries,
+The biggest part of the shmlog is reserved for fifo-style log entries,
 directly related to requests typically. This is 80MB by default. Once those
 80MB are filled, Varnish will continue writing to the log from the top. If
 you wish to preserve any of the data, you need to extract it before it's
@@ -261,13 +261,12 @@ different platforms, so you will most likely find similar default values on
 your own platform, whatever it may be.
 
 In addition to telling Varnish where to listen, you need to tell it where
-to get content. In the example above ``varnishd -b localhost:8080`` was
-used. The ``-b <address[:port]>`` argument is useful in testing, but not
-for much more. In almost all other cases you will want to specify an ``-f
-file`` option instead. ``-f file`` tells Varnish where to find the VCL file
-it should use, and that VCL file will have to list any backend
-servers Varnish should use. When you use ``-b``, Varnish generates a simple VCL
-file for you behind the scenes::
+to get content. You can achieve this through the ``-b <address[:port]>``
+argument, but that is typically limited to testing. In almost all other
+cases you will want to specify an ``-f file`` option instead. ``-f file``
+tells Varnish where to find the VCL file it should use, and that VCL file
+will have to list any backend servers Varnish should use. When you use
+``-b``, Varnish generates a simple VCL file for you behind the scenes::
 
         # varnishd -b pathfinder.kly.no:6085 -d
         Platform: Linux,4.2.0-0.bpo.1-amd64,x86_64,-smalloc,-smalloc,-hcritbit
@@ -322,11 +321,11 @@ Example::
         tcp        0      0 0.0.0.0:80         0.0.0.0:*        LISTEN -               
         tcp6       0      0 :::80              :::*             LISTEN -               
         tcp6       0      0 ::1:35863          :::*             LISTEN 2172/varnishd   
+        # varnishadm status
+        Child in state running
         # varnishadm -T localhost:37860 status
         Authentication required
         # varnishadm -T localhost:37860 -S /var/lib/varnish/c496eeac1030/_.secret status
-        Child in state running
-        # varnishadm status
         Child in state running
 
 Notice how ``varnishadm`` works with zero arguments, but if you start
@@ -381,16 +380,46 @@ you wont be able to control Varnish without running ``varnishadm`` in a
 different shell. In normal use, both ``-d`` and ``-F`` are considered
 rather exotic.
 
-``-n dir`` is used to control Varnish working directory. If you are running
-just one ``varnishd``-instance per host, then you should avoid ``-n``, but
-if you have multiple running on the same host, it's important to give them
-different ``-n`` arguments. The working directory is where Varnish keeps
-the shared memory log (and when ``-S`` is left to a default: the secret
-file). If you change ``-n``, you need to supply that same ``-n`` option to
-tools such as ``varnishlog`` and ``varnishadm``.
+``-n dir`` is used to control the Varnish working directory and name. The
+directory argument can either just be a simple name, like ``-n
+frontserver``, in which case Varnish will use a working directory named
+``frontserver``  in its default path, typically
+``/var/lib/varnish/frontserver/``. You can also provide a full path
+instead. Whenever you alter ``-n``, you need to provide that same ``-n``
+argument to any Varnish-tool you want to use. There are two use cases for
+``-n``:
 
-We will cover ``-p`` and ``-r`` extensively shortly, but they are used for
-setting run-time parameters.
+1. Running multiple Varnish instances on the same machine. Give each a
+   different ``-n`` to make this work.
+2. Run ``varnishd`` as a user that doesn't have access to the default
+   working directory. This can be handy during development or testing to
+   avoid having to start Varnish as the root user.
+
+If you look in the working directory, you can see your shmlog file and the
+compiled VCL, among other things::
+
+        # ls /var/lib/varnish/
+        # varnishd -b localhost:8080
+        # ls /var/lib/varnish/
+        3da4db675c6b
+        # ls /var/lib/varnish/3da4db675c6b/
+        _.secret  _.vsm  vcl.QakoKN_T.so
+        # varnishd -b localhost:8110 -a :81 -n test
+        # ls /var/lib/varnish/
+        3da4db675c6b  test
+        # ls /var/lib/varnish/test/
+        _.secret  _.vsm  vcl.Lnayret_.so
+        # netstat -nlpt
+        Active Internet connections (only servers)
+        Proto Recv-Q Send-Q Local Address    Foreign Address   State    PID/Program name
+        tcp        0      0 127.0.0.1:34504  0.0.0.0:*         LISTEN   502/varnishd    
+        tcp        0      0 127.0.0.1:42797  0.0.0.0:*         LISTEN   262/varnishd    
+        tcp        0      0 0.0.0.0:80       0.0.0.0:*         LISTEN   -               
+        tcp        0      0 0.0.0.0:81       0.0.0.0:*         LISTEN   -               
+        tcp6       0      0 ::1:39843        :::*              LISTEN   262/varnishd    
+        tcp6       0      0 :::80            :::*              LISTEN   -               
+        tcp6       0      0 :::81            :::*              LISTEN   -               
+        tcp6       0      0 ::1:43220        :::*              LISTEN   502/varnishd    
 
 A common task you have is to verify that your VCL is correct before you try
 loading it. This can be done implicitly with the ``-C`` option. It will
@@ -465,11 +494,6 @@ A more useful example::
 
 Perhaps not the prettiest syntax check, but it gets the job done.
 
-You can also provide ``-i`` to set an `identity`. This can be used in VCL
-to identify a Varnish instance. Defaults to the same value as ``-n``, or
-rather: The hostname of the machine.
-
 There are other options, but they are quite advanced and generally best
 left alone. We will cover them in more advanced chapters.
-
 
