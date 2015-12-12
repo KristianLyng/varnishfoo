@@ -12,6 +12,11 @@
 
     <!-- Bootstrap -->
     <link href="css/bootstrap.min.css" rel="stylesheet">
+    <style>
+      body {
+	padding-top: 5px;
+	}
+	</style>
 
     <!-- HTML5 shim and Respond.js for IE8 support of HTML5 elements and media queries -->
     <!-- WARNING: Respond.js doesn't work if you view the page via file:// -->
@@ -22,11 +27,52 @@
   </head>
   <body>
     <div class="container">
-    <div class="page-header">
-    <h1>Varnish Foo: A book in the making</h1>
-    </div>
     <div class="row">
-    <div class="col-md-9">
+    <div class="col-md-10">
+<nav class="navbar navbar-default navbar-nverse">
+  <div class="container-fluid">
+    <!-- Brand and toggle get grouped for better mobile display -->
+    <div class="navbar-header">
+      <button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-target="#bs-example-navbar-collapse-1" aria-expanded="false">
+        <span class="sr-only">Toggle navigation</span>
+        <span class="icon-bar"></span>
+        <span class="icon-bar"></span>
+        <span class="icon-bar"></span>
+      </button>
+      <a class="navbar-brand" href="index.html">Varnish Foo</a>
+    </div>
+
+    <!-- Collect the nav links, forms, and other content for toggling -->
+    <div class="collapse navbar-collapse" id="bs-example-navbar-collapse-1">
+      <ul class="nav navbar-nav">
+        <li class="dropdown">
+          <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-haspopup="true" aria-expanded="false">Jump to<span class="caret"></span></a>
+              <ul class="dropdown-menu">
+                <li class="dropdown-header">Complete Chapters</li>
+                <li><a href="chapter-1.html">1: Introduction</a></li>
+                <li><a href="chapter-2.html">2: Working with HTTP caching</a></li>
+                <li class="dropdown-header">Incomplete Chapters</li>
+                <li><a href="chapter-3.html">3: Architecture and operation</a></li>
+                <li class="dropdown-header">Appendices</li>
+                <li><a href="appendix-1.html">A: Varnish Three Letter Acronyms</a></li>
+                <li><a href="appendix-2.html">B: varnishd arguments</a></li>
+                <li><a href="appendix-n.html">N: License</a></li>
+                <li role="separator" class="divider"></li>
+                <li><a href="varnishfoo.pdf">PDF version of the book</a></li>
+              </ul>
+        </li>
+        <li class="dropdown">
+          <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-haspopup="true" aria-expanded="false">Resources <span class="caret"></span></a>
+          <ul class="dropdown-menu">
+            <li><a href="https://github.com/KristianLyng/varnishfoo">GitHub repo</a></li>
+            <li><a href="https://kly.no/">Author's blog - with frequent updates</a></li>
+            <li><a href="https://varnish-cache.org/">Official Varnish Cache site</a></li>
+          </ul>
+        </li>
+      </ul>
+    </div><!-- /.navbar-collapse -->
+  </div><!-- /.container-fluid -->
+</nav>
 <h1 class="title">Working with HTTP caching</h1>
 <p>Before you dig into the inner workings of Varnish, it's important to
 make sure you have the tools you need and some background information on
@@ -1388,25 +1434,6 @@ default, as dictated by the <tt class="docutils literal">default_ttl</tt> parame
 the right place. The right place for setting cache duration is usually in
 the application, not in Varnish. A good policy is to use <tt class="docutils literal"><span class="pre">s-maxage</span></tt>.</p>
 </div>
-    </div>
-    <div class="col-md-3">
-    <h3>Read the book</h3>
-    <ul>
-    <li><a href="index.html">Front Page</a></li>
-    <li><a href="chapter-1.html">Chapter 1: Introduction</a></li>
-    <li><a href="chapter-2.html">Chapter 2: Working with HTTP caching</a></li>
-    <li><a href="chapter-3.html">In progress: Chapter 3: Architecture and operation</a></li>
-    <li><a href="appendix-1.html">Appendix A: Varnish Three Letter Acronyms</a></li>
-    <li><a href="appendix-2.html">Appendix B: varnishd arguments</a></li>
-    <li><a href="appendix-n.html">Appendix N: License</a></li>
-    </ul>
-    <h3>Resources</h3>
-    <ul>
-    <li><a href="https://github.com/KristianLyng/varnishfoo">GitHub repo</a></li>
-    <li><a href="https://kly.no/">Author's blog - with frequent updates</a></li>
-    <li><a href="https://varnish-cache.org/">Official Varnish Cache site</a></li>
-    <li><a href="varnishfoo.pdf">PDF version of the book</a></li>
-    </ul>
     </div>
     </div>
     </div>
