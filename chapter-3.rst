@@ -69,7 +69,7 @@ of Varnish that could be covered by a number, e.g. number of cache hits,
 number of objects, and so forth. This part of the shmlog is named the VSM
 and is 1MB by default.
 
-The biggest part of the shmlog is reserved for fifo-tyle VSL log entries,
+The biggest part of the shmlog is reserved for fifo-style VSL log entries,
 directly related to requests typically. This is 80MB by default. Once those
 80MB are filled, Varnish will continue writing to the log from the top. If
 you wish to preserve any of the data, you need to extract it before it's
@@ -129,7 +129,7 @@ POSIX-operating systems (GNU/Linux, FreeBSD) running on proper hardware
 The different types of configuration
 ------------------------------------
 
-Varnish uses three different types of configuration types. Certain things
+Varnish uses three different configuration types. Certain things
 must be configured before Varnish starts and can't be changed during
 run-time. These settings are very limited, and are provided on the command
 line. Even among command line arguments, several can be changed during run
@@ -159,7 +159,7 @@ Language script, usually just referred to as your VCL or VCL file. This is
 where you will specify caching policies, what backends you have and how to
 pick a backend. VCL can be changed at run-time with little or no penalty to
 performance, but are not retroactive. If your VCL says "cache this for 5
-years" and the content is cached, then changing to a CL that says "cache
+years" and the content is cached, then changing your VCL to "cache
 this for 1 minute" isn't going to alter the content that has already been
 cached.
 
@@ -167,6 +167,7 @@ VCL is easily the most complex part of Varnish, but you can get a lot done
 with very basic knowledge and a few tools. In this chapter, VCL is not a
 focus, but is only briefly mentioned and used to avoid building bad habits.
 
+To summarize:
 
 Command line arguments
         Stored in startup-scripts. Takes effect on (re)starting Varnish.
@@ -241,7 +242,7 @@ In Varnish 4.1, you can supply multiple ``-a`` options instead.
 Be careful. Varnish 4.0 will still accept multiple ``-a`` options, but only
 the last one will be used.
 
-An other subtle detail worth noting is that the ``varnishd`` default value
+Another subtle detail worth noting is that the ``varnishd`` default value
 for ``-a`` is listening to port 80. But we have seen in previous
 installations that a default Varnish installation listens on port 6081, not
 port 80.
@@ -264,8 +265,8 @@ to get content. In the example above ``varnishd -b localhost:8080`` was
 used. The ``-b <address[:port]>`` argument is useful in testing, but not
 for much more. In almost all other cases you will want to specify an ``-f
 file`` option instead. ``-f file`` tells Varnish where to find the VCL file
-it should use, and that VCL file will have to list any and all backend
-servers Varnish uses. When you use ``-b``, Varnish generates a simple VCL
+it should use, and that VCL file will have to list any backend
+servers Varnish should use. When you use ``-b``, Varnish generates a simple VCL
 file for you behind the scenes::
 
         # varnishd -b pathfinder.kly.no:6085 -d
@@ -340,7 +341,7 @@ up with multiple Varnish instances over multiple machines.
 To summarize:
 
 ``-a <listen address>``
-        Listen address. Typically set to :80. Format for multiple listening
+        Listen address. Typically set to :80. Format for specifying multiple listening
         sockets varies between Varnish 4.0 and 4.1.
 
 ``-b <address[:port]>``
@@ -348,7 +349,7 @@ To summarize:
         with ``-f`` (VCL).
 
 ``-f <vclfile>``
-        Specify what VCL to use at startup.
+        Specify path to VCL file to use at startup.
 
 ``-T address:port``
         Set management/CLI listening address. Used for controlling Varnish.
