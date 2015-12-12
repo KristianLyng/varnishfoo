@@ -1,26 +1,12 @@
-Varnish programs and operation
-==============================
+Architecture and peration
+=========================
 
 If you are working with Varnish, you need to know how to get information
 from it, how to start and stop it and how to tweak it a bit.
 
-This chapter will cover the basic architecture of Varnish, how Varnish
-deals with logs, best practices for running Varnish and debugging your own
-issues.
-
-One of the biggest challenges with writing a book about any server-side
-software on GNU/Linux in late 2015/early 2016 is that it's a moving target.
-Depending on what distribution you are using, and what version, you may or
-may not be using Systemd, upstart or System V init scripts. Even within
-these categories, things vary. Advise that held true two year ago are
-quickly becoming irrelevant.
-
-The upside to all this is that this chapter is - out of necessity - very
-clear on what is a Varnish-derived default or tool, and what is related to
-packaging. Examples include tools such as ``varnishlog`` which is not
-related to ``/var/log`` or ``journald`` at all, while default arguments
-specified in ``/etc/default/varnish`` is highly distribution-dependent.
-Then ``/etc/varnish/default.vcl`` falls somewhere in between.
+This chapter will cover the architecture of Varnish, how Varnish deals with
+logs, best practices for running Varnish and debugging your Varnish
+installation.
 
 When you're done reading this chapter, you'll know how to distinguish what
 goes into Varnish and what comes out in the other end. You'll have an idea
@@ -558,4 +544,5 @@ seen on systems using custom-scripts is to not issue ``ulimit -n``, which
 has often limited Varnish to only 1024 file descriptors. This will directly
 influence how many concurrent connections and threads Varnish can handle.
 The distribution-provided scripts handle this for you, and more.
+
 
