@@ -1,4 +1,3 @@
-- ``-a`` documentation (see chapter 3). Both in usage and manual file.
-- ``-S`` and ``-T`` defaults.
-- No ``--help`` or similar
+- ``-S`` and ``-T`` defaults. This is a subtle change from Varnish 2...
+- No ``--help`` or similar?
 
