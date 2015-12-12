@@ -1,4 +1,5 @@
 .*.swp
 varnishfoo.pdf
 version.rst
-
+varnishfoo.info/*html
+varnishfoo.info/img
