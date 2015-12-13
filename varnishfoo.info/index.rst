@@ -24,3 +24,9 @@ to factual errors or whether the book flows well or not.
 The best way to get in contact with me is to jump over to `the github
 repo`_ and report an issue. If that doesn't work for you, you can also drop
 me a mail at kristian@bohemians.org.
+
+Version
+-------
+
+.. include:: web-version.rst
+
