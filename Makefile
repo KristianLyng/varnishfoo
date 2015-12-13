@@ -34,7 +34,7 @@ ${W}/web-version.rst: version.rst
 	@echo >> ${W}/web-version.rst
 	@echo "The git revision used was $$(git describe --always --tags)" >> ${W}/web-version.rst
 	@echo >> ${W}/web-version.rst
-	@git describe --tags --dirty | egrep -q "dirty$$" && echo "*Warning: This was generated with uncomitted local changes!*" >> ${W}/web-version.rst
+	@git describe --tags --dirty | egrep -q "dirty$$" && echo "*Warning: This was generated with uncomitted local changes!*" >> ${W}/web-version.rst || true
 
 ${W}/chapter-%.html: chapter-%.rst ${W}/template.raw
 	@echo " [WEB] $<"
