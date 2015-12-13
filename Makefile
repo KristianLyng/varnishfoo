@@ -1,7 +1,8 @@
 CHAPTERS=chapter-1.rst chapter-2.rst chapter-3.rst appendix-1.rst appendix-n.rst
-MISC=pdf.style version.rst
+MISC=pdf.style control/version.rst
 PICS=img/c3/*png img/c1/*png img/c2/*png
 W=varnishfoo.info
+CTRL=control/headerfooter.rst control/front.rst
 WA=${W}/index.html ${W}/chapter-1.html ${W}/chapter-2.html ${W}/chapter-3.html ${W}/appendix-1.html ${W}/appendix-2.html ${W}/appendix-n.html
 
 web: ${WA} varnishfoo.pdf
@@ -15,7 +16,9 @@ dist: web
 	@echo " [WEB] Purge"
 	@GET -d http://kly.no/purgeall
 
-varnishfoo.pdf: varnishfoo.rst ${MISC} ${CHAPTERS} ${PICS}
+pdf: varnishfoo.pdf
+
+varnishfoo.pdf: varnishfoo.rst ${MISC} ${CHAPTERS} ${PICS} ${CTRL}
 	@echo " [PDF] $<"
 	@FOO=$$(rst2pdf -b2 -s pdf.style varnishfoo.rst -o $@ 2>&1); \
 		ret=$$? ; \
@@ -23,12 +26,28 @@ varnishfoo.pdf: varnishfoo.rst ${MISC} ${CHAPTERS} ${PICS}
 		exit $$ret
 
 
-version.rst: ${CHAPTERS} ${PICS} Makefile .git/index
+control/version.rst: ${CHAPTERS} ${PICS} Makefile .git/index
 	@echo " [RST] $@"
-	@echo ":Version: $$(git describe --always --tags --dirty)" > version.rst
-	@echo ":Date: $$(date --iso-8601)" >> version.rst
+	@echo ":Version: $$(git describe --always --tags --dirty)" > control/version.rst
+	@echo ":Date: $$(date --iso-8601)" >> control/version.rst
 
-${W}/web-version.rst: version.rst
+chapter-%.pdf: chapter-%-pdf.rst ${PICS} ${MISC}
+	@echo " [PDF] $@"
+	@FOO=$$(rst2pdf -b2 -s pdf.style $< -o $@ 2>&1); \
+		ret=$$? ; \
+		echo "$$FOO" | egrep -v 'is too.*frame.*scaling'; \
+		exit $$ret
+
+chapter-%-pdf.rst: chapter-%.rst Makefile
+	@echo " [PDF] Makeing $@"
+	@echo ".. include:: control/front.rst" > $@
+	@echo >> $@
+	@echo ".. include:: control/headerfooter.rst" >> $@
+	@echo >> $@
+	@echo ".. include:: $<" >> $@
+	@echo >> $@
+
+${W}/web-version.rst: control/version.rst
 	@echo " [RST] $@"
 	@echo "This content was generated from source on $$(date --iso-8601)" > ${W}/web-version.rst
 	@echo >> ${W}/web-version.rst
@@ -49,6 +68,6 @@ ${W}/index.html: ${W}/index.rst ${W}/template.raw ${W}/web-version.rst
 	@rst2html --template ${W}/template.raw $< > $@
 
 clean:
-	-rm varnishfoo.pdf version.rst
+	-rm varnishfoo.pdf control/version.rst
 
-.PHONY: clean web
+.PHONY: clean web pdf
