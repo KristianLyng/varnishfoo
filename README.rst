@@ -1,10 +1,36 @@
-See https://varnishfoo.info for context. Or chapter 1.
+About Varnish Foo
+-----------------
 
-I welcome pull requests, and encourage feedback through github issues (or
-other means).
+Varnish Foo is the ultimate Varnish Cache book out there. Or it will be,
+when it's done.
 
-Licensing
----------
+.. _Kristian Lyngstøl: https://kly.no/
+
+The book is being written by `Kristian Lyngstøl`_, a long-time Varnish
+hacker. It is being published one chapter at a time under a Creative
+Commons non-commercial licence.
+
+You can browse the content right here, but be warned: It is not yet
+finished. Chapters marked as "complete" are largely done, but will probably
+receive editorial attention as other chapters progress.
+
+The first chapter is a good start for general information about the book
+and what this is all about.
+
+Found something that should be fixed?
+-------------------------------------
+
+.. _the github repo: https://github.com/KristianLyng/varnishfoo/
+
+I am very interested in any and all feedback, from pure spelling mistakes
+to factual errors or whether the book flows well or not.
+
+The best way to get in contact with me is to jump over to `the github
+repo`_ and report an issue. If that doesn't work for you, you can also drop
+me a mail at kristian@bohemians.org.
+
+License
+-------
 
 This work is licensed under the Creative Commons "CC-BY-SA-NC" license.
 The "non-commercial" clause does explicitly not trigger on reading the
@@ -16,9 +42,11 @@ meant to be temporary to avoid miss-use of immature material.
 Building
 --------
 
-The goal is to produce a PDF that's nice and readable, but also material
-that can be easily viewed on the web. Producing a pdf is simple, just run
-``make`` on a system with ``rst2pdf`` installed.
+After checking the content out from github, just typing ``make`` will
+produce a PDF and web-version, assuming you have all tools installed.
 
-Otherwise, the content should render OK directly on github.
+Version
+-------
+
+.. include:: build/web-version.rst
 

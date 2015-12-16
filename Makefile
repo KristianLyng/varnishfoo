@@ -69,7 +69,7 @@ ${B}/appendix-%.html: appendix-%.rst ${C}/template.raw | ${B}
 	@echo " [WEB] $@"
 	@rst2html --template ${C}/template.raw $< > $@
 
-${B}/index.html: index.rst ${C}/template.raw ${B}/web-version.rst | ${B}
+${B}/index.html: README.rst ${C}/template.raw ${B}/web-version.rst | ${B}
 	@echo " [WEB] $@"
 	@rst2html --template ${C}/template.raw $< > $@
 
