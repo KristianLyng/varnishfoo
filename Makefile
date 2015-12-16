@@ -59,7 +59,7 @@ ${B}/varnishfoo.pdf: varnishfoo.rst $(wildcard *rst Makefile .git/* control/* im
 $(addprefix ${B}/,$(addsuffix .pdf,${bases})): ${B}/%.pdf: ${B}/%.rst ${B}/img ${B}/version.rst Makefile
 	$(run-rst2pdf)
 
-$(addprefix ${B}/,$(addsuffix .rst,${bases})): ${B}/%.rst: %.rst Makefile ${B}
+$(addprefix ${B}/,$(addsuffix .rst,${bases})): ${B}/%.rst: %.rst Makefile | ${B}
 	@echo ".. include:: ../control/front.rst" > $@
 	@echo >> $@
 	@echo ".. include:: ../control/headerfooter.rst" >> $@
@@ -69,11 +69,11 @@ $(addprefix ${B}/,$(addsuffix .rst,${bases})): ${B}/%.rst: %.rst Makefile ${B}
 	@echo " [RST] "$(ok)
 
 $(addprefix ${B}/,$(addsuffix .html,${bases})): ${B}/%.html: %.rst Makefile ${C}/template.raw | ${B}/img ${B}
-	@rst2html --template ${C}/template.raw $< > $@
+	@rst2html --initial-header-level=2 --template ${C}/template.raw $< > $@
 	@echo " [rst2html] "$(ok)
 
 ${B}/index.html: README.rst ${B}/web-version.rst | ${B}
-	@rst2html --template ${C}/template.raw $< > $@
+	@rst2html --initial-header-level=2 --template ${C}/template.raw $< > $@
 	@echo " [rst2html] "$(ok)
 
 clean:

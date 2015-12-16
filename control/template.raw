@@ -16,6 +16,12 @@
       body {
 	padding-top: 15px;
 	}
+	body h1 a {
+		color: black;
+	}
+	body h2 a {
+		color: black;
+	}
 	</style>
 
     <!-- HTML5 shim and Respond.js for IE8 support of HTML5 elements and media queries -->
@@ -82,5 +88,23 @@
     <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.11.3/jquery.min.js"></script>
     <!-- Include all compiled plugins (below), or include individual files as needed -->
     <script src="js/bootstrap.min.js"></script>
+    <script>
+    /*
+     * This is pretty nasty, but works for now.
+     */
+    function linkify() {
+	    foo = document.getElementsByTagName("h2");
+	    for (i in foo) {
+		    if (foo[i].parentElement != null && foo[i].parentElement.id != null) {
+	    		foo[i].innerHTML = "<a href=\"#" + foo[i].parentElement.id + "\">" + foo[i].innerHTML + "</a>"
+		    }
+	    }
+	    foo = document.getElementsByTagName("h1");
+	    for (i in foo) {
+	    	foo[i].innerHTML = "<a href=\"#\">" + foo[i].innerHTML + "</a>"
+	    }
+    }
+    document.addEventListener('DOMContentLoaded',linkify);
+    </script>
   </body>
 </html>
