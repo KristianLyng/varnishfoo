@@ -53,7 +53,7 @@ ${B}/web-version.rst: $(wildcard *rst Makefile .git/* control/* img/* img/*/*) |
 	@git describe --tags --dirty | egrep -q "dirty$$" && echo "*Warning: This was generated with uncomitted local changes!*" >> ${B}/web-version.rst || true
 	@echo " [RST] "$(ok)
 
-${B}/varnishfoo.pdf: varnishfoo.rst $(wildcard *rst Makefile .git/* control/* img/* img/*/*) | ${B}
+${B}/varnishfoo.pdf: varnishfoo.rst $(wildcard *rst Makefile .git/* control/* img/* img/*/*) ${B}/version.rst | ${B}
 	$(run-rst2pdf)
 
 $(addprefix ${B}/,$(addsuffix .pdf,${bases})): ${B}/%.pdf: ${B}/%.rst ${B}/img ${B}/version.rst Makefile
