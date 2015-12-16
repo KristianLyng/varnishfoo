@@ -1,4 +1,4 @@
-Architecture and peration
+Architecture and operation
 =========================
 
 If you are working with Varnish, you need to know how to get information
@@ -499,7 +499,7 @@ Linux (RHEL), Fedora, CentOS and Scientific Linux, or on Debian and Ubuntu.
 These are the distributions where Varnish packaging is best maintained and
 they deliver top-quality Varnish packages.
 
-This, combined with Varnish developers habit of frequently changing Varnish
+This, combined with Varnish developers' habit of frequently changing Varnish
 default behavior to the better means that very changes are needed to get a
 basic Varnish installation going.
 
