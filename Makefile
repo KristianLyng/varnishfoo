@@ -1,16 +1,23 @@
-CHAPTERS=chapter-1.rst chapter-2.rst chapter-3.rst appendix-1.rst appendix-n.rst
 WEBTARGET=pathfinder.kly.no:public_html/varnishfoo.info/
-PICS=img/c3/*png img/c1/*png img/c2/*png
-C=control/
-MISC=${C}/pdf.style ${B}/version.rst
+PICS=$(wildcard img/*/*png)
 CTRL=control/headerfooter.rst control/front.rst
-WA=${B}/index.html ${B}/chapter-1.html ${B}/chapter-2.html ${B}/chapter-3.html ${B}/appendix-1.html ${B}/appendix-2.html ${B}/appendix-n.html
+C=control/
 B=build
 
-web: ${WA} ${B}/varnishfoo.pdf
+MISC=${C}/pdf.style ${B}/version.rst
+
+bases = $(basename $(wildcard chapter*rst appendix*rst))
+CHAPTERS= $(addsuffix .rst,${bases})
+WA=${B}/index.html $(addprefix ${B}/,$(addsuffix .html,${bases}))
+CHAPTERPDF= $(addprefix ${B}/,$(addsuffix .pdf, ${bases}))
+
+web: ${CHAPTERPDF} ${WA} ${B}/varnishfoo.pdf
 	@echo " [WEB] Populating ${B}"
-	@cp -a img/ ${B}/
 	@cp -a bootstrap/* ${B}/
+
+${B}/img: ${PICS}
+	@echo " [BLD] Copying images"
+	@cp -a img/ ${B}/
 
 ${B}:
 	@echo " [BLD] mkdir ${B}"
@@ -22,38 +29,55 @@ dist: web
 	@echo " [WEB] Purge"
 	@GET -d http://kly.no/purgeall
 
+chapterpdf: ${CHAPTERPDF}
+
 pdf: ${B}/varnishfoo.pdf
-
-${B}/varnishfoo.pdf: varnishfoo.rst ${MISC} ${CHAPTERS} ${PICS} ${CTRL} | ${B}
-	@echo " [PDF] $@"
-	@FOO=$$(rst2pdf -b2 -s ${C}/pdf.style varnishfoo.rst -o $@ 2>&1); \
-		ret=$$? ; \
-		echo "$$FOO" | egrep -v 'is too.*frame.*scaling'; \
-		exit $$ret
-
 
 ${B}/version.rst: ${CHAPTERS} ${PICS} Makefile .git/index | ${B}
 	@echo " [RST] $@"
 	@echo ":Version: $$(git describe --always --tags --dirty)" > ${B}/version.rst
 	@echo ":Date: $$(date --iso-8601)" >> ${B}/version.rst
 
-${B}/chapter-%.pdf: ${B}/chapter-%-pdf.rst ${PICS} ${MISC}
+${B}/varnishfoo.pdf: varnishfoo.rst ${MISC} ${CHAPTERS} ${PICS} ${CTRL} | ${B}
+	@echo " [PDF] $@"
+	@FOO=$$(rst2pdf -b2 -s ${C}/pdf.style varnishfoo.rst -o $@ 2>&1); \
+		ret=$$? ; \
+		echo -n "$$FOO" | egrep -v 'is too.*frame.*scaling'; \
+		exit $$ret
+
+${B}/chapter-%.pdf: ${B}/chapter-%.rst ${PICS} ${MISC} ${B}/img
 	@echo " [PDF] $@"
 	@FOO=$$(rst2pdf -b2 -s ${C}/pdf.style $< -o $@ 2>&1); \
 		ret=$$? ; \
-		echo "$$FOO" | egrep -v 'is too.*frame.*scaling'; \
+		echo -n "$$FOO" | egrep -v 'is too.*frame.*scaling'; \
 		exit $$ret
 
-${B}/chapter-%-pdf.rst: chapter-%.rst Makefile | ${B}
+${B}/appendix-%.pdf: ${B}/appendix-%.rst ${PICS} ${MISC} ${B}/img
+	@echo " [PDF] $@"
+	@FOO=$$(rst2pdf -b2 -s ${C}/pdf.style $< -o $@ 2>&1); \
+		ret=$$? ; \
+		echo -n "$$FOO" | egrep -v 'is too.*frame.*scaling'; \
+		exit $$ret
+
+${B}/appendix-%.rst: appendix-%.rst Makefile | ${B}
 	@echo " [PDF] Making $@"
-	@echo ".. include:: control/front.rst" > $@
+	@echo ".. include:: ../control/front.rst" > $@
 	@echo >> $@
-	@echo ".. include:: control/headerfooter.rst" >> $@
+	@echo ".. include:: ../control/headerfooter.rst" >> $@
 	@echo >> $@
-	@echo ".. include:: $<" >> $@
+	@echo ".. include:: ../$<" >> $@
 	@echo >> $@
 
-${B}/web-version.rst: ${B}/version.rst | ${B}
+${B}/chapter-%.rst: chapter-%.rst Makefile | ${B}
+	@echo " [PDF] Making $@"
+	@echo ".. include:: ../control/front.rst" > $@
+	@echo >> $@
+	@echo ".. include:: ../control/headerfooter.rst" >> $@
+	@echo >> $@
+	@echo ".. include:: ../$<" >> $@
+	@echo >> $@
+
+${B}/web-version.rst: ${B}/version.rst ${C}/* | ${B}
 	@echo " [RST] $@"
 	@echo "This content was generated from source on $$(date --iso-8601)" > ${B}/web-version.rst
 	@echo >> ${B}/web-version.rst
