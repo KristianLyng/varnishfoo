@@ -28,5 +28,5 @@ me a mail at kristian@bohemians.org.
 Version
 -------
 
-.. include:: web-version.rst
+.. include:: build/web-version.rst
 

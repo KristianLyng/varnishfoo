@@ -1,14 +1,19 @@
 CHAPTERS=chapter-1.rst chapter-2.rst chapter-3.rst appendix-1.rst appendix-n.rst
 MISC=pdf.style control/version.rst
 PICS=img/c3/*png img/c1/*png img/c2/*png
-W=varnishfoo.info
+C=control/
 CTRL=control/headerfooter.rst control/front.rst
-WA=${W}/index.html ${W}/chapter-1.html ${W}/chapter-2.html ${W}/chapter-3.html ${W}/appendix-1.html ${W}/appendix-2.html ${W}/appendix-n.html
+WA=${B}/index.html ${B}/chapter-1.html ${B}/chapter-2.html ${B}/chapter-3.html ${B}/appendix-1.html ${B}/appendix-2.html ${B}/appendix-n.html
+B=build
 
-web: ${WA} varnishfoo.pdf
-	@echo " [WEB] Populating ${W}"
-	@cp -a img/ ${W}/
-	@cp -a varnishfoo.pdf ${W}
+web: ${WA} ${B}/varnishfoo.pdf
+	@echo " [WEB] Populating ${B}"
+	@cp -a img/ ${B}/
+	@cp -a bootstrap/* ${B}/
+
+${B}:
+	@echo " [BLD] Mkdir ${B}"
+	@mkdir ${B}
 
 dist: web
 	@echo " [WEB] Rsync"
@@ -18,7 +23,7 @@ dist: web
 
 pdf: varnishfoo.pdf
 
-varnishfoo.pdf: varnishfoo.rst ${MISC} ${CHAPTERS} ${PICS} ${CTRL}
+${B}/varnishfoo.pdf: varnishfoo.rst ${MISC} ${CHAPTERS} ${PICS} ${CTRL} | ${B}
 	@echo " [PDF] $<"
 	@FOO=$$(rst2pdf -b2 -s pdf.style varnishfoo.rst -o $@ 2>&1); \
 		ret=$$? ; \
@@ -26,19 +31,19 @@ varnishfoo.pdf: varnishfoo.rst ${MISC} ${CHAPTERS} ${PICS} ${CTRL}
 		exit $$ret
 
 
-control/version.rst: ${CHAPTERS} ${PICS} Makefile .git/index
+${B}/version.rst: ${CHAPTERS} ${PICS} Makefile .git/index | ${B}
 	@echo " [RST] $@"
-	@echo ":Version: $$(git describe --always --tags --dirty)" > control/version.rst
-	@echo ":Date: $$(date --iso-8601)" >> control/version.rst
+	@echo ":Version: $$(git describe --always --tags --dirty)" > ${B}/version.rst
+	@echo ":Date: $$(date --iso-8601)" >> ${B}/version.rst
 
-chapter-%.pdf: chapter-%-pdf.rst ${PICS} ${MISC}
+${B}/chapter-%.pdf: ${B}/chapter-%-pdf.rst ${PICS} ${MISC}
 	@echo " [PDF] $@"
 	@FOO=$$(rst2pdf -b2 -s pdf.style $< -o $@ 2>&1); \
 		ret=$$? ; \
 		echo "$$FOO" | egrep -v 'is too.*frame.*scaling'; \
 		exit $$ret
 
-chapter-%-pdf.rst: chapter-%.rst Makefile
+${B}/chapter-%-pdf.rst: chapter-%.rst Makefile | ${B}
 	@echo " [PDF] Makeing $@"
 	@echo ".. include:: control/front.rst" > $@
 	@echo >> $@
@@ -47,25 +52,25 @@ chapter-%-pdf.rst: chapter-%.rst Makefile
 	@echo ".. include:: $<" >> $@
 	@echo >> $@
 
-${W}/web-version.rst: control/version.rst
+${B}/web-version.rst: control/version.rst | ${B}
 	@echo " [RST] $@"
-	@echo "This content was generated from source on $$(date --iso-8601)" > ${W}/web-version.rst
-	@echo >> ${W}/web-version.rst
-	@echo "The git revision used was $$(git describe --always --tags)" >> ${W}/web-version.rst
-	@echo >> ${W}/web-version.rst
-	@git describe --tags --dirty | egrep -q "dirty$$" && echo "*Warning: This was generated with uncomitted local changes!*" >> ${W}/web-version.rst || true
+	@echo "This content was generated from source on $$(date --iso-8601)" > ${B}/web-version.rst
+	@echo >> ${B}/web-version.rst
+	@echo "The git revision used was $$(git describe --always --tags)" >> ${B}/web-version.rst
+	@echo >> ${B}/web-version.rst
+	@git describe --tags --dirty | egrep -q "dirty$$" && echo "*Warning: This was generated with uncomitted local changes!*" >> ${B}/web-version.rst || true
 
-${W}/chapter-%.html: chapter-%.rst ${W}/template.raw
+${B}/chapter-%.html: chapter-%.rst ${C}/template.raw | ${B}
 	@echo " [WEB] $<"
-	@rst2html --template ${W}/template.raw $< > $@
+	@rst2html --template ${C}/template.raw $< > $@
 
-${W}/appendix-%.html: appendix-%.rst ${W}/template.raw
+${B}/appendix-%.html: appendix-%.rst ${C}/template.raw | ${B}
 	@echo " [WEB] $<"
-	@rst2html --template ${W}/template.raw $< > $@
+	@rst2html --template ${C}/template.raw $< > $@
 
-${W}/index.html: ${W}/index.rst ${W}/template.raw ${W}/web-version.rst
+${B}/index.html: index.rst ${C}/template.raw ${B}/web-version.rst | ${B}
 	@echo " [WEB] $<"
-	@rst2html --template ${W}/template.raw $< > $@
+	@rst2html --template ${C}/template.raw $< > $@
 
 clean:
 	-rm varnishfoo.pdf control/version.rst
