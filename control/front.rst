@@ -10,7 +10,7 @@ Varnish Foo
 
    PageBreak coverPage
 
-.. include:: version.rst
+.. include:: ../build/version.rst
 
 .. sectnum::
 
