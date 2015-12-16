@@ -221,40 +221,9 @@ official location for this is found in the source code of Varnish, under
 Alternatively, replace ``-Tpng`` and ``.png``  with ``-Tsvg`` and ``.svg``
 respectively to get vector graphics, or ``-Tpdf``/``.pdf`` for pdfs.
 
-For convenience, the graphs from Varnish 4.1 are included. If you don't
-quite grasp what these tell you yet, don't be too alarmed. These graphs are
-provided early as they are useful to have around as reference material and
-because there is no official location to find them pre-generated. A
-brief explanation for each is included, mostly to help you in later
-chapters.
-
-cache_req_fsm.png
-.................
-
-.. image:: img/c1/cache_req_fsm.png
-
-``cache_req_fsm`` details the client-specific part of the VCL state engine.
-And can be used when writing VCL. You want to look for the blocks that
-read ``vcl_`` to identify VCL functions. The lines tell you how a
-return-statement in VCL will affect the VCL state engine at large, and
-which return statements are available where. You can also see which objects
-are available where.
-
-
-cache_fetch.png
-...............
-
-.. image:: img/c1/cache_fetch.png
-
-``cache_fetch`` has the same format as the ``cache_req_fsm.png``, but
-from the perspective of a backend request.
-
-cache_http1_fsm.png
-...................
-
-.. image:: img/c1/cache_http1_fsm.png
-
-Of the three, this is the least practical flow chart, mainly included for
-completeness. It does not document much related to VCL or practical Varnish
-usage, but the internal state engine of an HTTP request in Varnish. It can
-sometimes be helpful for debugging internal Varnish issues.
+For convenience, the graphs from Varnish 4.1 are included in Appendix A. If
+you don't quite grasp what these tell you yet, don't be too alarmed. These
+graphs are provided early as they are useful to have around as reference
+material and because there is no official location to find them
+pre-generated. A brief explanation for each is included, mostly to help you
+in later chapters.

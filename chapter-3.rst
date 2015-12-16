@@ -25,7 +25,7 @@ them sparsely and where they make sense. Many of them are ambiguous and
 some refer to different things depending on context. An effort is made to
 keep a list of the relevant acronyms and their meaning. That list can be
 found at https://www.varnish-cache.org/trac/wiki/VTLA, with a copy
-attached in appendix 3.
+attached in Appendix B.
 
 Architecture
 ------------
