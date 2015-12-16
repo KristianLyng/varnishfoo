@@ -4,7 +4,7 @@ Architecture and operation
 If you are working with Varnish, you need to know how to get information
 from it, how to start and stop it and how to tweak it a bit.
 
-This chapter will cover the architecture of Varnish, how Varnish deals with
+This chapter explains the architecture of Varnish, how Varnish deals with
 logs, best practices for running Varnish and debugging your Varnish
 installation.
 
@@ -19,18 +19,20 @@ mostly not relevant for every-day operation. Neither will you see much of
 the Varnish Configuration Language (VCL). VCL requires a chapter or two all
 by itself.
 
-It's worth taking a look at Appendix A, or go directly to
-https://www.varnish-cache.org/trac/wiki/VTLA and review some of the three
-letter acronyms that are all too common in Varnish. They are used
-extensively in the Varnish community, but are often ambiguous and
-miss-leading. Because of this, we will use them sparsely.
+The Varnish developer use a lot of three letter acronyms for many of the
+components and concepts that are covered in this chapter. We will only use
+them sparsely and where they make sense. Many of them are ambiguous and
+some refer to different things depending on context. An effort is made to
+keep a list of the relevant acronyms and their meaning. That list can be
+found at https://www.varnish-cache.org/trac/wiki/VTLA, with a copy
+attached in appendix 3.
 
 Architecture
 ------------
 
 Varnish architecture is not just of academic interest. Every single tool
 you use is affected by it, and understanding the architecture will
-hopefully help you understand why things work the way they do.
+make it easier to understand how to use Varnish.
 
 Varnish operates using two separate processes. The management process and
 the child process. The child is where all the work gets done. A simplified
@@ -42,12 +44,20 @@ The management process, which is also the parent process, handles
 initialization, parsing of VCL, interactive administration through the CLI
 interface, and basic monitoring of the child process.
 
-You will notice that the log file is drawn with a dotted line next to the
-child process. It might be more correct to draw it directly into the child.
 Varnish has two different logging mechanisms. The manager process will
 typically log to `syslog`, like you would expect, but the child logs to a
-shared memory log instead. This saves Varnish the trouble of worrying
-about file locks and generally speeds things up greatly.
+shared memory log instead. This shared memory can be accessed by Varnish
+itself and any tool that knows where to find the log and how to parse it.
+
+A shared memory log was chosen over a traditional log file for two reasons.
+First of all, it is quite fast, and doesn't eat up disk space. The second
+reason is that a traditional log file is often limited in information.
+Compromises have to be made because it is written to disk and could take up
+a great deal of space if everything you might need during a debug session
+was always included. With a shared memory log, Varnish can add all
+information it has, always. If you are debugging, you can extract
+everything you need, but if all you want is statistics, that's all you
+extract.
 
 The shared memory log, abbreviated shmlog, is a round-robin style log file
 which is usually a little less than 100MB large. It is split in two parts.
@@ -62,7 +72,7 @@ you wish to preserve any of the data, you need to extract it before it's
 overwritten. Luckily for us, there are numerous tools designed to do just
 this.
 
-The other note-worthy part of the diagram above is how VCL is handled. VCL
+An other note-worthy part of the diagram above is how VCL is handled. VCL
 is not a traditionally parsed configuration format, but a shim layer on top
 of C and the Varnish run time library (VRT). You are not so much
 configuring Varnish with VCL as programming it. Once you've written your
@@ -74,56 +84,58 @@ twice. That is because the Varnish agent both reads the logs and
 communicates with Varnish over the CLI protocol. Both ``varnishadm`` and
 ``varnish-agent`` are tools that can influence a running Varnish instance,
 while any tool that only works on the shmlog is purely informational and
-has no impact on the running Varnish instance. We will look at the agent
-shortly.
+has no direct impact on the running Varnish instance.
 
 Design principles in Varnish
 ----------------------------
 
-Varnish changes frequently. Perhaps more frequently than a system
-administrator would like. This is part of the design principles of Varnish.
+Varnish is designed to solve real problems and then largely get out of your
+way. If the solution to your problem is to buy more RAM, then Varnish isn't
+going to try to work around that issue. If you want to use Varnish to proxy
+SSH connection, then by all means, go ahead, but your patches to make it
+easier are unlikely to be accepted.
 
-Varnish is designed to work optimally for the most sensible use cases out
-there, with as little configuration as possible. It's designed to be fast
-and well behaving. But it is not designed to work for all scenarios
-perfectly.
+Varnish also uses a great deal of ``assert()`` statements and other fail
+safes in the code base. An ``assert()`` statement is a very simple
+mechanism. ``assert(x == 0);`` means "make sure x is 0". If x is `not` 0,
+Varnish will abort. In most cases, that means the entire child process
+shuts down, only to have the manager start it back up. You lose all
+connections, you lose all cache.
 
-One of the consequences of this was that Varnish was designed with
-multi-core 64-bit processes from day one. In 2015 this is not particularly
-controversial, but it was not quite as easy to justify poor 32-bit support
-in 2006. Using potentially thousands of threads was also not very common
-back then.
+Hopefully, you wont run into assert errors. They are there to handle what
+is believed to be the unthinkable. A more realistic example can be:
 
-The good news for you is that there is little in Varnish which is the way
-it is because it was written once and can't be changed for fear of breaking
-configurations. The down side happens to be the same. With most upgrades,
-default values will change.
+- Create an object, called `foo`. Set ``foo.magic`` to ``0x123765``.
+- Store `foo` in the cache.
+- (time passes)
+- Read `foo` from the cache.
+- Assert that ``foo.magic`` is till ``0x123765``.
 
-Practical consequences of this is that you generally don't have to worry
-too much about explicitly turning on new features that just make sense. You
-don't have to fiddle with every tunable parameter because the defaults are
-changed as the Varnish community builds new knowledge on what constitute
-good defaults.
+This is a simple safe guard against memory corruption, and is used for
+almost all data structures that are kept around for a while in Varnish. An
+arbitrary `magic` value is picked during development, and whenever the
+object is used, that value is read back and checked. If it doesn't match,
+your memory was corrupted. Either by something Varnish did or by the host
+it's running on.
 
-If you have a normal computer, Varnish is built for that. If you wish to
-run Varnish on a Pentium 4 with a CF card as storage, then Varnish is not
-built for that. Patches to make it run better on platforms like that are
-rejected if they make a mess for the primary use case: Proper
-POSIX-operating systems (GNU/Linux, FreeBSD) running on proper hardware
-(or in a VM with proper specs).
+Assert errors are there to make sure that you don't use a corrupt system.
+The theory is that if something so bad that the code doesn't account for it
+happens, then it's better to just stop and start up. You might lose some
+up-time (usually in the order of a couple of seconds), but at least your
+Varnish instance is back up in a predictable state.
 
-The different types of configuration
-------------------------------------
+The different categories of configuration
+-----------------------------------------
 
-Varnish uses three different configuration types. Certain things
+Varnish has three categories of configuration settings. Certain things
 must be configured before Varnish starts and can't be changed during
 run-time. These settings are very limited, and are provided on the command
 line. Even among command line arguments, several can be changed during run
-time to some degree. Examples of command line arguments are things like
-which working directory to use and how the management interface should be
-configured.
+time to some degree. The working directory to be used and the management
+interface are among the settings that are typically provided as command
+line arguments.
 
-The second type configuration primitive Varnish uses is run-time
+The second category of configuration Varnish uses is the run-time
 parameters. These can be changed after Varnish has started, but depending
 on the nature of the parameter it could take some time before the change is
 visible. Parameters can be changed through the CLI, but need to be added as
@@ -179,47 +191,38 @@ Varnish Configuration Language
         Cookie headers for these requests", "Output an error message for
         this URL".
 
-Basic pre-runtime configuration
--------------------------------
+Command line arguments
+----------------------
 
-Most aspects of Varnish can be changed during run-time, but there are a
-handful of settings that need to be sorted out before you start
-``varnishd`` up. Then there are those that are just better to get sorted
-out right away.
+Command line arguments are rarely entered directly, but usually kept in
+``/lib/systemd/system/varnish.service`` or similar startup scripts.
+Before we look at startup scripts, we'll look at running
+``varnishd`` by hand.
 
-FIXME: Systemd.
+Varnish hasn't got the best track record of verifying arguments. Just
+because Varnish starts with the arguments you provided doesn't mean Varnish
+actually used them as you expected. Make sure you double check if you
+deviate from the standard usage.
 
-All of these options are handled by command line arguments to ``varnishd``.
-These are rarely entered directly, but usually kept in
-``/etc/default/varnish``, ``/etc/sysconfig/varnish`` or the systemd
-equivalent. Before we look at those files, we'll look at running
-``varnishd`` by hand. Whenever one of these files are referenced, remember
-that they have different names on different platforms, and we'll get back
-to the individual platforms later.
+Some command line arguments are really just short hands for parameters,
+which is why you will some times find parameters that seem to overlap with
+command line arguments.
 
-Before we look at the individual options, a few things are worth
-mentioning: Varnish hasn't got the best track record of verifying
-arguments. Just because Varnish starts with the arguments you provided
-doesn't mean Varnish actually used them as you expected. Make sure you
-double check if you deviate from the standard usage. Many arguments are
-also short-hands for parameters, which we'll investigate in detail.
+Most command line arguments haven't changed much since their introduction,
+but some might have had their more complex variants extended or tweaked a
+bit.
 
-We'll start with the most important ones, instead of trying an alphabetical
-listing. The examples listed here are from Varnish 4.1, which is slightly
-changed from Varnish 4.0, notably adding `PROXY` support, which we will
-investigate in later chapters.
+``-a`` specifies what port Varnish listens to, and as such, is probably one
+of the most important arguments you will use. This argument differs
+somewhat between Varnish 4.0 and 4.1 if you try to use multiple listening
+sockets, but for most use cases that change is irrelevant.
 
-The most important option is probably ``-a``, as it specifies what port
-Varnish listens to. This argument differs somewhat between Varnish 4.0 and
-4.1, but for most use cases that change is irrelevant.
-
-For most practical purposes, you will just use ``-a :80``, but it's worth
-noting that you can have Varnish listening on multiple sockets. This is
-especially useful in Varnish 4.1 where you can have Varnish listen for
-regular HTTP traffic on port 80, and SSL-terminated traffic through the
-PROXY protocol on 127.0.0.1:1443 (for example). In Varnish 4.0, this was
-accomplished by having a white-space separated list of ``address:port``
-pairs::
+Most installations simply use ``-a :80``, but it's worth noting that you
+can have Varnish listening on multiple sockets. This is especially useful
+in Varnish 4.1 where you can have Varnish listen for regular HTTP traffic
+on port 80, and SSL-terminated traffic through the PROXY protocol on
+127.0.0.1:1443 (for example). In Varnish 4.0, this is accomplished by
+having a white-space separated list of ``address:port`` pairs::
 
         varnishd -b localhost:8080 ... -a "0.0.0.0:80 127.0.0.1:81"
 
@@ -233,18 +236,14 @@ for ``-a`` is listening to port 80. But we have seen in previous
 installations that a default Varnish installation listens on port 6081, not
 port 80.
 
-This is because port 6081 is a convention specified in
-``/etc/default/varnish`` and similar. Here's an example from a default
-Debian Jessie installation's ``/lib/systemd/system/varnish.service``::
+This is because port 6081 is a convention specified in startup scripts.
+Here's an example from a default Debian Jessie installation's
+``/lib/systemd/system/varnish.service``::
 
         ExecStart=/usr/sbin/varnishd -a :6081 -T localhost:6082 \
                         -f /etc/varnish/default.vcl \
                         -S /etc/varnish/secret \
                         -s malloc,256m
-
-The Varnish community tries to keep roughly the same defaults across
-different platforms, so you will most likely find similar default values on
-your own platform, whatever it may be.
 
 In addition to telling Varnish where to listen, you need to tell it where
 to get content. You can achieve this through the ``-b <address[:port]>``
@@ -254,47 +253,28 @@ tells Varnish where to find the VCL file it should use, and that VCL file
 will have to list any backend servers Varnish should use. When you use
 ``-b``, Varnish generates a simple VCL file for you behind the scenes::
 
-        # varnishd -b pathfinder.kly.no:6085 -d
-        Platform: Linux,4.2.0-0.bpo.1-amd64,x86_64,-smalloc,-smalloc,-hcritbit
-        200 278     
-        -----------------------------
-        Varnish Cache CLI 1.0
-        -----------------------------
-        Linux,4.2.0-0.bpo.1-amd64,x86_64,-smalloc,-smalloc,-hcritbit
-        varnish-4.0.2 revision bfe7cd1
-
-        Type 'help' for command list.
-        Type 'quit' to close CLI session.
-        Type 'start' to launch worker process.
-
-        start
-        child (1443) Started
-        200 0       
-
-        Child (1443) said Child starts
-        vcl.show boot
-        200 67      
+        # varnishd -b pathfinder.kly.no:6085
+        # varnishadm vcl.show boot
         vcl 4.0;
         backend default {
-                    .host = "pathfinder.kly.no:6085";
+            .host = "pathfinder.kly.no:6085";
         }
 
-There are two more rather trivial, but important, options that all proper
-Varnish installations use: ``-T`` and ``-S``. The ``-T`` option specifies a
-listening socket for Varnish's management CLI. Since its introduction, the
-convention has been to run the CLI interface on ``127.0.0.1:6082``, and
-this is seen in most Varnish distributions. However the actual default for
-the ``varnishd`` binary in Version 4 and newer is a random port and secret
-file.
+There are two more important options that all proper Varnish installations use:
+``-T`` and ``-S``. The ``-T`` option specifies a listening socket for Varnish's
+management CLI. Since its introduction, the convention has been to run the CLI
+interface on ``127.0.0.1:6082``, and this is seen in most Varnish
+distributions. However the actual default for the ``varnishd`` binary in
+Version 4 and newer is a random port and secret file.
 
 The ``-S`` argument lets you specify a file which contains a shared secret
 that management tools can use to authenticate to Varnish. This is referred
-to as the `secret file` and should contain random data, typically 256 bytes
-worth. The content is never sent over the network, but used to verify
-clients. All tools that are to interact with Varnish must be able to read
-the content of this file.
+to as the `secret file` and should contain data, typically 256 bytes randomly
+generated at installation. The content is never sent over the network, but
+used to verify clients. All tools that are to interact with Varnish must be
+able to read the content of this file.
 
-The best part about both ``-T`` and ``-S`` is that you don't really have to
+The nice thing about both ``-T`` and ``-S`` is that you don't really have to
 think too much about them. ``varnishadm`` and other tools that use the
 management port can read those arguments directly from the ``shmlog``.
 Example::
@@ -320,8 +300,16 @@ adding ``-T`` you also have to specify the ``-S``. ``varnishadm`` and
 ``-S``, ``-n``).
 
 Many Varnish installations default to using ``-S /etc/varnish/secret``.
-This is largely for historic reasons, but is a useful habit in case you end
+This is largely for historic reasons, but is a good habit in case you end
 up with multiple Varnish instances over multiple machines.
+
+Last, but not least, you almost always want to specify an ``-s`` option. This
+is used to set how large Varnish's cache will be, and what underlying method is
+used to cache.  This is an extensive topic, but for now, use ``-s
+malloc,<size>``, for example ``-s malloc,256M``. For most systems, using ``-s
+malloc,<size>``, where ``<size>`` is slightly less than the system memory is a
+good practice. Malloc has been a good choice for a decade, and recently ``-s
+file`` was formally deprecated.
 
 To summarize:
 
@@ -348,23 +336,14 @@ To summarize:
         ``/etc/varnish/secret``. Shouldn't matter where it is as long as
         ``varnishadm`` can read it and the shmlog.
 
+``-s <method,options>``
+        Used to control how large the cache can be and the storage engine.
+        Alternatives are ``-s persistent,(options)``, ``-s
+        file,(options)`` and ``-s malloc,(size)``. ``-s malloc,256m`` (or
+        more) is strongly recommended.
 
 Other useful ``varnishd`` arguments
 -----------------------------------
-
-You almost always want to specify an ``-s`` option. This is used to set how
-large Varnish's cache will be, and what underlying method is used to cache.
-This is an extensive topic, but for now, use ``-s malloc,<size>``, for
-example ``-s malloc,256M``. For most systems, using ``-s malloc,<size>``,
-where ``<size>`` is slightly less than the system memory is a good
-practice. We will come back to this in later chapters.
-
-You've seen ``varnishd -d`` in examples, and ``varnishd -F`` is similar in
-that it runs ``varnishd`` in the foreground.  ``-d`` can be used to test as
-it will connect your terminal to the Varnish CLI. ``-F`` is less useful, as
-you wont be able to control Varnish without running ``varnishadm`` in a
-different shell. In normal use, both ``-d`` and ``-F`` are considered
-rather exotic.
 
 ``-n dir`` is used to control the Varnish working directory and name. The
 directory argument can either just be a simple name, like ``-n
@@ -486,21 +465,20 @@ left alone. We will cover them in more advanced chapters.
 Startup scripts
 ---------------
 
-Use standard software packages from either your distribution of choice or
-Varnish Cache will provide you with a default startup script. Use it. Do
-not write your own.
-
 Varnish Cache development focuses on GNU/Linux and FreeBSD, with some
 occasional attention directed towards Solaris.
 
 But the vast majority of Varnish Cache operational focus is on GNU/Linux,
 more specifically on Fedora-derived systems, such as Red Hat Enterprise
-Linux (RHEL), Fedora, CentOS and Scientific Linux, or on Debian and Ubuntu.
-These are the distributions where Varnish packaging is best maintained and
-they deliver top-quality Varnish packages.
+Linux (RHEL), Fedora and CentOS, or on Debian and Ubuntu. These are the
+distributions where Varnish packaging is best maintained and they deliver
+top-quality Varnish packages.
+
+The startup scripts provided for those distributions are solid, and should
+be used whenever possible.
 
 This, combined with Varnish developers' habit of frequently changing Varnish
-default behavior to the better means that very changes are needed to get a
+default behavior to the better means that few changes are needed to get a
 basic Varnish installation going.
 
 Since before GNU/Linux existed, System V-styled init scripts have been used
@@ -516,16 +494,16 @@ start and stop it.
 Where your distribution keeps its configuration will vary, but in short:
 
 - They all keep VCL and secret files in ``/etc/varnish`` by default.
-- Before systemd, Debian/Ubuntu kept startup arguments in
-  ``/etc/default/varnish``.
-- Before systemd, Red Had Enterprise Linux/CentOS/Fedora kept startup
-  arguments in ``/etc/sysconfig/varnish``.
 - With systemd, startup arguments are kept in
   ``/lib/systemd/system/varnish.service`` for both distribution families.
   That file should be copied to ``/etc/systemd/system/varnish.service`` if
   you mean to modify it.
 - Recent RHEL/Fedora packages use ``/etc/varnish/varnish.params``. A
   similar strategy is expected for other distributions too in the future.
+- Before systemd, Debian/Ubuntu kept startup arguments in
+  ``/etc/default/varnish``.
+- Before systemd, Red Had Enterprise Linux/CentOS/Fedora kept startup
+  arguments in ``/etc/sysconfig/varnish``.
 
 For starting and stopping, it's a little simpler:
 
