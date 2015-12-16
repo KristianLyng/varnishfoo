@@ -25,7 +25,7 @@ dist: web
 pdf: ${B}/varnishfoo.pdf
 
 ${B}/varnishfoo.pdf: varnishfoo.rst ${MISC} ${CHAPTERS} ${PICS} ${CTRL} | ${B}
-	@echo " [PDF] $<"
+	@echo " [PDF] $@"
 	@FOO=$$(rst2pdf -b2 -s ${C}/pdf.style varnishfoo.rst -o $@ 2>&1); \
 		ret=$$? ; \
 		echo "$$FOO" | egrep -v 'is too.*frame.*scaling'; \
@@ -45,7 +45,7 @@ ${B}/chapter-%.pdf: ${B}/chapter-%-pdf.rst ${PICS} ${MISC}
 		exit $$ret
 
 ${B}/chapter-%-pdf.rst: chapter-%.rst Makefile | ${B}
-	@echo " [PDF] Makeing $@"
+	@echo " [PDF] Making $@"
 	@echo ".. include:: control/front.rst" > $@
 	@echo >> $@
 	@echo ".. include:: control/headerfooter.rst" >> $@
