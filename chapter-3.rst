@@ -1,5 +1,5 @@
 Architecture and operation
-=========================
+==========================
 
 If you are working with Varnish, you need to know how to get information
 from it, how to start and stop it and how to tweak it a bit.
