@@ -721,31 +721,9 @@ Tools: ``varnishstat``
 
 ``varnishstat`` is the simplest of all the log-related tools, yet also one
 of the most useful tools. In its simplest form, it opens a real-time view
-of Varnish-counters::
+of Varnish-counters:
 
-        Uptime mgt:   6+17:40:49              Hitrate n:       10       38       38
-        Uptime child: 6+17:40:49                 avg(n):   0.9943   0.9727   0.9727
-
-          NAME                        CURRENT       CHANGE      AVERAGE            
-        MAIN.uptime                    582049         1.00         1.00
-        MAIN.sess_conn               11321763        25.96        19.00
-        MAIN.client_req              11492571        25.96        19.00
-        MAIN.cache_hit               11278670        25.96        19.00
-        MAIN.cache_miss                 15614         0.00          .
-        MAIN.backend_conn                3851         0.00          .
-        MAIN.backend_reuse             568470         1.00          .
-        MAIN.backend_toolate             3832         0.00          .
-        MAIN.backend_recycle           572307         1.00          .
-        MAIN.fetch_length              567578         1.00          .
-        MAIN.fetch_chunked               4423         0.00          .
-        MAIN.fetch_304                    320         0.00          .
-        MAIN.pools                          2         0.00          .
-        MAIN.threads                      200         0.00          .
-        MAIN.threads_created              200         0.00          .
-        MAIN.busy_sleep                     3         0.00          .
-        ↓ MAIN.uptime                                                          INFO
-        Child process uptime:
-        How long the child process has been running.
+.. image:: img/c3/varnishstat-1.png
 
 ``varnishstat`` reads counters from the shmlog and makes sense of them, is
 the simple explanation. It can also be accessed in manners better suited
@@ -756,11 +734,6 @@ had 11278670 cache hits over the last six and a half days might be
 interesting, but knowing that you have 25.96 cache hits per seconds right
 now is far more useful. The same can be achieved through ``varnishtat -1``
 and similar by simply executing the command twice and comparing the values.
-
-The interactive variant requires a slightly bigger window than shown above
-to expose all the information though.
-
-.. image:: img/c3/varnishstat-1.png
 
 Starting in the upper left, you'll see some durations:
 
@@ -839,23 +812,668 @@ A few key bindings are worth mentioning:
 A note on threads
 -----------------
 
-Traditionally there was an exception to this rule. Varnish used to ship
-with an extremely conservative value for ``thread_pool_min`` and
-``thread_pool_max``, which are the parameters that govern how many `worker
-threads` Varnish uses. On Varnish 3, you would typically have 10 threads by
-default. Varnish would spin up more on demand, but 10 threads is extremely
-low, even for very low-traffic sites.
+Now that you've been acquainted with parameters and counters, it might be
+worth looking at threads.
 
 Varnish uses one `worker thread` per active TCP connection. A typical user
 can easily set up 5 or more concurrent TCP sessions, depending on the
-content and browser, so with just 10 threads, your site is tuned for
-roughly 2-3 concurrent users. Again, Varnish will spin up more threads on
-demand, but this is still not ideal.
+content and browser. Varnish also organizes worker threads into `thread
+pools`. Each pool of threads is managed by a separate thread, and can grow
+and shrink on demand. By default, Varnish uses two thread pools, this can
+be tuned with the ``thread_pools`` parameter.
 
-With Varnish 4.0, this default value was finally brought up to where it
-needs to be. Varnish 4.0 (and newer) defaults to starting up 200 threads,
-with a maximum value of 10000. This is suitable for the vast majority of
-web sites out there.
+Each thread pool starts up with ``thread_pool_min`` threads, by default,
+that is 100 threads. The upper limit for threads used per thread pool is
+``thread_pool_max``, which in turn defaults to 5000. Even when this limit
+is reached, Varnish has several layers of queues that will be used. You can
+see the state of the session queue in the counter called
+``MAIN.thread_queue_len``. You can also observe how many threads are used
+by looking at ``MAIN.threads``. Since Varnish also removes threads that are
+unused, looking at ``MAIN.threads_created`` is also interesting. If you see
+a high number of threads created, that means Varnish is spawning new
+threads frequently, only to remove them later.
 
-FIXME: not done
+Traditionally, thread parameters were some of the few parameters that
+always made sense to tune. This is no longer the case. Originally, Varnish
+shipped with very conservative default values where Varnish would start
+with just 10 threads total. Today, it uses 200 by default, with a maximum
+of 10000. Even 200 can be a bit low, but it's nowhere near as drastic as
+what the old default of 10 threads was. As such, most sites will operate
+very well using default thread parameters today.
 
+It's worth repeating a small detail here: The thread parameters are per
+thread pool. That means that:
+
+- Setting ``thread_pools=1`` and ``thread_pool_min=10`` gives you a minimum
+  of 10 threads.
+- Setting ``thread_pools=2`` and ``thread_pool_min=100`` gives you a minimum
+  of 200 threads. (this is the default).
+- Setting ``thread_pools=5`` and ``thread_pool_min=10`` gives you a minimum
+  of 50 threads.
+
+And so forth. If you search the web, you might also run into pages that
+suggest setting ``thread_pools`` to the same number as the number of CPU
+cores you have available. This was believed to be advantageous, but further
+testing and experience has demonstrated that the biggest gain is changing
+it from 1 thread pool to 2. Any number above 2 doesn't seem to make a
+significant difference. On the other hand, a value of 2 is known to work
+very well.
+
+In addition to worker threads, which make up the bulk of the threads
+Varnish uses, there are several other more specialized threads that you
+rarely have to deal with. That can be the ban lurker thread, expiry thread
+or acceptor thread, for example. Looking at a Varnish 4.0 installation on
+GNU/Linux, you can see the consequence of this::
+
+        # varnishstat -1f MAIN.threads
+        MAIN.threads               200          .   Total number of threads
+        # pidof varnishd
+        19 18
+        # grep Threads /proc/19/status
+        Threads:        217
+
+The ``MAIN.threads`` counter states 200 threads, but investigating the
+``/proc`` filesystem, you can see that the worker process is actually using
+217 threads. The worker threads are the only ones that we usually have to
+worry about, though.
+
+In summary: Threads rarely need tuning in Varnish 4, and the old best
+practices no longer apply. Varnish will use one thread per active TCP
+connection, and scale automatically.
+
+Tools: ``varnishlog``
+---------------------
+
+Where ``varnishstat`` is a simple way to view and work with counters in
+Varnish, ``varnishlog`` is a simple way to view and work with the rest of
+the shmlog. With no arguments, it will output all log data in a
+semi-ordered manner. However, most Varnish installations has far too much
+traffic for that to be useful. You need to be able to filter and group data
+to be able to use ``varnishlog`` productively.
+
+Normally ``varnishlog`` will only parse new data. Since the shmlog contains
+up to 80MB of old data, it's some times useful to look at this data too.
+This can be achieved with the ``-d`` argument.
+
+You can also select if you want backend-traffic (``-b``), client-traffic
+(``-c``) or everything. By default, you get everything. Let's take a look
+at a single request::
+
+        # varnishlog -cd
+        *   << Request  >> 2         
+        -   Begin          req 1 rxreq
+        -   Timestamp      Start: 1450446455.943883 0.000000 0.000000
+        -   Timestamp      Req: 1450446455.943883 0.000000 0.000000
+        -   ReqStart       ::1 59310
+        -   ReqMethod      GET
+        -   ReqURL         /
+        -   ReqProtocol    HTTP/1.1
+        -   ReqHeader      Host: localhost
+        -   ReqHeader      Connection: keep-alive
+        -   ReqHeader      Accept-Encoding: gzip, deflate
+        -   ReqHeader      Accept: */*
+        -   ReqHeader      User-Agent: HTTPie/0.8.0
+        -   ReqHeader      X-Forwarded-For: ::1
+        -   VCL_call       RECV
+        -   VCL_return     hash
+        -   ReqUnset       Accept-Encoding: gzip, deflate
+        -   ReqHeader      Accept-Encoding: gzip
+        -   VCL_call       HASH
+        -   VCL_return     lookup
+        -   Debug          "XXXX MISS"
+        -   VCL_call       MISS
+        -   VCL_return     fetch
+        -   Link           bereq 3 fetch
+        -   Timestamp      Fetch: 1450446455.945022 0.001139 0.001139
+        -   RespProtocol   HTTP/1.1
+        -   RespStatus     200
+        -   RespReason     OK
+        -   RespHeader     Date: Fri, 18 Dec 2015 13:47:35 GMT
+        -   RespHeader     Server: Apache/2.4.10 (Debian)
+        -   RespHeader     Last-Modified: Thu, 03 Dec 2015 12:43:12 GMT
+        -   RespHeader     ETag: "2b60-525fdbbd7f800-gzip"
+        -   RespHeader     Vary: Accept-Encoding
+        -   RespHeader     Content-Encoding: gzip
+        -   RespHeader     Content-Type: text/html
+        -   RespHeader     X-Varnish: 2
+        -   RespHeader     Age: 0
+        -   RespHeader     Via: 1.1 varnish-v4
+        -   VCL_call       DELIVER
+        -   VCL_return     deliver
+        -   Timestamp      Process: 1450446455.945037 0.001154 0.000015
+        -   Debug          "RES_MODE 8"
+        -   RespHeader     Transfer-Encoding: chunked
+        -   RespHeader     Connection: keep-alive
+        -   RespHeader     Accept-Ranges: bytes
+        -   Timestamp      Resp: 1450446455.945157 0.001274 0.000119
+        -   Debug          "XXX REF 2"
+        -   ReqAcct        130 0 130 356 3092 3448
+        -   End            
+
+This is a lot of data, but represents a single client request. If your
+Varnish server is slightly more used than this one, you will have far more
+log entries.
+
+The very first column is used to help you group requests. The single ``*``
+tells you that this particular line is just informing you about the
+following grouping. ``<< Request  >> 2`` tells you that the following is
+grouped as a request, and the ID is 2. The default grouping method is
+``vxid``, which we will explore soon.
+
+Next, you see what is more typical entries. Each log line starts with a
+``-`` to indicate that it's related to the above grouping. Other grouping
+methods might have more dashes here to indicate what happened first and
+last. The actual grouping is a logic done in the ``varnishlog`` tool
+itself, using information from the shmlog. It is useful, because the shmlog
+is the result of hundreds, potentially thousands of threads writing to a
+log at the same time. Without grouping it, tracking a single request would
+be very hard.
+
+The ``Begin``-word is called a log `tag`. Each line has a tag associated
+with it, and each type of tag can have different formats. All tags are
+documented in the ``vsl(7)`` manual page. We will focus on the most useful
+ones.
+
+You can tell ``varnishlog`` to only output some tags::
+
+        # varnishlog -d -i ReqURL
+        *   << BeReq    >> 3         
+
+        *   << Request  >> 2         
+        -   ReqURL         /
+
+        *   << Session  >> 1         
+
+        *   << BeReq    >> 32771     
+
+        *   << Request  >> 32770     
+        -   ReqURL         /demo/
+
+        *   << Session  >> 32769     
+
+This might also demonstrate why grouping is sometimes unwanted. You can
+change grouping method using ``-g``. Or disable it entirely with ``-g
+raw``::
+
+        # varnishlog -d -g raw -i ReqURL
+                 2 ReqURL         c /
+             32770 ReqURL         c /demo/
+
+You can also exclude individual tags with ``-x``, or use a regular expression
+to match their content using ``-I``. The latter can be interesting if you want
+to look at a specific header.
+
+More importantly, however, is the use of the ``-q`` option, to specify a `VSL
+query`. VSL is the part of the log we are working with, and a VSL query allows
+you to filter it intelligently. It is documented in the manual page
+``vsl-query(7)``. It is very useful combined with grouping.
+
+Let's look at the difference between the default (``vxid``) grouping and
+``request`` grouping, while using a VSL query::
+
+        # varnishlog -d -q 'ReqUrl eq "/demo/"'
+        *   << Request  >> 32770     
+        -   Begin          req 32769 rxreq
+        -   Timestamp      Start: 1450447223.693214 0.000000 0.000000
+        -   Timestamp      Req: 1450447223.693214 0.000000 0.000000
+        -   ReqStart       ::1 59320
+        -   ReqMethod      GET
+        -   ReqURL         /demo/
+        -   ReqProtocol    HTTP/1.1
+        -   ReqHeader      Host: localhost
+        -   ReqHeader      Connection: keep-alive
+        -   ReqHeader      Accept-Encoding: gzip, deflate
+        -   ReqHeader      Accept: */*
+        -   ReqHeader      User-Agent: HTTPie/0.8.0
+        -   ReqHeader      X-Forwarded-For: ::1
+        -   VCL_call       RECV
+        -   VCL_return     hash
+        -   ReqUnset       Accept-Encoding: gzip, deflate
+        -   ReqHeader      Accept-Encoding: gzip
+        -   VCL_call       HASH
+        -   VCL_return     lookup
+        -   Debug          "XXXX MISS"
+        -   VCL_call       MISS
+        -   VCL_return     fetch
+        -   Link           bereq 32771 fetch
+        -   Timestamp      Fetch: 1450447223.693667 0.000454 0.000454
+        -   RespProtocol   HTTP/1.1
+        -   RespStatus     404
+        -   RespReason     Not Found
+        -   RespHeader     Date: Fri, 18 Dec 2015 14:00:23 GMT
+        -   RespHeader     Server: Apache/2.4.10 (Debian)
+        -   RespHeader     Content-Type: text/html; charset=iso-8859-1
+        -   RespHeader     X-Varnish: 32770
+        -   RespHeader     Age: 0
+        -   RespHeader     Via: 1.1 varnish-v4
+        -   VCL_call       DELIVER
+        -   VCL_return     deliver
+        -   Timestamp      Process: 1450447223.693677 0.000463 0.000010
+        -   RespHeader     Content-Length: 280
+        -   Debug          "RES_MODE 2"
+        -   RespHeader     Connection: keep-alive
+        -   Timestamp      Resp: 1450447223.693712 0.000499 0.000036
+        -   Debug          "XXX REF 2"
+        -   ReqAcct        135 0 135 232 280 512
+        -   End            
+
+With the default grouping, we see just the client request and response.
+Reading the details, you can see that it triggered a fetch from a backend,
+but we don't see anything related to that fetch. That might be exactly what
+you want. If, however, you need to see the related backend request, we can
+switch to grouping by request::
+
+        # varnishlog -d -g request -q 'ReqUrl eq "/"'
+        *   << Request  >> 2         
+        -   Begin          req 1 rxreq
+        -   Timestamp      Start: 1450446455.943883 0.000000 0.000000
+        -   Timestamp      Req: 1450446455.943883 0.000000 0.000000
+        -   ReqStart       ::1 59310
+        -   ReqMethod      GET
+        -   ReqURL         /
+        -   ReqProtocol    HTTP/1.1
+        -   ReqHeader      Host: localhost
+        -   ReqHeader      Connection: keep-alive
+        -   ReqHeader      Accept-Encoding: gzip, deflate
+        -   ReqHeader      Accept: */*
+        -   ReqHeader      User-Agent: HTTPie/0.8.0
+        -   ReqHeader      X-Forwarded-For: ::1
+        -   VCL_call       RECV
+        -   VCL_return     hash
+        -   ReqUnset       Accept-Encoding: gzip, deflate
+        -   ReqHeader      Accept-Encoding: gzip
+        -   VCL_call       HASH
+        -   VCL_return     lookup
+        -   Debug          "XXXX MISS"
+        -   VCL_call       MISS
+        -   VCL_return     fetch
+        -   Link           bereq 3 fetch
+        -   Timestamp      Fetch: 1450446455.945022 0.001139 0.001139
+        -   RespProtocol   HTTP/1.1
+        -   RespStatus     200
+        -   RespReason     OK
+        -   RespHeader     Date: Fri, 18 Dec 2015 13:47:35 GMT
+        -   RespHeader     Server: Apache/2.4.10 (Debian)
+        -   RespHeader     Last-Modified: Thu, 03 Dec 2015 12:43:12 GMT
+        -   RespHeader     ETag: "2b60-525fdbbd7f800-gzip"
+        -   RespHeader     Vary: Accept-Encoding
+        -   RespHeader     Content-Encoding: gzip
+        -   RespHeader     Content-Type: text/html
+        -   RespHeader     X-Varnish: 2
+        -   RespHeader     Age: 0
+        -   RespHeader     Via: 1.1 varnish-v4
+        -   VCL_call       DELIVER
+        -   VCL_return     deliver
+        -   Timestamp      Process: 1450446455.945037 0.001154 0.000015
+        -   Debug          "RES_MODE 8"
+        -   RespHeader     Transfer-Encoding: chunked
+        -   RespHeader     Connection: keep-alive
+        -   RespHeader     Accept-Ranges: bytes
+        -   Timestamp      Resp: 1450446455.945157 0.001274 0.000119
+        -   Debug          "XXX REF 2"
+        -   ReqAcct        130 0 130 356 3092 3448
+        -   End            
+        **  << BeReq    >> 3         
+        --  Begin          bereq 2 fetch
+        --  Timestamp      Start: 1450446455.943931 0.000000 0.000000
+        --  BereqMethod    GET
+        --  BereqURL       /
+        --  BereqProtocol  HTTP/1.1
+        --  BereqHeader    Host: localhost
+        --  BereqHeader    Accept: */*
+        --  BereqHeader    User-Agent: HTTPie/0.8.0
+        --  BereqHeader    X-Forwarded-For: ::1
+        --  BereqHeader    Accept-Encoding: gzip
+        --  BereqHeader    X-Varnish: 3
+        --  VCL_call       BACKEND_FETCH
+        --  VCL_return     fetch
+        --  BackendOpen    17 default(127.0.0.1,,8080) 127.0.0.1 54806 
+        --  Backend        17 default default(127.0.0.1,,8080)
+        --  Timestamp      Bereq: 1450446455.944036 0.000105 0.000105
+        --  Timestamp      Beresp: 1450446455.944924 0.000993 0.000888
+        --  BerespProtocol HTTP/1.1
+        --  BerespStatus   200
+        --  BerespReason   OK
+        --  BerespHeader   Date: Fri, 18 Dec 2015 13:47:35 GMT
+        --  BerespHeader   Server: Apache/2.4.10 (Debian)
+        --  BerespHeader   Last-Modified: Thu, 03 Dec 2015 12:43:12 GMT
+        --  BerespHeader   ETag: "2b60-525fdbbd7f800-gzip"
+        --  BerespHeader   Accept-Ranges: bytes
+        --  BerespHeader   Vary: Accept-Encoding
+        --  BerespHeader   Content-Encoding: gzip
+        --  BerespHeader   Content-Length: 3078
+        --  BerespHeader   Content-Type: text/html
+        --  TTL            RFC 120 -1 -1 1450446456 1450446456 1450446455 0 0
+        --  VCL_call       BACKEND_RESPONSE
+        --  VCL_return     deliver
+        --  Storage        malloc s0
+        --  ObjProtocol    HTTP/1.1
+        --  ObjStatus      200
+        --  ObjReason      OK
+        --  ObjHeader      Date: Fri, 18 Dec 2015 13:47:35 GMT
+        --  ObjHeader      Server: Apache/2.4.10 (Debian)
+        --  ObjHeader      Last-Modified: Thu, 03 Dec 2015 12:43:12 GMT
+        --  ObjHeader      ETag: "2b60-525fdbbd7f800-gzip"
+        --  ObjHeader      Vary: Accept-Encoding
+        --  ObjHeader      Content-Encoding: gzip
+        --  ObjHeader      Content-Type: text/html
+        --  Fetch_Body     3 length stream
+        --  Gzip           u F - 3078 11104 80 80 24554
+        --  BackendReuse   17 default(127.0.0.1,,8080)
+        --  Timestamp      BerespBody: 1450446455.945101 0.001169 0.000177
+        --  Length         3078
+        --  BereqAcct      133 0 133 283 3078 3361
+        --  End  
+
+Now you see both the client-request and the backend request. The "top"
+request is the client request. The backend request starts with ``**  <<
+BeReq    >> 3``. The two stars indicate that it's nested one level deeper
+than the above request, as does the two leading dashes for the request
+lines.
+
+Using a VSL query with ``-g raw`` will be similar to ``-i`` or ``-I``::
+
+        # varnishlog -d -g raw -q 'ReqUrl eq "/"'
+         2 ReqURL         c /
+
+An other option for grouping is ``-g session``. This will behave similar to
+``-g request`` for many tests, but it's for a single HTTP session. Or in
+other words: If a client re-uses a connection to issue multiple HTTP
+requests, ``-g request`` will separate each request, but ``-g session``
+will group them all together.
+
+To summarize grouping:
+
+``-g raw``
+        Disables grouping all together.
+
+``-g vxid``
+        Default grouping mode. Based on Varnish ID numbers, so each
+        client request and backend request is separate, as is the session
+        data.
+
+``-g request``
+        Groups each request together, including backend requests triggered
+        by client requests.
+
+``-g session``
+        Group by HTTP (or TCP) session. Will frequently produce huge
+        amounts of data.
+
+VSL queries are used in other tools too, as are many of the options that
+apply to ``varnishlog``. We will revisit them at the end of the chapter,
+once more of the log tools have been introduced.
+
+Tools: ``varnishtop``
+---------------------
+
+To quote the manual page::
+
+       The  varnishtop  utility reads varnishd(1) shared memory logs
+       and presents a continuously updated list of the most commonly
+       occurring log entries.  With suitable filtering using the -I,
+       -i, -X and -x options, it can be used to display a ranking of
+       requested  documents,  clients,  user  agents,  or  any other
+       information which is recorded in the log.
+
+This is the output of ``varnishlog -i ReqUrl``::
+
+        list length 7                                            e979e205720e
+
+             2.86 ReqURL         /?1
+             0.72 ReqURL         /?25556
+             0.70 ReqURL         /?5879
+             0.70 ReqURL         /?12292
+             0.69 ReqURL         /?26317
+             0.67 ReqURL         /?30808
+             0.50 ReqURL         /?12592
+
+The number on the left is a decaying average, then you see the log tag
+(``ReqURL``) and the value. This tells me that ``/?1`` has been requested
+more frequently than any of the other URLs. Over time, the number on the left
+will reach zero if no tag matching that value is seen.
+
+A few very useful examples:
+
+``varnishtop -i BereqURL``
+        See URLs requested from a backend. Want to tweak your cache hit
+        rate? Start at the top of this list.
+
+``varnishtop -I ReqHeader:User-Agent``
+        See ``User-Agent`` headers from clients.
+
+``varnishtop -i ReqURL``
+        Frequently requested URLs.
+
+``varnishtop -I ReqHeader:Host``
+        Frequently requested hosts.
+
+Tools: ``varnishncsa`` and ``varnishhist``
+------------------------------------------
+
+If you need or want traditional access logs, ``varnishncsa`` is the tool
+for you. Most distribution provide startup scripts that will run
+``varnishncsa`` in the background, in which case all you have to do is
+enable them. With systemd, that would be ``systemctl enable
+varnishncsa.service``.
+
+The ``varnishhist`` tool can draw a histogram of response time
+distribution, size distribution or any other number-based tag. It can make
+for an interesting demo, but is not particularly useful unless you have
+very specific questions that you need answered.
+
+More on VSL queries
+-------------------
+
+Just using ``varnishlog -q 'ReqURL eq "/foo"'`` is useful in itself, but
+you can also do more advanced searches. You can also use most of these
+queries with ``varnishncsa``.
+
+The most obvious thing we can do is expand upon the simple match. The
+``eq`` operator is meant for strings, but we can also use ``~`` for regular
+expressions::
+
+        # varnishncsa -d -q 'ReqURL ~ "[0-9]"'
+        ::1 - - [18/Dec/2015:14:23:33 +0000] "GET http://localhost/?12592 HTTP/1.1" 200 3092 "-" "HTTPie/0.8.0"
+        ::1 - - [18/Dec/2015:14:23:42 +0000] "GET http://localhost/?30808 HTTP/1.1" 200 3092 "-" "HTTPie/0.8.0"
+        (...)
+
+An other helpful way to use a VSL query is to investigate the details of
+the ``Timestamp`` tag. Quoting directly from the ``vsl(7)`` manual page::
+
+       Timestamp - Timing information
+              Contains  timing  information  for  the Varnish worker
+              threads.
+
+              Time stamps are issued by Varnish on  certain  events,
+              and  show  the  absolute  time  of the event, the time
+              spent since the start of the work unit, and  the  time
+              spent  since the last timestamp was logged. See vsl(7)
+              for information about the individual timestamps.
+
+              The format is:
+
+                 %s: %f %f %f
+                 |   |  |  |
+                 |   |  |  +- Time since last timestamp
+                 |   |  +---- Time since start of work unit
+                 |   +------- Absolute time of event
+                 +----------- Event label
+
+Looking at this, you can see that a regular expression might not be the
+most useful tool. However, you could extract the actual field you want
+using a ``[field]`` syntax::
+
+        # varnishlog -d -c -q 'Timestamp[3] >= 1.0'
+        *   << Request  >> 16        
+        -   Begin          req 15 rxreq
+        -   Timestamp      Start: 1450454500.617483 0.000000 0.000000
+        -   Timestamp      Req: 1450454500.617483 0.000000 0.000000
+        -   ReqStart       ::1 60074
+        -   ReqMethod      GET
+        -   ReqURL         /cgi-bin/foo.sh
+        -   ReqProtocol    HTTP/1.1
+        -   ReqHeader      Host: localhost
+        -   ReqHeader      Connection: keep-alive
+        -   ReqHeader      Accept-Encoding: gzip, deflate
+        -   ReqHeader      Accept: */*
+        -   ReqHeader      User-Agent: HTTPie/0.8.0
+        -   ReqHeader      X-Forwarded-For: ::1
+        -   VCL_call       RECV
+        -   VCL_return     hash
+        -   ReqUnset       Accept-Encoding: gzip, deflate
+        -   ReqHeader      Accept-Encoding: gzip
+        -   VCL_call       HASH
+        -   VCL_return     lookup
+        -   Debug          "XXXX MISS"
+        -   VCL_call       MISS
+        -   VCL_return     fetch
+        -   Link           bereq 17 fetch
+        -   Timestamp      Fetch: 1450454501.623769 1.006286 1.006286
+        -   RespProtocol   HTTP/1.1
+        -   RespStatus     200
+        -   RespReason     OK
+        -   RespHeader     Date: Fri, 18 Dec 2015 16:01:40 GMT
+        -   RespHeader     Server: Apache/2.4.10 (Debian)
+        -   RespHeader     Content-Type: text/plain
+        -   RespHeader     X-Varnish: 16
+        -   RespHeader     Age: 0
+        -   RespHeader     Via: 1.1 varnish-v4
+        -   VCL_call       DELIVER
+        -   VCL_return     deliver
+        -   Timestamp      Process: 1450454501.623783 1.006300 0.000014
+        -   RespHeader     Content-Length: 57
+        -   Debug          "RES_MODE 2"
+        -   RespHeader     Connection: keep-alive
+        -   RespHeader     Accept-Ranges: bytes
+        -   Timestamp      Resp: 1450454501.623817 1.006334 0.000034
+        -   Debug          "XXX REF 2"
+        -   ReqAcct        144 0 144 224 57 281
+        -   End            
+
+The above example extracts the third field of the ``Timestamp`` tag and
+matches if it has a value of 1.0 or higher. This is very useful if you need
+to investigate reports of slow requests.
+
+An other nifty way to use VSL queries is to investigate the ``TTL`` tag.
+This log tag is used to report how an object gets its cache::
+
+        # varnishlog -g raw -d -i TTL
+                 3 TTL            b RFC 120 -1 -1 1450446456 1450446456 1450446455 0 0
+             32771 TTL            b RFC 120 -1 -1 1450447224 1450447224 1450447223 0 0
+             32774 TTL            b RFC 120 -1 -1 1450448614 1450448614 1450448613 0 0
+
+These lines tell us that the objects in question all got a TTL of 120
+seconds. Let's try to modify some headers from a backend and try again::
+
+        # varnishlog -d -q 'TTL[2] > 120'
+        *   << BeReq    >> 32790     
+        -   Begin          bereq 32789 fetch
+        -   Timestamp      Start: 1450455456.550332 0.000000 0.000000
+        -   BereqMethod    GET
+        -   BereqURL       /cgi-bin/foo.sh
+        -   BereqProtocol  HTTP/1.1
+        -   BereqHeader    Host: localhost
+        -   BereqHeader    Accept: */*
+        -   BereqHeader    User-Agent: HTTPie/0.8.0
+        -   BereqHeader    X-Forwarded-For: ::1
+        -   BereqHeader    Accept-Encoding: gzip
+        -   BereqHeader    X-Varnish: 32790
+        -   VCL_call       BACKEND_FETCH
+        -   VCL_return     fetch
+        -   BackendClose   17 default(127.0.0.1,,8080) toolate
+        -   BackendOpen    17 default(127.0.0.1,,8080) 127.0.0.1 55746 
+        -   Backend        17 default default(127.0.0.1,,8080)
+        -   Timestamp      Bereq: 1450455456.550474 0.000142 0.000142
+        -   Timestamp      Beresp: 1450455456.552757 0.002426 0.002283
+        -   BerespProtocol HTTP/1.1
+        -   BerespStatus   200
+        -   BerespReason   OK
+        -   BerespHeader   Date: Fri, 18 Dec 2015 16:17:36 GMT
+        -   BerespHeader   Server: Apache/2.4.10 (Debian)
+        -   BerespHeader   Cache-Control: max-age=3600
+        -   BerespHeader   Age: 10
+        -   BerespHeader   Content-Length: 56
+        -   BerespHeader   Content-Type: text/plain
+        -   TTL            RFC 3600 -1 -1 1450455457 1450455447 1450455456 0 3600
+        -   VCL_call       BACKEND_RESPONSE
+        -   VCL_return     deliver
+        -   Storage        malloc s0
+        -   ObjProtocol    HTTP/1.1
+        -   ObjStatus      200
+        -   ObjReason      OK
+        -   ObjHeader      Date: Fri, 18 Dec 2015 16:17:36 GMT
+        -   ObjHeader      Server: Apache/2.4.10 (Debian)
+        -   ObjHeader      Cache-Control: max-age=3600
+        -   ObjHeader      Content-Type: text/plain
+        -   Fetch_Body     3 length stream
+        -   BackendReuse   17 default(127.0.0.1,,8080)
+        -   Timestamp      BerespBody: 1450455456.552814 0.002482 0.000057
+        -   Length         56
+        -   BereqAcct      151 0 151 172 56 228
+        -   End            
+
+You can still see the ``TTL`` header, but now it reads 3600 and higher.
+Unfortunately, there's a miss-match between the documentation and
+implementation here in Varnish 4.0 and 4.1. The documentation suggests that
+the first number should take ``Age`` into account, but as we just
+demonstrated, that is clearly not happening. However, the other numbers are
+correct, so you can infer the ``Age`` from that, but not really use it
+directly in a VSL query.
+
+Combining multiple queries is also possible::
+
+        # varnishlog -cdq 'ReqHeader:User-agent ~ "HTTP" and Hit and ReqUrl ~ "demo"'
+        *   << Request  >> 65541     
+        -   Begin          req 65540 rxreq
+        -   Timestamp      Start: 1450457044.299308 0.000000 0.000000
+        -   Timestamp      Req: 1450457044.299308 0.000000 0.000000
+        -   ReqStart       ::1 60290
+        -   ReqMethod      GET
+        -   ReqURL         /demo
+        -   ReqProtocol    HTTP/1.1
+        -   ReqHeader      Host: localhost
+        -   ReqHeader      Connection: keep-alive
+        -   ReqHeader      Accept-Encoding: gzip, deflate
+        -   ReqHeader      Accept: */*
+        -   ReqHeader      User-Agent: HTTPie/0.8.0
+        -   ReqHeader      X-Forwarded-For: ::1
+        -   VCL_call       RECV
+        -   VCL_return     hash
+        -   ReqUnset       Accept-Encoding: gzip, deflate
+        -   ReqHeader      Accept-Encoding: gzip
+        -   VCL_call       HASH
+        -   VCL_return     lookup
+        -   Hit            2147549187
+        -   VCL_call       HIT
+        -   VCL_return     deliver
+        -   RespProtocol   HTTP/1.1
+        -   RespStatus     404
+        -   RespReason     Not Found
+        -   RespHeader     Date: Fri, 18 Dec 2015 16:44:02 GMT
+        -   RespHeader     Server: Apache/2.4.10 (Debian)
+        -   RespHeader     Content-Type: text/html; charset=iso-8859-1
+        -   RespHeader     X-Varnish: 65541 65539
+        -   RespHeader     Age: 1
+        -   RespHeader     Via: 1.1 varnish-v4
+        -   VCL_call       DELIVER
+        -   VCL_return     deliver
+        -   Timestamp      Process: 1450457044.299346 0.000038 0.000038
+        -   RespHeader     Content-Length: 279
+        -   Debug          "RES_MODE 2"
+        -   RespHeader     Connection: keep-alive
+        -   Timestamp      Resp: 1450457044.299370 0.000062 0.000024
+        -   Debug          "XXX REF 2"
+        -   ReqAcct        134 0 134 238 279 517
+        -   End            
+
+These examples are mostly meant to get you started and give you an idea of
+what you can do. The best reference pages for these tools are the manual
+pages, and the ``vsl-query(7)`` and ``vsl(7)`` manual pages. Even if they
+some times do get out of date.
+
+FIXME
+-----
+
+The chapter needs to be re-ordered I think. The flow from sub-chapter to
+sub-chapter is a bit random.

@@ -1,3 +1,5 @@
 - ``-S`` and ``-T`` defaults. This is a subtle change from Varnish 2...
 - No ``--help`` or similar?
+- TTL log tag documentation/implementation
+- vsl-query(7) refers to ReqEnd
 
