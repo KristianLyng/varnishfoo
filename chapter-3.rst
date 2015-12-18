@@ -124,6 +124,16 @@ happens, then it's better to just stop and start up. You might lose some
 up-time (usually in the order of a couple of seconds), but at least your
 Varnish instance is back up in a predictable state.
 
+If Varnish does hit an assert error, it will (try to) log it to syslog. In
+addition to that, it keeps the last `panic` message available through
+``varnishadm panic.show``::
+
+        # varnishadm panic.show 
+        Child has not panicked or panic has been cleared
+        Command failed with error code 300
+        #
+
+
 The different categories of configuration
 -----------------------------------------
 
@@ -523,4 +533,329 @@ has often limited Varnish to only 1024 file descriptors. This will directly
 influence how many concurrent connections and threads Varnish can handle.
 The distribution-provided scripts handle this for you, and more.
 
+Parameters
+----------
+
+Run-time parameters in Varnish allow you to modify aspects of Varnish that
+should normally be left alone. The default values are meant to suite the
+vast majority of installations, and usually do. However, parameters exist
+for a reason.
+
+Varnish 4.0 has 93 parameters, which can be seen using ``varnishadm`` on a
+running Varnish server::
+
+        # varnishadm param.show
+        acceptor_sleep_decay       0.9 (default)
+        acceptor_sleep_incr        0.001 [s] (default)
+        acceptor_sleep_max         0.050 [s] (default)
+        auto_restart               on [bool] (default)
+        ban_dups                   on [bool] (default)
+        ban_lurker_age             60.000 [s] (default)
+        ban_lurker_batch           1000 (default)
+        ban_lurker_sleep           0.010 [s] (default)
+        between_bytes_timeout      60.000 [s] (default)
+        (...)
+
+You can also get detailed information on individual parameters::
+
+        # varnishadm param.show default_ttl
+        default_ttl
+                Value is: 120.000 [seconds] (default)
+                Default is: 120.000
+                Minimum is: 0.000
+
+                The TTL assigned to objects if neither the backend nor the VCL
+                code assigns one.
+
+                NB: This parameter is evaluated only when objects are
+                created.To change it for all objects, restart or ban
+                everything.
+
+Changing a parameter takes effect immediately, but is not always
+immediately visible, as the above `default_ttl` demonstrates. Changing
+`default_ttl` will affect any new object entered into the cache, but not
+what is already there.
+
+Many of the parameters Varnish exposes are meant for tweaking very
+complicated parts of Varnish, and even the developers may not know the
+exact consequence of modifying it, this is usually demonstrated through a
+warning, e.g.::
+
+        # varnishadm param.show timeout_linger
+        timeout_linger
+                Value is: 0.050 [seconds] (default)
+                Default is: 0.050
+                Minimum is: 0.000
+
+                How long time the workerthread lingers on an idle session
+                before handing it over to the waiter.
+                When sessions are reused, as much as half of all reuses happen
+                within the first 100 msec of the previous request completing.
+                Setting this too high results in worker threads not doing
+                anything for their keep, setting it too low just means that
+                more sessions take a detour around the waiter.
+
+                NB: We do not know yet if it is a good idea to change this
+                parameter, or if the default value is even sensible.  Caution
+                is advised, and feedback is most welcome.
+
+Heeding this warning is usually a good idea.
+
+You can change parameters using ``varnishadm param.set``::
+
+        # varnishadm param.set default_ttl 15
+
+        # varnishadm param.show default_ttl  
+        default_ttl
+                Value is: 15.000 [seconds]
+                Default is: 120.000
+                Minimum is: 0.000
+
+                The TTL assigned to objects if neither the backend nor the VCL
+                code assigns one.
+
+                NB: This parameter is evaluated only when objects are
+                created.To change it for all objects, restart or ban
+                everything.
+
+However, this is stored exclusively in the memory of the running Varnish
+instance, if you want to make it permanent, you need to add it to the
+``varnishd`` command line as a ``-p`` argument. E.g.::
+
+        # varnishd -b localhost:1111 -p default_ttl=10 -p prefer_ipv6=on
+
+Most parameters can and should be left alone, but reading over the list is
+a good idea. The relevant parameters are referenced when we run across the
+functionality.
+
+Tools: ``varnishadm``
+---------------------
+
+You've already seen ``varnishadm`` demonstrated numerous times. There isn't
+much to it.
+
+You can run ``varnishadm`` in two different modes: interactive, or with the
+CLI command you wish to issue as part of the ``varnishadm`` command line.
+The examples have so far used the latter form, e.g.::
+
+        # varnishadm status
+        Child in state running
+
+This is very useful for scripting and one-off commands.
+
+If you just type ``varnishadm``, you enter the interactive mode::
+
+        # varnishadm 
+        200        
+        -----------------------------
+        Varnish Cache CLI 1.0
+        -----------------------------
+        Linux,4.2.0-0.bpo.1-amd64,x86_64,-smalloc,-smalloc,-hcritbit
+        varnish-4.0.2 revision bfe7cd1
+
+        Type 'help' for command list.
+        Type 'quit' to close CLI session.
+
+        varnish> help
+        200        
+        help [command]
+        ping [timestamp]
+        auth response
+        quit
+        banner
+        status
+        start
+        stop
+        vcl.load <configname> <filename>
+        vcl.inline <configname> <quoted_VCLstring>
+        vcl.use <configname>
+        vcl.discard <configname>
+        vcl.list
+        param.show [-l] [<param>]
+        param.set <param> <value>
+        panic.show
+        panic.clear
+        storage.list
+        vcl.show <configname>
+        backend.list
+        backend.set_health matcher state
+        ban <field> <operator> <arg> [&& <field> <oper> <arg>]...
+        ban.list
+        
+        varnish> quit
+        500        
+        Closing CLI connection
+        # 
+
+Both modes are functionally identical. The biggest benefit of using the
+interactive mode might be that you don't have to worry about yet an other
+level of quotation marks once you start dealing with more complex commands
+than ``vcl.load`` and ``param.list``. For now, it's just a matter of style.
+An other difference is that ``varnishadm`` in interactive mode also offer
+rudimentary command line completion, something your shell might not.
+
+The CLI, and ``varnishadm`` by extension, uses HTTP-like status codes.
+If a command is issued successfully, you will get a ``200`` in return.
+These are just similar to HTTP, though, and do not match fully.
+
+When you are using ``varnishadm``, you are communicating with Varnish
+through the management process, over a regular TCP connection. It is
+possible to run ``varnishadm`` from a remote host, even if it is not
+generally advised. To accomplish this, you must:
+
+- Use a ``-T`` option that binds the CLI to an externally-available port.
+  E.g.: Not ``-T localhost:6082``.
+- Copy the `secret file` from the Varnish host to the one you wish to run
+  ``varnishadm`` from.
+- Make sure all firewalls etc are open.
+- Issue ``varnishadm`` with ``-T`` and ``-S``.
+
+However, be advised: CLI communication is NOT encrypted. The authentication
+is reasonably secure, in that it is not directly vulnerable to replay
+attacks (the shared secret is never transmitted), but after authentication,
+the connection can be hijacked. Never run ``varnishadm`` over an untrusted
+network. In fact, the best practice is to keep it bound to localhost.
+
+Tools: ``varnishstat``
+----------------------
+
+``varnishstat`` is the simplest of all the log-related tools, yet also one
+of the most useful tools. In its simplest form, it opens a real-time view
+of Varnish-counters::
+
+        Uptime mgt:   6+17:40:49              Hitrate n:       10       38       38
+        Uptime child: 6+17:40:49                 avg(n):   0.9943   0.9727   0.9727
+
+          NAME                        CURRENT       CHANGE      AVERAGE            
+        MAIN.uptime                    582049         1.00         1.00
+        MAIN.sess_conn               11321763        25.96        19.00
+        MAIN.client_req              11492571        25.96        19.00
+        MAIN.cache_hit               11278670        25.96        19.00
+        MAIN.cache_miss                 15614         0.00          .
+        MAIN.backend_conn                3851         0.00          .
+        MAIN.backend_reuse             568470         1.00          .
+        MAIN.backend_toolate             3832         0.00          .
+        MAIN.backend_recycle           572307         1.00          .
+        MAIN.fetch_length              567578         1.00          .
+        MAIN.fetch_chunked               4423         0.00          .
+        MAIN.fetch_304                    320         0.00          .
+        MAIN.pools                          2         0.00          .
+        MAIN.threads                      200         0.00          .
+        MAIN.threads_created              200         0.00          .
+        MAIN.busy_sleep                     3         0.00          .
+        ↓ MAIN.uptime                                                          INFO
+        Child process uptime:
+        How long the child process has been running.
+
+``varnishstat`` reads counters from the shmlog and makes sense of them, is
+the simple explanation. It can also be accessed in manners better suited
+for scripting, either ``varnishstat -1`` (plain text), ``varnishstat -j``
+(JSON) or ``varnishstat -x`` (XML). The real-time mode collects data over
+time, to provide you with meaningful interpretation. Knowing that you have
+had 11278670 cache hits over the last six and a half days might be
+interesting, but knowing that you have 25.96 cache hits per seconds right
+now is far more useful. The same can be achieved through ``varnishtat -1``
+and similar by simply executing the command twice and comparing the values.
+
+The interactive variant requires a slightly bigger window than shown above
+to expose all the information though.
+
+.. image:: img/c3/varnishstat-1.png
+
+Starting in the upper left, you'll see some durations:
+
+.. image:: img/c3/varnishstat-3.png
+
+This tells you the uptime of the management and child process. Every once
+in a while, these numbers might differ. That could happen if you manually
+issue a ``stop`` command followed by a ``start`` command through
+``varnishadm``, or if Varnish is hitting a bug and throwing an ``assert()``
+error.
+
+Looking closer at the upper right corner, you will see six numbers:
+
+.. image:: img/c3/varnishstat-2.png
+
+The first line tells you the time frame of the second. It will start at "1
+1   1" and grow to eventually read "10  100  1000". When you start
+``varnishstat``, it only has one second of data, but it collects up to a
+thousand seconds.
+
+The ``avg(n)`` line tells you the cache hit rate during the last ``(n)``
+seconds, where, `n` refers to the line above. In this example, we have a
+cache hit rate of 1.0 (aka: 100%) for the last 10 seconds, 0.9969 (99.69%)
+for the last 100 seconds and 0.9951 (99.51%) for the last 236 seconds.
+Getting a high cache hit rate is almost always good, but it can be a bit
+tricky. It reports how many client requests were served by cache hits, but
+it doesn't say anything about how many backend requests were triggered. If
+you are using grace mode, cache hit rate can easily be 100% while you are
+issuing requests to the web server.
+
+The main area shows 7 columns:
+
+``NAME``
+        This one should be obvious. The name of the counter.
+
+``CURRENT``
+        The actual value. This is the only value seen in ``varnishstat -j``
+        and similar.
+
+``CHANGE``
+        "Change per second". Or put an other way: The difference between
+        the current value and the value read a second earlier. Can be read
+        as "cache hit per second" or "client reuqests per second".
+
+``AVERAGE``
+        Average change of the counter, since start-up. The above example
+        has had 19 client requests per second on average. It's basically
+        ``CURRENT`` divided by ``MAIN.uptime``.
+
+``AVERAGE_n``
+        Similar the cache hit rate, this is the average over the last `n`
+        seconds. Note that the header says ``AVERAGE_1000`` immediately,
+        but the actual time period is the same as the ``Hitrate n:`` line,
+        so it depends on how long ``varnishstat`` has been running.
+
+An other note on the interactive ``varnishstat`` is that it does not
+display all counters by default. By default, it will hide any counter with
+a value of 0, in the interest of saving screen real-estate. In addition to
+hiding counters without a value, Varnish now has a concept of verbosity
+levels (new in Version 4.0). By default, it only displays informational
+counters.
+
+A few key bindings are worth mentioning:
+
+``<UP>``/``<DOWN>``/``<Page UP>``/``<Page Down>``
+        Scroll the list of counters.
+
+``<d>``
+        Toggle displaying unseen counters.
+``<v>``
+        Similar to ``<d>``, but only cycles through verbosity levels
+        instead of toggling everything.
+``<q>``
+        Quit.
+
+A note on threads
+-----------------
+
+Traditionally there was an exception to this rule. Varnish used to ship
+with an extremely conservative value for ``thread_pool_min`` and
+``thread_pool_max``, which are the parameters that govern how many `worker
+threads` Varnish uses. On Varnish 3, you would typically have 10 threads by
+default. Varnish would spin up more on demand, but 10 threads is extremely
+low, even for very low-traffic sites.
+
+Varnish uses one `worker thread` per active TCP connection. A typical user
+can easily set up 5 or more concurrent TCP sessions, depending on the
+content and browser, so with just 10 threads, your site is tuned for
+roughly 2-3 concurrent users. Again, Varnish will spin up more threads on
+demand, but this is still not ideal.
+
+With Varnish 4.0, this default value was finally brought up to where it
+needs to be. Varnish 4.0 (and newer) defaults to starting up 200 threads,
+with a maximum value of 10000. This is suitable for the vast majority of
+web sites out there.
+
+FIXME: not done
 
