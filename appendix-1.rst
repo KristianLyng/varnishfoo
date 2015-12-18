@@ -1,5 +1,5 @@
-Appendix A: Sate machine graphs
-===============================
+Appendix A: State machine graphs
+================================
 
 See chapter 1 for information on how to generate these for yourself. They
 are included for your convenience.
