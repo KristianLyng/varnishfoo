@@ -357,15 +357,12 @@ argument to any Varnish-tool you want to use. There are two use cases for
 If you look in the working directory, you can see your shmlog file and the
 compiled VCL, among other things::
 
-        # ls /var/lib/varnish/
         # varnishd -b localhost:8080
-        # ls /var/lib/varnish/
-        3da4db675c6b
-        # ls /var/lib/varnish/3da4db675c6b/
-        _.secret  _.vsm  vcl.QakoKN_T.so
         # varnishd -b localhost:8110 -a :81 -n test
         # ls /var/lib/varnish/
         3da4db675c6b  test
+        # ls /var/lib/varnish/3da4db675c6b/
+        _.secret  _.vsm  vcl.QakoKN_T.so
         # ls /var/lib/varnish/test/
         _.secret  _.vsm  vcl.Lnayret_.so
         # netstat -nlpt
@@ -380,10 +377,10 @@ compiled VCL, among other things::
         tcp6       0      0 :::81            :::*              LISTEN   -               
         tcp6       0      0 ::1:43220        :::*              LISTEN   502/varnishd    
 
-A common task you have is to verify that your VCL is correct before you try
-loading it. This can be done implicitly with the ``-C`` option. It will
-either give you a syntax error for your VCL or a whole lot of C code, which
-happens to be your VCL translated to C::
+A common task is to verify that your VCL is correct before you try loading
+it. This can be done with the ``-C`` option. It will either give you a
+syntax error for your VCL or a whole lot of C code, which happens to be
+your VCL translated to C::
 
         # cat /etc/varnish/test.vcl 
         vcl 4.0;
@@ -407,7 +404,7 @@ happens to be your VCL translated to C::
         # echo $?
         2
 
-Note that the return-code of ``varnishd -C -f vcl`` is false if the VCL
+The return-code of ``varnishd -C -f vcl`` is false(non-zero) if the VCL
 fails to compile. Fixing the VCL::
 
         # cat /etc/varnish/test-ok.vcl 
@@ -563,12 +560,6 @@ running Varnish server::
         acceptor_sleep_decay       0.9 (default)
         acceptor_sleep_incr        0.001 [s] (default)
         acceptor_sleep_max         0.050 [s] (default)
-        auto_restart               on [bool] (default)
-        ban_dups                   on [bool] (default)
-        ban_lurker_age             60.000 [s] (default)
-        ban_lurker_batch           1000 (default)
-        ban_lurker_sleep           0.010 [s] (default)
-        between_bytes_timeout      60.000 [s] (default)
         (...)
 
 You can also get detailed information on individual parameters::
@@ -617,19 +608,8 @@ warning, e.g.::
 You can change parameters using ``varnishadm param.set``::
 
         # varnishadm param.set default_ttl 15
-
-        # varnishadm param.show default_ttl  
-        default_ttl
-                Value is: 15.000 [seconds]
-                Default is: 120.000
-                Minimum is: 0.000
-
-                The TTL assigned to objects if neither the backend nor the VCL
-                code assigns one.
-
-                NB: This parameter is evaluated only when objects are
-                created.To change it for all objects, restart or ban
-                everything.
+        # varnishadm param.show | grep default_ttl
+        default_ttl                15.000 [seconds]
 
 However, this is stored exclusively in the memory of the running Varnish
 instance, if you want to make it permanent, you need to add it to the
@@ -677,36 +657,12 @@ If you just type ``varnishadm``, you enter the interactive mode::
         Type 'help' for command list.
         Type 'quit' to close CLI session.
 
-        varnish> help
+        varnish> status
         200        
-        help [command]
-        ping [timestamp]
-        auth response
-        quit
-        banner
-        status
-        start
-        stop
-        vcl.load <configname> <filename>
-        vcl.inline <configname> <quoted_VCLstring>
-        vcl.use <configname>
-        vcl.discard <configname>
-        vcl.list
-        param.show [-l] [<param>]
-        param.set <param> <value>
-        panic.show
-        panic.clear
-        storage.list
-        vcl.show <configname>
-        backend.list
-        backend.set_health matcher state
-        ban <field> <operator> <arg> [&& <field> <oper> <arg>]...
-        ban.list
-        
+        Child in state running
         varnish> quit
         500        
         Closing CLI connection
-        # 
 
 Both modes are functionally identical. One benefit of using the interactive
 mode is that you don't have to worry about yet an other level of quotation
@@ -731,14 +687,13 @@ generally advised. To accomplish this, you must:
 - Make sure all firewalls etc are open.
 - Issue ``varnishadm`` with ``-T`` and ``-S``.
 
-However, be advised: CLI communication is *not* encrypted. The authentication
-is reasonably secure, in that it is not directly vulnerable to replay
-attacks (the shared secret is never transmitted), but after authentication,
-the connection can be hijacked. Never run ``varnishadm`` over an untrusted
-network. In fact, the best practice is to keep it bound to localhost.
+CLI communication is *not* encrypted. The authentication is reasonably
+secure, in that it is not directly vulnerable to replay attacks (the shared
+secret is never transmitted), but after authentication, the connection can
+be hijacked. Never run ``varnishadm`` over an untrusted network. The best
+practice is to keep it bound to localhost.
 
-If you do need to communicate with it, you can always use SSH. You do not
-need root-privileges to run ``varnishadm``, the user just needs
+You do not need root-privileges to run ``varnishadm``, the user just needs
 read-permission to the secret file and either read permission to the shmlog
 or knowledge of the ``-T`` and ``-S`` arguments.
 
