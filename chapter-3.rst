@@ -370,7 +370,7 @@ Other useful ``varnishd`` arguments
 ``-n dir`` is used to control the Varnish working directory and name. The
 directory argument can either just be a simple name, like ``-n
 frontserver``, in which case Varnish will use a working directory named
-``frontserver``  in its default path, typically
+``frontserver`` in its default path, typically
 ``/var/lib/varnish/frontserver/``. You can also provide a full path
 instead. Whenever you alter ``-n``, you need to provide that same ``-n``
 argument to any Varnish-tool you want to use. There are two use cases for
@@ -596,7 +596,7 @@ warning, e.g.::
                 more sessions take a detour around the waiter.
 
                 NB: We do not know yet if it is a good idea to change this
-                parameter, or if the default value is even sensible.  Caution
+                parameter, or if the default value is even sensible. Caution
                 is advised, and feedback is most welcome.
 
 You can change parameters using ``varnishadm param.set``::
@@ -696,7 +696,7 @@ If you just type ``varnishadm``, you enter the interactive mode::
 Both modes are functionally identical. One benefit of using the interactive
 mode is that you don't have to worry about yet an other level of quotation
 marks once you start dealing with more complex commands than ``vcl.load``
-and ``param.list``. For now, it's just a matter of style.  An other
+and ``param.list``. For now, it's just a matter of style. An other
 difference is that ``varnishadm`` in interactive mode also offer
 rudimentary command line completion, something your shell might not.
 
@@ -1224,12 +1224,12 @@ Tools: ``varnishtop``
 
 To quote the manual page::
 
-       The  varnishtop  utility reads varnishd(1) shared memory logs
-       and presents a continuously updated list of the most commonly
-       occurring log entries.  With suitable filtering using the -I,
-       -i, -X and -x options, it can be used to display a ranking of
-       requested  documents,  clients,  user  agents,  or  any other
-       information which is recorded in the log.
+       The varnishtop utility reads varnishd(1) shared memory logs and
+       presents a continuously updated list of the most commonly occurring
+       log entries. With suitable filtering using the -I, -i, -X and -x
+       options, it can be used to display a ranking of requested documents,
+       clients, user agents, or any other information which is recorded in
+       the log.
 
 This is the output of ``varnishlog -i ReqUrl``::
 
@@ -1297,14 +1297,13 @@ An other helpful way to use a VSL query is to investigate the details of
 the ``Timestamp`` tag. Quoting directly from the ``vsl(7)`` manual page::
 
        Timestamp - Timing information
-              Contains  timing  information  for  the Varnish worker
-              threads.
+              Contains timing information for the Varnish worker threads.
 
-              Time stamps are issued by Varnish on  certain  events,
-              and  show  the  absolute  time  of the event, the time
-              spent since the start of the work unit, and  the  time
-              spent  since the last timestamp was logged. See vsl(7)
-              for information about the individual timestamps.
+              Time stamps are issued by Varnish on certain events, and
+              show the absolute time of the event, the time spent since the
+              start of the work unit, and the time spent since the last
+              timestamp was logged. See vsl(7) for information about the
+              individual timestamps.
 
               The format is:
 

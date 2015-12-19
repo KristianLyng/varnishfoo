@@ -118,7 +118,7 @@ The Varnish project began in 2005. The issue to be solved was that of a
 large Norwegian news site (or alternatively a tiny international site). The
 first release came in 2006, and worked well for www.vg.no. In 2008, Varnish
 2.0 came, which opened Varnish up to more sites, as long as they looked and
-behaved similar to www.vg.no.  As time progressed and more people started
+behaved similar to www.vg.no. As time progressed and more people started
 using Varnish, Varnish has been adapted to a large and varied set of use
 cases.
 
@@ -178,7 +178,7 @@ or optionally change configuration, stop and start Varnish, and more. The
 agent lives on https://github.com/varnish/vagent2, and is packaged for most
 distributions today.
 
-Using Varnish to gracefully handle operational issues is common.  Serving
+Using Varnish to gracefully handle operational issues is common. Serving
 cached content past its expiry time while a web server is down, or
 switching to a different server, will give your users a better browsing
 experience. And in a worst case scenario, at least the user can be
@@ -218,7 +218,7 @@ official location for this is found in the source code of Varnish, under
         # for a in *dot; do dot -Tpng $a > $(echo $a | sed s/.dot/.png/); done
         # ls *png
 
-Alternatively, replace ``-Tpng`` and ``.png``  with ``-Tsvg`` and ``.svg``
+Alternatively, replace ``-Tpng`` and ``.png`` with ``-Tsvg`` and ``.svg``
 respectively to get vector graphics, or ``-Tpdf``/``.pdf`` for pdfs.
 
 For convenience, the graphs from Varnish 4.1 are included in Appendix A. If

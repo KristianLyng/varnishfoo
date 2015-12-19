@@ -67,7 +67,7 @@ inspection:
 
 The browser sends ``Cache-Control: max-age=0`` and an
 ``If-Modified-Since``-header. The web server correctly responds with
-``304 Not Modified``.  We'll look closer at those, but for now,
+``304 Not Modified``. We'll look closer at those, but for now,
 let's use a different type of refresh: ``<Shift>+<F5>`` in Chrome or
 ``<Shift>+<Ctrl>+r`` in Firefox:
 
@@ -852,7 +852,7 @@ The lessons to pick up from this is:
 - ``max-age`` is relative to ``Age`` and *not* to when the request was
   made.
 - You can have multiple tiers of caches, and ``max-age=x`` will be correct
-  for the end user if all intermediary  caches correctly obey it and adds
+  for the end user if all intermediary caches correctly obey it and adds
   to ``Age``.
 
 The ``Cache-Control`` header
@@ -979,7 +979,7 @@ existed a few years before `RFC5861`_ came about.
 
 Varnish 4.1 implements ``stale-while-revalidate`` for the first time, but
 not ``stale-if-error``. Varnish has a default ``stale-while-revalidate``
-value of 10 seconds.  Earlier examples ran into this: You could see
+value of 10 seconds. Earlier examples ran into this: You could see
 responses that were a few seconds older than max-age, while a request to
 revalidate the response was happening in the background.
 
