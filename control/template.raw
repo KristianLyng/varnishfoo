@@ -6,6 +6,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <style>
     	img { max-width: 100%%; }
+	object { max-width: 100%%; }
     </style>
     <!-- The above 3 meta tags *must* come first in the head; any other head content must come *after* these tags -->
     <title>varnishfoo.info</title>
