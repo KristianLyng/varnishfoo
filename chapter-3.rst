@@ -1464,8 +1464,26 @@ what you can do. The best reference pages for these tools are the manual
 pages, and the ``vsl-query(7)`` and ``vsl(7)`` manual pages. Even if they
 some times do get out of date.
 
-FIXME
------
+Summary
+-------
 
-The chapter needs to be re-ordered I think. The flow from sub-chapter to
-sub-chapter is a bit random.
+You have seen how to modify Varnish parameters and command line arguments,
+how to use the various tools and you've been introduced to the architecture
+of Varnish.
+
+The perhaps most important lesson to pick up in this chapter, however, is
+that you do not want to alter Varnish parameters and startup scripts unless
+you have a very strong reason to do so. With the exception of how much
+memory Varnish is to use and the default listening port provided by startup
+scripts, the default values are tuned for real web sites and can be used
+even on quite high-traffic sites.
+
+Of the tools demonstrated here, ``varnishlog``, ``varnishadm`` and
+``varnishstat`` are the real work horses. Mastering a few simple VSL
+queries will make operating on the shared memory log a breeze, even when
+your site is serving thousands of requests per second and you need to find
+that one URL that's miss-behaving.
+
+When you are introduced to the Varnish Configuration Language in the
+chapters to come, these tools will be right at the center of your work
+flow.
