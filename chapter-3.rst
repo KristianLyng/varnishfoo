@@ -2,7 +2,7 @@ Architecture and operation
 ==========================
 
 If you are working with Varnish, you need to know how to get information
-from it, how to start and stop it and how to tweak it a bit.
+from it, how to start and stop it and how to configure it.
 
 This chapter explains the architecture of Varnish, how Varnish deals with
 logs, best practices for running Varnish and debugging your Varnish
@@ -19,7 +19,7 @@ mostly not relevant for every-day operation. Neither will you see much of
 the Varnish Configuration Language (VCL). VCL requires a chapter or two all
 by itself.
 
-The Varnish developer use a lot of three letter acronyms for many of the
+The Varnish developers use numerous three letter acronyms for the
 components and concepts that are covered in this chapter. We will only use
 them sparsely and where they make sense. Many of them are ambiguous and
 some refer to different things depending on context. An effort is made to
@@ -54,14 +54,14 @@ First of all, it is quite fast, and doesn't eat up disk space. The second
 reason is that a traditional log file is often limited in information.
 Compromises have to be made because it is written to disk and could take up
 a great deal of space if everything you might need during a debug session
-was always included. With a shared memory log, Varnish can add all
+was always included. With a shared memory log, Varnish can add all the
 information it has, always. If you are debugging, you can extract
 everything you need, but if all you want is statistics, that's all you
 extract.
 
 The shared memory log, abbreviated shmlog, is a round-robin style log file
-which is usually a little less than 100MB large. It is split in two parts.
-The smallest bit is the part for counters, used to keep track of any part
+which is typically about 85MB large. It is split in two parts. The
+smallest bit is the part for counters, used to keep track of any part
 of Varnish that could be covered by a number, e.g. number of cache hits,
 number of objects, and so forth. This part of the shmlog is 1MB by default.
 
@@ -69,31 +69,27 @@ The biggest part of the shmlog is reserved for fifo-style log entries,
 directly related to requests typically. This is 80MB by default. Once those
 80MB are filled, Varnish will continue writing to the log from the top. If
 you wish to preserve any of the data, you need to extract it before it's
-overwritten. Luckily for us, there are numerous tools designed to do just
-this.
+overwritten. This is where the various Varnish tools comes into the
+picture.
 
-An other note-worthy part of the diagram above is how VCL is handled. VCL
-is not a traditionally parsed configuration format, but a shim layer on top
-of C and the Varnish run time library (VRT). You are not so much
+VCL is not a traditionally parsed configuration format, but a shim layer on
+top of C and the Varnish run time library (VRT). You are not so much
 configuring Varnish with VCL as programming it. Once you've written your
 VCL file, Varnish will translate it to C and compile it, then link it
 directly into the child process.
 
-The observant reader will have noticed that ``varnish-agent`` is listed
-twice. That is because the Varnish agent both reads the logs and
-communicates with Varnish over the CLI protocol. Both ``varnishadm`` and
-``varnish-agent`` are tools that can influence a running Varnish instance,
-while any tool that only works on the shmlog is purely informational and
-has no direct impact on the running Varnish instance.
+Both ``varnishadm`` and ``varnish-agent`` are tools that can influence a
+running Varnish instance, while any tool that only works on the shmlog is
+purely informational and has no direct impact on the running Varnish
+instance.
 
-Design principles in Varnish
+Design principles of Varnish
 ----------------------------
 
 Varnish is designed to solve real problems and then largely get out of your
 way. If the solution to your problem is to buy more RAM, then Varnish isn't
-going to try to work around that issue. If you want to use Varnish to proxy
-SSH connection, then by all means, go ahead, but your patches to make it
-easier are unlikely to be accepted.
+going to try to work around that issue. Varnish relies on features provided
+by 64-bit operating systems and multi-core hardware.
 
 Varnish also uses a great deal of ``assert()`` statements and other fail
 safes in the code base. An ``assert()`` statement is a very simple
@@ -109,7 +105,7 @@ is believed to be the unthinkable. A more realistic example can be:
 - Store `foo` in the cache.
 - (time passes)
 - Read `foo` from the cache.
-- Assert that ``foo.magic`` is till ``0x123765``.
+- Assert that ``foo.magic`` is still ``0x123765``.
 
 This is a simple safe guard against memory corruption, and is used for
 almost all data structures that are kept around for a while in Varnish. An
@@ -139,7 +135,7 @@ The different categories of configuration
 
 Varnish has three categories of configuration settings. Certain things
 must be configured before Varnish starts and can't be changed during
-run-time. These settings are very limited, and are provided on the command
+run-time. These settings are few in number, and are provided on the command
 line. Even among command line arguments, several can be changed during run
 time to some degree. The working directory to be used and the management
 interface are among the settings that are typically provided as command
@@ -159,21 +155,21 @@ what parameters can modify is the number of threads Varnish can use, the
 size of the shared memory log, what user to run as and default timeout
 values.
 
-It's worth mentioning that many of the command line arguments passed to
-``varnishd`` are really just short-hands for their respective parameters.
+Many of the command line arguments passed to ``varnishd`` are actually
+short-hands for their respective parameters.
 
 The third type of configuration primitive is the Varnish Configuration
 Language script, usually just referred to as your VCL or VCL file. This is
 where you will specify caching policies, what backends you have and how to
 pick a backend. VCL can be changed at run-time with little or no penalty to
-performance, but are not retroactive. If your VCL says "cache this for 5
-years" and the content is cached, then changing your VCL to "cache
-this for 1 minute" isn't going to alter the content that has already been
-cached.
+performance, but like parameters, changes are not retroactive. If your VCL
+says "cache this for 5 years" and the content is cached, then changing your
+VCL to "cache this for 1 minute" isn't going to alter the cache duration
+for content that has already been cached.
 
 VCL is easily the most complex part of Varnish, but you can get a lot done
-with very basic knowledge and a few tools. In this chapter, VCL is not a
-focus, but is only briefly mentioned and used to avoid building bad habits.
+with a few simple techniques. In this chapter, VCL is not a focus, but is
+only briefly mentioned and used to avoid building bad habits.
 
 To summarize:
 
@@ -194,12 +190,12 @@ Parameters
         Varnish supports".
 
 Varnish Configuration Language
-        Stored in a separate VCL file, usually in ``/etc/varnish/``. Can be
-        changed on-the-fly. Uses a custom-made configuration language to
-        define caching policies. Examples: "Retrieve content for
-        www.example.com from backend server at prod01.example.net", "Strip
-        Cookie headers for these requests", "Output an error message for
-        this URL".
+        Stored in one or more separate VCL files, usually in
+        ``/etc/varnish/``. Can be changed on-the-fly. Uses a custom-made
+        configuration language to define caching policies. Examples:
+        "Retrieve content for www.example.com from backend server at
+        prod01.example.net", "Strip Cookie headers for these requests",
+        "Output an error message for this URL".
 
 Command line arguments
 ----------------------
@@ -209,30 +205,18 @@ Command line arguments are rarely entered directly, but usually kept in
 Before we look at startup scripts, we'll look at running
 ``varnishd`` by hand.
 
-Varnish hasn't got the best track record of verifying arguments. Just
-because Varnish starts with the arguments you provided doesn't mean Varnish
-actually used them as you expected. Make sure you double check if you
-deviate from the standard usage.
+Varnish hasn't got the best track record of verifying command line
+arguments. Just because Varnish starts with the arguments you provided
+doesn't mean Varnish actually used them as you expected. Make sure you
+double check if you deviate from the standard usage.
 
-Some command line arguments are really just short hands for parameters,
-which is why you will some times find parameters that seem to overlap with
-command line arguments.
-
-Most command line arguments haven't changed much since their introduction,
-but some might have had their more complex variants extended or tweaked a
-bit.
-
-``-a`` specifies what port Varnish listens to, and as such, is probably one
-of the most important arguments you will use. This argument differs
-somewhat between Varnish 4.0 and 4.1 if you try to use multiple listening
-sockets, but for most use cases that change is irrelevant.
-
-Most installations simply use ``-a :80``, but it's worth noting that you
-can have Varnish listening on multiple sockets. This is especially useful
-in Varnish 4.1 where you can have Varnish listen for regular HTTP traffic
-on port 80, and SSL-terminated traffic through the PROXY protocol on
-127.0.0.1:1443 (for example). In Varnish 4.0, this is accomplished by
-having a white-space separated list of ``address:port`` pairs::
+``-a`` specifies what port Varnish listens to. Most installations simply
+use ``-a :80``, but it's worth noting that you can have Varnish listening
+on multiple sockets. This is especially useful in Varnish 4.1 where you can
+have Varnish listen for regular HTTP traffic on port 80, and SSL-terminated
+traffic through the PROXY protocol on 127.0.0.1:1443 (for example). In
+Varnish 4.0, this is accomplished by having a white-space separated list of
+``address:port`` pairs::
 
         varnishd -b localhost:8080 ... -a "0.0.0.0:80 127.0.0.1:81"
 
@@ -284,10 +268,9 @@ generated at installation. The content is never sent over the network, but
 used to verify clients. All tools that are to interact with Varnish must be
 able to read the content of this file.
 
-The nice thing about both ``-T`` and ``-S`` is that you don't really have to
-think too much about them. ``varnishadm`` and other tools that use the
-management port can read those arguments directly from the ``shmlog``.
-Example::
+``varnishadm`` and other tools that use the management port will read the
+``-T`` and ``-S`` argument from the shmlog if you don't provide them on the
+command line. As seen here::
 
         # varnishd -b localhost:8080
         # netstat -nlpt
@@ -304,22 +287,51 @@ Example::
         # varnishadm -T localhost:37860 -S /var/lib/varnish/c496eeac1030/_.secret status
         Child in state running
 
-Notice how ``varnishadm`` works with zero arguments, but if you start
-adding ``-T`` you also have to specify the ``-S``. ``varnishadm`` and
-``varnish-agent`` can re-use multiple options from ``varnishd`` (``-T``,
-``-S``, ``-n``).
+``varnishadm`` works with zero arguments, but if you add ``-T`` you also
+have to specify the ``-S`` argument. ``varnishadm`` can re-use multiple
+options from ``varnishd`` (``-T``, ``-S``, ``-n``).
 
 Many Varnish installations default to using ``-S /etc/varnish/secret``.
-This is largely for historic reasons, but is a good habit in case you end
-up with multiple Varnish instances over multiple machines.
+This is a good habit in case you end up with multiple Varnish instances
+over multiple machines.
 
-Last, but not least, you almost always want to specify an ``-s`` option. This
+Last, but not least, you will want to specify an ``-s`` option. This
 is used to set how large Varnish's cache will be, and what underlying method is
-used to cache.  This is an extensive topic, but for now, use ``-s
-malloc,<size>``, for example ``-s malloc,256M``. For most systems, using ``-s
-malloc,<size>``, where ``<size>`` is slightly less than the system memory is a
-good practice. Malloc has been a good choice for a decade, and recently ``-s
-file`` was formally deprecated.
+used to cache. Varnish provides three storage backends, called ``mallco``,
+``file`` and ``persistent``. The most used, by far, is ``malloc``. It works
+by allocating the memory needed with the ``malloc()`` system call, and adds
+as little logic as possible on top of it. Under the hood, Varnish uses the
+`jemalloc` library to achieve better performance for multi-threaded
+applications. If you specify a larger cache than you have physical memory,
+it is up to your operating system to utilize swap instead.
+
+The second alternative is ``file``. This allocates a file on your file
+system, then uses ``mmap()`` to map it into memory. Varnish never makes an
+attempt to commit the content to disk. The file is merely provided in case
+your cache is larger than your physical memory. It is not possible to
+re-use a file previously used with ``-s file`` to regain the cached content
+you had before a restart or similar event. What is written to the file is
+for all practical purposes random.
+
+The last alternative is ``persistent``. This is by far the most complex
+alternative, and is meant to provide a persistent storage of cache between
+restarts. It doesn't make a guarantee that all of the content is there,
+though.
+
+As of Varnish 4.1, both ``persistent`` and ``file`` are deprecated.
+Persistent is deprecated because it is very complex and has not received
+near enough testing and feedback to be regarded as production quality. It
+is used by several large Varnish installations, but use at your own risk.
+For ``file``, the deprecation is less severe. The ``malloc`` alternative is
+simply better for most of us.
+
+If you do end up using ``-s malloc``, the next question is usually "how
+large should the cache be?". There is no easy answer to this, but as a
+rule, starting out with 80% of the memory your machine has available is
+usually safe. Varnish will use a little more memory than just what you
+specify for ``-s malloc``, so you need to anticipate that too. How much
+more depends on your traffic. Many small objects have a larger overhead,
+while large objects have less of an overhead.
 
 To summarize:
 
@@ -487,10 +499,6 @@ top-quality Varnish packages.
 The startup scripts provided for those distributions are solid, and should
 be used whenever possible.
 
-This, combined with Varnish developers' habit of frequently changing Varnish
-default behavior to the better means that few changes are needed to get a
-basic Varnish installation going.
-
 Since before GNU/Linux existed, System V-styled init scripts have been used
 to boot Unix-like machines. This has been the case for GNU/Linux too. Until
 recently, when ``upstart`` and ``systemd`` came around. By now, all the
@@ -524,14 +532,6 @@ For starting and stopping, it's a little simpler:
 
 To enable or disable starting Varnish at boot, you can use ``systemctl
 <enable|disable> varnish.service`` on Systemd-systems.
-
-The biggest benefit of using the distribution-provided startup script,
-beyond not having to write one yourself, is that all the little details are
-handled correctly according to your distribution. The most common mistake
-seen on systems using custom-scripts is to not issue ``ulimit -n``, which
-has often limited Varnish to only 1024 file descriptors. This will directly
-influence how many concurrent connections and threads Varnish can handle.
-The distribution-provided scripts handle this for you, and more.
 
 Parameters
 ----------
@@ -577,8 +577,8 @@ immediately visible, as the above `default_ttl` demonstrates. Changing
 what is already there.
 
 Many of the parameters Varnish exposes are meant for tweaking very
-complicated parts of Varnish, and even the developers may not know the
-exact consequence of modifying it, this is usually demonstrated through a
+intricate parts of Varnish, and even the developers may not know the
+exact consequence of modifying it, this is usually flagged through a
 warning, e.g.::
 
         # varnishadm param.show timeout_linger
@@ -598,8 +598,6 @@ warning, e.g.::
                 NB: We do not know yet if it is a good idea to change this
                 parameter, or if the default value is even sensible.  Caution
                 is advised, and feedback is most welcome.
-
-Heeding this warning is usually a good idea.
 
 You can change parameters using ``varnishadm param.set``::
 
@@ -624,6 +622,15 @@ instance, if you want to make it permanent, you need to add it to the
 
         # varnishd -b localhost:1111 -p default_ttl=10 -p prefer_ipv6=on
 
+The usual work flow for adjusting parameters is:
+
+1. Start Varnish
+2. Modify parameters through ``varnishadm``
+3. Test
+4. Go back to step 2 if it doesn't work as intended
+5. When it works as intended, save the changes to your startup script as
+   ``-p`` arguments.
+
 Most parameters can and should be left alone, but reading over the list is
 a good idea. The relevant parameters are referenced when we run across the
 functionality.
@@ -631,8 +638,9 @@ functionality.
 Tools: ``varnishadm``
 ---------------------
 
-You've already seen ``varnishadm`` demonstrated numerous times. There isn't
-much to it.
+Controlling a running Varnish instance is accomplished with the
+``varnishadm`` tool, which talks to the management process through the CLI
+interface.
 
 You can run ``varnishadm`` in two different modes: interactive, or with the
 CLI command you wish to issue as part of the ``varnishadm`` command line.
@@ -640,8 +648,6 @@ The examples have so far used the latter form, e.g.::
 
         # varnishadm status
         Child in state running
-
-This is very useful for scripting and one-off commands.
 
 If you just type ``varnishadm``, you enter the interactive mode::
 
@@ -687,11 +693,11 @@ If you just type ``varnishadm``, you enter the interactive mode::
         Closing CLI connection
         # 
 
-Both modes are functionally identical. The biggest benefit of using the
-interactive mode might be that you don't have to worry about yet an other
-level of quotation marks once you start dealing with more complex commands
-than ``vcl.load`` and ``param.list``. For now, it's just a matter of style.
-An other difference is that ``varnishadm`` in interactive mode also offer
+Both modes are functionally identical. One benefit of using the interactive
+mode is that you don't have to worry about yet an other level of quotation
+marks once you start dealing with more complex commands than ``vcl.load``
+and ``param.list``. For now, it's just a matter of style.  An other
+difference is that ``varnishadm`` in interactive mode also offer
 rudimentary command line completion, something your shell might not.
 
 The CLI, and ``varnishadm`` by extension, uses HTTP-like status codes.
@@ -710,32 +716,38 @@ generally advised. To accomplish this, you must:
 - Make sure all firewalls etc are open.
 - Issue ``varnishadm`` with ``-T`` and ``-S``.
 
-However, be advised: CLI communication is NOT encrypted. The authentication
+However, be advised: CLI communication is *not* encrypted. The authentication
 is reasonably secure, in that it is not directly vulnerable to replay
 attacks (the shared secret is never transmitted), but after authentication,
 the connection can be hijacked. Never run ``varnishadm`` over an untrusted
 network. In fact, the best practice is to keep it bound to localhost.
 
+If you do need to communicate with it, you can always use SSH. You do not
+need root-privileges to run ``varnishadm``, the user just needs
+read-permission to the secret file and either read permission to the shmlog
+or knowledge of the ``-T`` and ``-S`` arguments.
+
 Tools: ``varnishstat``
 ----------------------
 
-``varnishstat`` is the simplest of all the log-related tools, yet also one
-of the most useful tools. In its simplest form, it opens a real-time view
-of Varnish-counters:
+``varnishstat`` is the simplest, yet one of the most useful log-related
+tools. With no arguments, ``varnishstat`` opens an interactive view of
+Varnish-counters:
 
 .. image:: img/c3/varnishstat-1.png
 
-``varnishstat`` reads counters from the shmlog and makes sense of them, is
-the simple explanation. It can also be accessed in manners better suited
-for scripting, either ``varnishstat -1`` (plain text), ``varnishstat -j``
-(JSON) or ``varnishstat -x`` (XML). The real-time mode collects data over
-time, to provide you with meaningful interpretation. Knowing that you have
-had 11278670 cache hits over the last six and a half days might be
-interesting, but knowing that you have 25.96 cache hits per seconds right
-now is far more useful. The same can be achieved through ``varnishtat -1``
-and similar by simply executing the command twice and comparing the values.
+``varnishstat`` reads counters from the shmlog and makes sense of them.
+It can also be accessed in manners better suited for scripting, either
+``varnishstat -1`` (plain text), ``varnishstat -j`` (JSON) or ``varnishstat
+-x`` (XML). The real-time mode collects data over time, to provide you with
+meaningful interpretation. Knowing that you have had 11278670 cache hits
+over the last six and a half days might be interesting, but knowing that
+you have 25.96 cache hits per seconds right now is far more useful. The
+same can be achieved through ``varnishtat -1`` and similar by executing the
+command twice and comparing the values.
 
-Starting in the upper left, you'll see some durations:
+Looking at the upper left corner of the screenshot above, you'll see some
+durations:
 
 .. image:: img/c3/varnishstat-3.png
 
@@ -745,7 +757,7 @@ issue a ``stop`` command followed by a ``start`` command through
 ``varnishadm``, or if Varnish is hitting a bug and throwing an ``assert()``
 error.
 
-Looking closer at the upper right corner, you will see six numbers:
+In the upper right corner, you will see six numbers:
 
 .. image:: img/c3/varnishstat-2.png
 
@@ -761,8 +773,8 @@ for the last 100 seconds and 0.9951 (99.51%) for the last 236 seconds.
 Getting a high cache hit rate is almost always good, but it can be a bit
 tricky. It reports how many client requests were served by cache hits, but
 it doesn't say anything about how many backend requests were triggered. If
-you are using grace mode, cache hit rate can easily be 100% while you are
-issuing requests to the web server.
+you are using grace mode, cache hit rate can be 100% while you are issuing
+requests to the web server.
 
 The main area shows 7 columns:
 
@@ -789,12 +801,11 @@ The main area shows 7 columns:
         but the actual time period is the same as the ``Hitrate n:`` line,
         so it depends on how long ``varnishstat`` has been running.
 
-An other note on the interactive ``varnishstat`` is that it does not
-display all counters by default. By default, it will hide any counter with
-a value of 0, in the interest of saving screen real-estate. In addition to
-hiding counters without a value, Varnish now has a concept of verbosity
-levels (new in Version 4.0). By default, it only displays informational
-counters.
+An interactive ``varnishstat`` does not display all counters by default.
+It will hide any counter with a value of 0, in the interest of
+saving screen real-estate. In addition to hiding counters without a value,
+each counter has a verbosity level attached to it. By default, it only
+displays informational counters.
 
 A few key bindings are worth mentioning:
 
@@ -804,7 +815,7 @@ A few key bindings are worth mentioning:
 ``<d>``
         Toggle displaying unseen counters.
 ``<v>``
-        Similar to ``<d>``, but only cycles through verbosity levels
+        Similar to ``<d>``, but cycles through verbosity levels
         instead of toggling everything.
 ``<q>``
         Quit.
@@ -886,8 +897,8 @@ Tools: ``varnishlog``
 
 Where ``varnishstat`` is a simple way to view and work with counters in
 Varnish, ``varnishlog`` is a simple way to view and work with the rest of
-the shmlog. With no arguments, it will output all log data in a
-semi-ordered manner. However, most Varnish installations has far too much
+the shmlog. With no arguments, it will output all log data in real time in
+a semi-ordered manner. However, most Varnish installations has far too much
 traffic for that to be useful. You need to be able to filter and group data
 to be able to use ``varnishlog`` productively.
 
@@ -957,24 +968,24 @@ log entries.
 The very first column is used to help you group requests. The single ``*``
 tells you that this particular line is just informing you about the
 following grouping. ``<< Request  >> 2`` tells you that the following is
-grouped as a request, and the ID is 2. The default grouping method is
-``vxid``, which we will explore soon.
+grouped as a request, and the `vxid` is 2. A `vixid` is an ID attached to
+all log records. You will also see it in the response header ``X-Varnish``.
 
 Next, you see what is more typical entries. Each log line starts with a
-``-`` to indicate that it's related to the above grouping. Other grouping
-methods might have more dashes here to indicate what happened first and
-last. The actual grouping is a logic done in the ``varnishlog`` tool
-itself, using information from the shmlog. It is useful, because the shmlog
-is the result of hundreds, potentially thousands of threads writing to a
-log at the same time. Without grouping it, tracking a single request would
-be very hard.
+``-`` to indicate that it's related to the above grouping, using the same
+`vxid`. Other grouping methods might have more dashes here to indicate what
+happened first and last. The actual grouping is a logic done in the
+``varnishlog`` tool itself, using information from the shmlog. It is
+useful, because the shmlog is the result of hundreds, potentially thousands
+of threads writing to a log at the same time. Without grouping it, tracking
+a single request would be very hard.
 
-The ``Begin``-word is called a log `tag`. Each line has a tag associated
-with it, and each type of tag can have different formats. All tags are
-documented in the ``vsl(7)`` manual page. We will focus on the most useful
-ones.
+Each line starts with a `vxid` followed by a `log tag`. Each type of tag
+has a different format, documented in the ``vsl(7)`` manual page. In our
+example, the first real log line has the `tag` ``Begin``.
 
-You can tell ``varnishlog`` to only output some tags::
+You can tell ``varnishlog`` to only output some tags using the ``-i``
+command line argument::
 
         # varnishlog -d -i ReqURL
         *   << BeReq    >> 3         
@@ -991,22 +1002,23 @@ You can tell ``varnishlog`` to only output some tags::
 
         *   << Session  >> 32769     
 
-This might also demonstrate why grouping is sometimes unwanted. You can
-change grouping method using ``-g``. Or disable it entirely with ``-g
-raw``::
+This also demonstrate why grouping is sometimes unwanted. You can change
+grouping method using ``-g``. Or disable it entirely with ``-g raw``::
 
         # varnishlog -d -g raw -i ReqURL
                  2 ReqURL         c /
              32770 ReqURL         c /demo/
+
+Here you can see the `vxid` directly, instead of a ``-``.
 
 You can also exclude individual tags with ``-x``, or use a regular expression
 to match their content using ``-I``. The latter can be interesting if you want
 to look at a specific header.
 
 More importantly, however, is the use of the ``-q`` option, to specify a `VSL
-query`. VSL is the part of the log we are working with, and a VSL query allows
-you to filter it intelligently. It is documented in the manual page
-``vsl-query(7)``. It is very useful combined with grouping.
+query`. VSL stands for `Varnish Shared memory Log` and refers to the part
+of the log we are working with, and a VSL query allows you to filter it
+intelligently. It is documented in the manual page ``vsl-query(7)``.
 
 Let's look at the difference between the default (``vxid``) grouping and
 ``request`` grouping, while using a VSL query::
@@ -1058,10 +1070,14 @@ Let's look at the difference between the default (``vxid``) grouping and
         -   End            
 
 With the default grouping, we see just the client request and response.
-Reading the details, you can see that it triggered a fetch from a backend,
-but we don't see anything related to that fetch. That might be exactly what
-you want. If, however, you need to see the related backend request, we can
-switch to grouping by request::
+Reading the details, the ``Link  bereq 32771 fetch`` line tells us that
+this request is linked to a different one with vxid 32771. Also, the
+``VCL_return fetch`` indicates that (the default) VCL told Varnish to fetch
+the data.
+
+Using a different grouping mode, you can see the linked backend request
+too. Switching to ``-g request``, the output includes the linked request
+too::
 
         # varnishlog -d -g request -q 'ReqUrl eq "/"'
         *   << Request  >> 2         
@@ -1201,8 +1217,7 @@ To summarize grouping:
         amounts of data.
 
 VSL queries are used in other tools too, as are many of the options that
-apply to ``varnishlog``. We will revisit them at the end of the chapter,
-once more of the log tools have been introduced.
+apply to ``varnishlog``.
 
 Tools: ``varnishtop``
 ---------------------
@@ -1229,9 +1244,9 @@ This is the output of ``varnishlog -i ReqUrl``::
              0.50 ReqURL         /?12592
 
 The number on the left is a decaying average, then you see the log tag
-(``ReqURL``) and the value. This tells me that ``/?1`` has been requested
+(``ReqURL``) and the value. This shows us that ``/?1`` has been requested
 more frequently than any of the other URLs. Over time, the number on the left
-will reach zero if no tag matching that value is seen.
+will reach zero if no tag matching that value is seen again.
 
 A few very useful examples:
 
@@ -1252,7 +1267,7 @@ Tools: ``varnishncsa`` and ``varnishhist``
 ------------------------------------------
 
 If you need or want traditional access logs, ``varnishncsa`` is the tool
-for you. Most distribution provide startup scripts that will run
+for you. Most distributions provide startup scripts that will run
 ``varnishncsa`` in the background, in which case all you have to do is
 enable them. With systemd, that would be ``systemctl enable
 varnishncsa.service``.
@@ -1265,15 +1280,15 @@ very specific questions that you need answered.
 More on VSL queries
 -------------------
 
-Just using ``varnishlog -q 'ReqURL eq "/foo"'`` is useful in itself, but
-you can also do more advanced searches. You can also use most of these
-queries with ``varnishncsa``.
+While ``varnishlog -q 'ReqURL eq "/foo"'`` is useful, you can also do more
+advanced searches. VSL queries are valid for ``varnishlog`` and other log
+tools, with varying effects.
 
-The most obvious thing we can do is expand upon the simple match. The
-``eq`` operator is meant for strings, but we can also use ``~`` for regular
-expressions::
+String operators ``eq`` and ``neq`` can be used to evaluate exact matches,
+or you can use regular expressions, either negated with ``!~`` or regular
+matching using ``~`` for comparison::
 
-        # varnishncsa -d -q 'ReqURL ~ "[0-9]"'
+        # varnishncsa -d -q 'ReqURL ~ "/?[0-9]"'
         ::1 - - [18/Dec/2015:14:23:33 +0000] "GET http://localhost/?12592 HTTP/1.1" 200 3092 "-" "HTTPie/0.8.0"
         ::1 - - [18/Dec/2015:14:23:42 +0000] "GET http://localhost/?30808 HTTP/1.1" 200 3092 "-" "HTTPie/0.8.0"
         (...)
@@ -1355,8 +1370,15 @@ The above example extracts the third field of the ``Timestamp`` tag and
 matches if it has a value of 1.0 or higher. This is very useful if you need
 to investigate reports of slow requests.
 
+It's worth noting that "1" and "1.0" are not necessarily the same. If you
+use just "1", you are likely doing an integer comparison, which means that
+any digit after the decimal point is ignored. So ``Timestamp[3] > 1.0``
+will match if ``Timestamp[3]`` is 1.006334, as seen here, but
+``Timestamp[3] > 1`` will not, because it will be considered the same as
+``1 > 1``. In short: Use ``1.0`` instead of just ``1``.
+
 An other nifty way to use VSL queries is to investigate the ``TTL`` tag.
-This log tag is used to report how an object gets its cache::
+This log tag is used to report how an object gets its cache duration::
 
         # varnishlog -g raw -d -i TTL
                  3 TTL            b RFC 120 -1 -1 1450446456 1450446456 1450446455 0 0
@@ -1413,13 +1435,14 @@ seconds. Let's try to modify some headers from a backend and try again::
         -   BereqAcct      151 0 151 172 56 228
         -   End            
 
-You can still see the ``TTL`` header, but now it reads 3600 and higher.
+You can still see the ``TTL`` header, but now it reads 3600.
 Unfortunately, there's a miss-match between the documentation and
-implementation here in Varnish 4.0 and 4.1. The documentation suggests that
+implementation in Varnish 4.0 and 4.1. The documentation suggests that
 the first number should take ``Age`` into account, but as we just
-demonstrated, that is clearly not happening. However, the other numbers are
-correct, so you can infer the ``Age`` from that, but not really use it
-directly in a VSL query.
+demonstrated, that is clearly not happening (if it was, then the first
+number of the ``TTL`` line should have read `3590`). However, the other
+numbers are correct, so you can infer the ``Age`` from that, but not really
+use it directly in a VSL query.
 
 Combining multiple queries is also possible::
 
