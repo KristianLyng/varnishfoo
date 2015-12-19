@@ -12,7 +12,7 @@ define ok =
 endef
 
 define run-rst2pdf = 
-	@FOO=$$(rst2pdf -b2 -s ${C}/pdf.style $(firstword $^) -o $@ 2>&1); \
+	@FOO=$$(rst2pdf -e inkscape -b2 -s ${C}/pdf.style $(firstword $^) -o $@ 2>&1); \
 		ret=$$? ; \
 		echo -n "$$FOO" | egrep -v 'is too.*frame.*scaling'; \
 		exit $$ret
