@@ -58,8 +58,8 @@
                 <li class="dropdown-header">Complete Chapters</li>
                 <li><a href="chapter-1.html">1: Introduction</a></li>
                 <li><a href="chapter-2.html">2: Working with HTTP caching</a></li>
-                <li class="dropdown-header">Incomplete Chapters</li>
                 <li><a href="chapter-3.html">3: Architecture and operation</a></li>
+                <li class="dropdown-header">Incomplete Chapters</li>
                 <li class="dropdown-header">Appendices</li>
                 <li><a href="appendix-a.html">A: State machine graphs</a></li>
                 <li><a href="appendix-b.html">B: Varnish Three Letter Acronyms</a></li>
