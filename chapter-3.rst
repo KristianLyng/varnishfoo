@@ -8,9 +8,9 @@ This chapter explains the architecture of Varnish, how Varnish deals with
 logs, best practices for running Varnish and debugging your Varnish
 installation.
 
-When you're done reading this chapter, you'll know how to distinguish what
-goes into Varnish and what comes out in the other end. You'll have an idea
-of what it takes to operate Varnish in the long-term and some very basic
+When you're done reading this chapter, you'll know how to tell what goes
+into Varnish and what comes out in the other end. You'll have an idea of
+what it takes to operate Varnish in the long-term and some very basic
 tuning needs.
 
 What you will not learn in this chapter is what every single Varnish
@@ -63,14 +63,14 @@ The shared memory log, abbreviated shmlog, is a round-robin style log file
 which is typically about 85MB large. It is split in two parts. The
 smallest bit is the part for counters, used to keep track of any part
 of Varnish that could be covered by a number, e.g. number of cache hits,
-number of objects, and so forth. This part of the shmlog is 1MB by default.
+number of objects, and so forth. This part of the shmlog is roughly 2MB by
+default, by varies depending on setup.
 
 The biggest part of the shmlog is reserved for fifo-style log entries,
 directly related to requests typically. This is 80MB by default. Once those
 80MB are filled, Varnish will continue writing to the log from the top. If
 you wish to preserve any of the data, you need to extract it before it's
-overwritten. This is where the various Varnish tools comes into the
-picture.
+overwritten. This is where the various Varnish tools come into the picture.
 
 VCL is not a traditionally parsed configuration format, but a shim layer on
 top of C and the Varnish run time library (VRT). You are not so much
@@ -107,7 +107,7 @@ is believed to be the unthinkable. A more realistic example can be:
 - Read `foo` from the cache.
 - Assert that ``foo.magic`` is still ``0x123765``.
 
-This is a simple safe guard against memory corruption, and is used for
+This is a crude safe guard against memory corruption, and is used for
 almost all data structures that are kept around for a while in Varnish. An
 arbitrary `magic` value is picked during development, and whenever the
 object is used, that value is read back and checked. If it doesn't match,
@@ -119,6 +119,9 @@ The theory is that if something so bad that the code doesn't account for it
 happens, then it's better to just stop and start up. You might lose some
 up-time (usually in the order of a couple of seconds), but at least your
 Varnish instance is back up in a predictable state.
+
+Other typical assert statements will check the return codes for library
+calls that should never fail.
 
 If Varnish does hit an assert error, it will (try to) log it to syslog. In
 addition to that, it keeps the last `panic` message available through
@@ -147,7 +150,7 @@ on the nature of the parameter it could take some time before the change is
 visible. Parameters can be changed through the CLI, but need to be added as
 a command line argument in a startup script to be permanent.
 
-Parameters usually change some purely operational aspect of Varnish, not
+Parameters usually control some purely operational aspect of Varnish, not
 policy. Default values for Varnish parameters are frequently tuned between
 Varnish releases as feedback from real-world use reaches developers. As
 such, most parameters can be left to the default values. Some examples of
@@ -158,18 +161,18 @@ values.
 Many of the command line arguments passed to ``varnishd`` are actually
 short-hands for their respective parameters.
 
-The third type of configuration primitive is the Varnish Configuration
-Language script, usually just referred to as your VCL or VCL file. This is
-where you will specify caching policies, what backends you have and how to
-pick a backend. VCL can be changed at run-time with little or no penalty to
+The third type of configuration is the Varnish Configuration Language
+script, usually just referred to as your VCL or VCL file. This is where you
+will specify caching policies, what backends you have and how to pick a
+backend. VCL can be changed at run-time with little or no penalty to
 performance, but like parameters, changes are not retroactive. If your VCL
 says "cache this for 5 years" and the content is cached, then changing your
 VCL to "cache this for 1 minute" isn't going to alter the cache duration
 for content that has already been cached.
 
-VCL is easily the most complex part of Varnish, but you can get a lot done
-with a few simple techniques. In this chapter, VCL is not a focus, but is
-only briefly mentioned and used to avoid building bad habits.
+VCL is easily the most extensive part of Varnish, but you can get a lot
+done with a few simple techniques. In this chapter, VCL is not a focus, but
+is only briefly mentioned and used to avoid building bad habits.
 
 To summarize:
 
@@ -254,9 +257,8 @@ will have to list any backend servers Varnish should use. When you use
             .host = "pathfinder.kly.no:6085";
         }
 
-There are two more important options that all proper Varnish installations use:
-``-T`` and ``-S``. The ``-T`` option specifies a listening socket for Varnish's
-management CLI. Since its introduction, the convention has been to run the CLI
+The ``-T`` option specifies a listening socket for Varnish's management
+CLI. Since its introduction, the convention has been to run the CLI
 interface on ``127.0.0.1:6082``, and this is seen in most Varnish
 distributions. However the actual default for the ``varnishd`` binary in
 Version 4 and newer is a random port and secret file.
@@ -302,7 +304,7 @@ The ``-s`` argument is used to set how large Varnish's cache will be, and
 what underlying method is used to cache. Varnish provides three storage
 backends, called ``malloc``, ``file`` and ``persistent``. The most used, by
 far, is ``malloc``. It works by allocating the memory needed with the
-``malloc()`` system call, and adds as little logic as possible on top of
+``malloc()`` library call, and adds as little logic as possible on top of
 it. Under the hood, Varnish uses the `jemalloc` library to achieve better
 performance for multi-threaded applications. If you specify a larger cache
 than you have physical memory, it is up to your operating system to utilize
@@ -319,14 +321,16 @@ for all practical purposes random.
 The last alternative is ``persistent``. This is by far the most complex
 alternative, and is meant to provide a persistent storage of cache between
 restarts. It doesn't make a guarantee that all of the content is there,
-though.
+though, only that the majority is there and that what's there is intact.
 
 As of Varnish 4.1, both ``persistent`` and ``file`` are deprecated.
 Persistent is deprecated because it is very complex and has not received
 near enough testing and feedback to be regarded as production quality. It
 is used by several large Varnish installations, but use at your own risk.
 For ``file``, the deprecation is less severe. The ``malloc`` alternative is
-simply better for most of us.
+simply better for most use cases, and maintaining two different methods
+with similar properties was deemed unnecessary. Unlike ``persistent``,
+``file`` is considered quite stable, just sub-optimal.
 
 If you do end up using ``-s malloc``, the next question is usually "how
 large should the cache be?". There is no easy answer to this, but as a
@@ -365,90 +369,48 @@ compiled VCL, among other things::
         _.secret  _.vsm  vcl.QakoKN_T.so
         # ls /var/lib/varnish/test/
         _.secret  _.vsm  vcl.Lnayret_.so
-        # netstat -nlpt
-        Active Internet connections (only servers)
-        Proto Recv-Q Send-Q Local Address    Foreign Address   State    PID/Program name
-        tcp        0      0 127.0.0.1:34504  0.0.0.0:*         LISTEN   502/varnishd    
-        tcp        0      0 127.0.0.1:42797  0.0.0.0:*         LISTEN   262/varnishd    
-        tcp        0      0 0.0.0.0:80       0.0.0.0:*         LISTEN   -               
-        tcp        0      0 0.0.0.0:81       0.0.0.0:*         LISTEN   -               
-        tcp6       0      0 ::1:39843        :::*              LISTEN   262/varnishd    
-        tcp6       0      0 :::80            :::*              LISTEN   -               
-        tcp6       0      0 :::81            :::*              LISTEN   -               
-        tcp6       0      0 ::1:43220        :::*              LISTEN   502/varnishd    
 
 A common task is to verify that your VCL is correct before you try loading
 it. This can be done with the ``-C`` option. It will either give you a
 syntax error for your VCL or a whole lot of C code, which happens to be
-your VCL translated to C::
+your VCL translated to C. However, that isn't very useful alone. The
+following script is slightly more useful::
 
-        # cat /etc/varnish/test.vcl 
-        vcl 4.0;
+        #!/bin/bash
+        if [ -z "$1" ]; then
+                echo "Usage: $0 <file>"
+                exit 1;
+        fi
+        FOO=$(varnishd -C -f "$1")
+        ret=$?
+        if [ "x$ret" = "x0" ]; then
+                echo "Syntax OK"
+                exit 0
+        fi
+        echo "$FOO"
+        exit $ret
 
-        broken VCL backend localhost {
-                .host = "localhost";
-                .port = "8080";
-        }
-        # varnishd -C -f /etc/varnish/test.vcl 
+Running it::
+
+        # ./check_syntax.sh bad.vcl
         Message from VCC-compiler:
-        Expected one of
-                'acl', 'sub', 'backend', 'director', 'probe', 'import',  or 'vcl'
-        Found: 'broken' at
-        ('input' Line 3 Pos 1)
-        broken VCL backend localhost {
-        ######------------------------
+        VCL version declaration missing
+        Update your VCL to Version 4 syntax, and add
+                vcl 4.0;
+        on the first line the VCL files.
+        ('input' Line 1 Pos 1)
+        bad
+        ###
 
         Running VCC-compiler failed, exited with 2
 
         VCL compilation failed
-        # echo $?
-        2
 
-The return-code of ``varnishd -C -f vcl`` is false(non-zero) if the VCL
-fails to compile. Fixing the VCL::
+        # ./check_syntax.sh good.vcl
+        Syntax OK
 
-        # cat /etc/varnish/test-ok.vcl 
-        vcl 4.0;
-
-        backend localhost {
-                .host = "localhost";
-                .port = "8080";
-        }
-        # varnishd -C -f /etc/varnish/test-ok.vcl
-        /* ---===### include/vcl.h ###===--- */
-
-        /*
-         * NB:  This file is machine generated, DO NOT EDIT!
-         *
-         * Edit and run generate.py instead
-         */
-
-        struct vrt_ctx;
-        struct req;
-        (......)
-
-        # echo $?
-        0
-
-A more useful example::
-
-        # varnishd -C -f /etc/varnish/test.vcl >/dev/null && echo "VCL OK" || echo "VCL NOT OK" 
-        Message from VCC-compiler:
-        Expected one of
-                'acl', 'sub', 'backend', 'director', 'probe', 'import',  or 'vcl'
-        Found: 'broken' at
-        ('input' Line 3 Pos 1)
-        broken VCL backend localhost {
-        ######------------------------
-
-        Running VCC-compiler failed, exited with 2
-
-        VCL compilation failed
-        VCL NOT OK
-        # varnishd -C -f /etc/varnish/test-ok.vcl >/dev/null && echo "VCL OK" || echo "VCL NOT OK" 
-        VCL OK
-
-Perhaps not the prettiest syntax check, but it gets the job done.
+Similar scripts are usually part of the "reload" scripts used in various
+start-up scripts.
 
 Summary of ``varnishd`` arguments
 ---------------------------------
@@ -514,12 +476,12 @@ be used whenever possible.
 Since before GNU/Linux existed, System V-styled init scripts have been used
 to boot Unix-like machines. This has been the case for GNU/Linux too. Until
 recently, when ``upstart`` and ``systemd`` came around. By now, all the
-major GNU/Linux use or are preparing to use ``systemd``. That means that if
-you have older installations, the specific way Varnish is started will be
-different than how it's started on newer installations. In the end, though,
-it all boils down to one thing: you have to know into which file you need
-to add your ``varnishd`` start-up arguments, and what commands to use to
-start and stop it.
+major GNU/Linux distributions use or are preparing to use ``systemd``. That
+means that if you have older installations, the specific way Varnish is
+started will be different than how it's started on newer installations. In
+the end, though, it all boils down to one thing: you have to know into
+which file you need to add your ``varnishd`` start-up arguments, and what
+commands to use to start and stop it.
 
 Where your distribution keeps its configuration will vary, but in short:
 
@@ -578,9 +540,9 @@ You can also get detailed information on individual parameters::
                 everything.
 
 Changing a parameter takes effect immediately, but is not always
-immediately visible, as the above `default_ttl` demonstrates. Changing
-`default_ttl` will affect any new object entered into the cache, but not
-what is already there.
+immediately visible, as the above description of `default_ttl`
+demonstrates. Changing `default_ttl` will affect any new object entered
+into the cache, but not what is already there.
 
 Many of the parameters Varnish exposes are meant for tweaking very
 intricate parts of Varnish, and even the developers may not know the
