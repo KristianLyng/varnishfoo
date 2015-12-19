@@ -14,9 +14,9 @@ Varnish Foo
 
 .. sectnum::
 
+.. contents::
+
 .. raw:: pdf
 
-   PageBreak
-
-.. contents::
+   PageBreak oneColumn
 

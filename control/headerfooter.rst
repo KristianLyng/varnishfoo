@@ -18,6 +18,3 @@
       |Page ###Page###|Chapter ###Section###|   |
       +---------------+---------------------+---+
 
-.. raw:: pdf
-
-   PageBreak oneColumn

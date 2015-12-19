@@ -28,6 +28,10 @@ dist: web
 	@echo " [WEB] Purge"
 	@GET -d http://kly.no/purgeall
 
+${B}:
+	@mkdir -p ${B}
+	@echo " [mkdir] "$(ok)
+
 ${B}/css ${B}/fonts ${B}/js: ${B}/%: bootstrap/% | ${B}
 	@cp -a $< ${B}
 	@echo " [cp] "$(ok)
@@ -36,10 +40,6 @@ ${B}/img: $(wildcard img/*/* img/*) img | ${B}
 	@cp -a img ${B}
 	@touch ${B}/img
 	@echo " [cp] "$(ok)
-
-${B}:
-	@mkdir -p ${B}
-	@echo " [mkdir] "$(ok)
 
 ${B}/version.rst: $(wildcard *rst Makefile .git/* control/* img/* img/*/*) | ${B}
 	@echo ":Version: $$(git describe --always --tags --dirty)" > ${B}/version.rst
@@ -54,7 +54,22 @@ ${B}/web-version.rst: $(wildcard *rst Makefile .git/* control/* img/* img/*/*) |
 	@git describe --tags --dirty | egrep -q "dirty$$" && echo "*Warning: This was generated with uncomitted local changes!*" >> ${B}/web-version.rst || true
 	@echo " [RST] "$(ok)
 
-${B}/varnishfoo.pdf: varnishfoo.rst $(wildcard *rst Makefile .git/* control/* img/* img/*/*) ${B}/version.rst | ${B}
+${B}/varnishfoo.rst: Makefile $(wildcard control/*rst) | $(wildcard *rst) ${B}
+	@echo ".. include:: ../control/front.rst" > $@
+	@echo >> $@
+	@echo ".. include:: ../control/headerfooter.rst" >> $@
+	@echo >> $@
+	@for a in chapter-*.rst; do \
+		echo ".. include:: ../$$a" >> $@ ; \
+		echo >> $@ ; \
+	done
+	@for a in appendix-*.rst; do \
+		echo ".. include:: ../$$a" >> $@ ; \
+		echo >> $@ ; \
+	done
+	@echo " [RST] "$(ok)
+
+${B}/varnishfoo.pdf: ${B}/varnishfoo.rst $(wildcard *rst Makefile .git/* control/* img/* img/*/*) ${B}/version.rst | ${B}
 	$(run-rst2pdf)
 
 $(addprefix ${B}/,$(addsuffix .pdf,${bases})): ${B}/%.pdf: ${B}/%.rst ${B}/img ${B}/version.rst Makefile
