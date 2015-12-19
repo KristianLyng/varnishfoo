@@ -295,15 +295,18 @@ Many Varnish installations default to using ``-S /etc/varnish/secret``.
 This is a good habit in case you end up with multiple Varnish instances
 over multiple machines.
 
-Last, but not least, you will want to specify an ``-s`` option. This
-is used to set how large Varnish's cache will be, and what underlying method is
-used to cache. Varnish provides three storage backends, called ``mallco``,
-``file`` and ``persistent``. The most used, by far, is ``malloc``. It works
-by allocating the memory needed with the ``malloc()`` system call, and adds
-as little logic as possible on top of it. Under the hood, Varnish uses the
-`jemalloc` library to achieve better performance for multi-threaded
-applications. If you specify a larger cache than you have physical memory,
-it is up to your operating system to utilize swap instead.
+Cache size and storage backend
+------------------------------
+
+The ``-s`` argument is used to set how large Varnish's cache will be, and
+what underlying method is used to cache. Varnish provides three storage
+backends, called ``malloc``, ``file`` and ``persistent``. The most used, by
+far, is ``malloc``. It works by allocating the memory needed with the
+``malloc()`` system call, and adds as little logic as possible on top of
+it. Under the hood, Varnish uses the `jemalloc` library to achieve better
+performance for multi-threaded applications. If you specify a larger cache
+than you have physical memory, it is up to your operating system to utilize
+swap instead.
 
 The second alternative is ``file``. This allocates a file on your file
 system, then uses ``mmap()`` to map it into memory. Varnish never makes an
@@ -332,37 +335,6 @@ usually safe. Varnish will use a little more memory than just what you
 specify for ``-s malloc``, so you need to anticipate that too. How much
 more depends on your traffic. Many small objects have a larger overhead,
 while large objects have less of an overhead.
-
-To summarize:
-
-``-a <listen address>``
-        Listen address. Typically set to :80. Format for specifying multiple listening
-        sockets varies between Varnish 4.0 and 4.1.
-
-``-b <address[:port]>``
-        Specify backend address. Mostly for testing, mutually exclusive
-        with ``-f`` (VCL).
-
-``-f <vclfile>``
-        Specify path to VCL file to use at startup.
-
-``-T address:port``
-        Set management/CLI listening address. Used for controlling Varnish.
-        ``varnishd`` default is random, but ``127.0.0.1:6082`` is a common
-        value used in default installations.
-
-``-S <secret file>``
-        Used to secure the management CLI. Points to a file with random
-        data that both ``varnishd`` and management clients like
-        ``varnishadm`` must have access to. Often set to
-        ``/etc/varnish/secret``. Shouldn't matter where it is as long as
-        ``varnishadm`` can read it and the shmlog.
-
-``-s <method,options>``
-        Used to control how large the cache can be and the storage engine.
-        Alternatives are ``-s persistent,(options)``, ``-s
-        file,(options)`` and ``-s malloc,(size)``. ``-s malloc,256m`` (or
-        more) is strongly recommended.
 
 Other useful ``varnishd`` arguments
 -----------------------------------
@@ -481,8 +453,51 @@ A more useful example::
 
 Perhaps not the prettiest syntax check, but it gets the job done.
 
-There are other options, but they are quite advanced and generally best
-left alone. We will cover them in more advanced chapters.
+Summary of ``varnishd`` arguments
+---------------------------------
+
+There are more command line arguments than these, and they are all
+documented in the manual page ``varnishd(1)``. This is a summary of the
+ones used in this chapter:
+
+``-a <listen address>``
+        Listen address. Typically set to :80. Format for specifying multiple listening
+        sockets varies between Varnish 4.0 and 4.1.
+
+``-b <address[:port]>``
+        Specify backend address. Mostly for testing, mutually exclusive
+        with ``-f`` (VCL).
+
+``-f <vclfile>``
+        Specify path to VCL file to use at startup.
+
+``-T address:port``
+        Set management/CLI listening address. Used for controlling Varnish.
+        ``varnishd`` default is random, but ``127.0.0.1:6082`` is a common
+        value used in default installations.
+
+``-S <secret file>``
+        Used to secure the management CLI. Points to a file with random
+        data that both ``varnishd`` and management clients like
+        ``varnishadm`` must have access to. Often set to
+        ``/etc/varnish/secret``. Shouldn't matter where it is as long as
+        ``varnishadm`` can read it and the shmlog.
+
+``-s <method,options>``
+        Used to control how large the cache can be and the storage engine.
+        Alternatives are ``-s persistent,(options)``, ``-s
+        file,(options)`` and ``-s malloc,(size)``. ``-s malloc,256m`` (or
+        more) is strongly recommended.
+
+``-n <name or path>``
+        Specifies working directory, and/or name of the instance. Only
+        needed if multiple ``varnishd`` instances run on the same machine.
+
+``-C -f <vclfile>``
+        Only parse the VCL, then exit. If the VCL file compiles (i.e.: The
+        syntax is correct), it outputs the raw C code then exits with a
+        return code of 0 (true), otherwise describes the syntax error and
+        exits with a non-0 status code (false).
 
 Startup scripts
 ---------------
