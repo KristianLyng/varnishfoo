@@ -32,7 +32,7 @@ ${B}/css ${B}/fonts ${B}/js: ${B}/%: bootstrap/% | ${B}
 	@cp -a $< ${B}
 	@echo " [cp] "$(ok)
 
-${B}/img: $(wildcard img/*/* img/*) | ${B}
+${B}/img: $(wildcard img/*/* img/*) img | ${B}
 	@cp -a img ${B}
 	@touch ${B}/img
 	@echo " [cp] "$(ok)

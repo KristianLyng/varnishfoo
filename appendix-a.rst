@@ -16,20 +16,20 @@ These graphs are generated with::
 
 A PNG version of each is also available at:
 
-* https://varnishfoo.info/img/c1/cache_req_fsm.png
-* https://varnishfoo.info/img/c1/cache_fetch.png
-* https://varnishfoo.info/img/c1/cache_http1_fsm.png
+* https://varnishfoo.info/img/a/cache_req_fsm.png
+* https://varnishfoo.info/img/a/cache_fetch.png
+* https://varnishfoo.info/img/a/cache_http1_fsm.png
 
 And SVG versions for download:
 
-* https://varnishfoo.info/img/c1/cache_req_fsm.svg
-* https://varnishfoo.info/img/c1/cache_fetch.svg
-* https://varnishfoo.info/img/c1/cache_http1_fsm.svg
+* https://varnishfoo.info/img/a/cache_req_fsm.svg
+* https://varnishfoo.info/img/a/cache_fetch.svg
+* https://varnishfoo.info/img/a/cache_http1_fsm.svg
 
 cache_req_fsm
 -------------
 
-.. image:: img/c1/cache_req_fsm.svg
+.. image:: img/a/cache_req_fsm.svg
 
 ``cache_req_fsm`` details the client-specific part of the VCL state engine.
 And can be used when writing VCL. You want to look for the blocks that
@@ -42,7 +42,7 @@ are available where.
 cache_fetch
 -----------
 
-.. image:: img/c1/cache_fetch.svg
+.. image:: img/a/cache_fetch.svg
 
 ``cache_fetch`` has the same format as the ``cache_req_fsm``, but
 from the perspective of a backend request.
@@ -50,7 +50,7 @@ from the perspective of a backend request.
 cache_http1_fsm
 ---------------
 
-.. image:: img/c1/cache_http1_fsm.svg
+.. image:: img/a/cache_http1_fsm.svg
 
 Of the three, ``cache_http1_fsm`` is the least practical flow chart, mainly
 included for completeness. It does not document much related to VCL or
