@@ -57,6 +57,8 @@ ${B}/web-version.rst: $(wildcard *rst Makefile .git/* control/* img/* img/*/*) |
 ${B}/varnishfoo.rst: Makefile $(wildcard control/*rst) | $(wildcard *rst) ${B}
 	@echo ".. include:: ../control/front.rst" > $@
 	@echo >> $@
+	@echo ".. include:: ../control/secondpage.rst" >> $@
+	@echo >> $@
 	@echo ".. include:: ../control/headerfooter.rst" >> $@
 	@echo >> $@
 	@for a in chapter-*.rst; do \
@@ -76,7 +78,11 @@ $(addprefix ${B}/,$(addsuffix .pdf,${bases})): ${B}/%.pdf: ${B}/%.rst ${B}/img $
 	$(run-rst2pdf)
 
 $(addprefix ${B}/,$(addsuffix .rst,${bases})): ${B}/%.rst: %.rst Makefile | ${B}
-	@echo ".. include:: ../control/front.rst" > $@
+	@echo "$<" | sed 's/./=/g' > $@
+	@echo "$<" >> $@
+	@echo "$<" | sed 's/./=/g' >> $@
+	@echo >> $@
+	@echo ".. include:: ../control/secondpage.rst" >> $@
 	@echo >> $@
 	@echo ".. include:: ../control/headerfooter.rst" >> $@
 	@echo >> $@

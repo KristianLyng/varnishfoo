@@ -10,13 +10,3 @@ Varnish Foo
 
    PageBreak coverPage
 
-.. include:: ../build/version.rst
-
-.. sectnum::
-
-.. contents::
-
-.. raw:: pdf
-
-   PageBreak oneColumn
-
