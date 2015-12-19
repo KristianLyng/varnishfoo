@@ -61,8 +61,8 @@
                 <li class="dropdown-header">Incomplete Chapters</li>
                 <li><a href="chapter-3.html">3: Architecture and operation</a></li>
                 <li class="dropdown-header">Appendices</li>
-                <li><a href="appendix-1.html">A: State machine graphs</a></li>
-                <li><a href="appendix-2.html">B: Varnish Three Letter Acronyms</a></li>
+                <li><a href="appendix-a.html">A: State machine graphs</a></li>
+                <li><a href="appendix-b.html">B: Varnish Three Letter Acronyms</a></li>
                 <li><a href="appendix-n.html">N: License</a></li>
                 <li role="separator" class="divider"></li>
                 <li><a href="varnishfoo.pdf">PDF version of the book</a></li>

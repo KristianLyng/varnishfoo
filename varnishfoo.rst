@@ -8,8 +8,8 @@
 
 .. include:: chapter-3.rst
 
-.. include:: appendix-1.rst
+.. include:: appendix-a.rst
 
-.. include:: appendix-2.rst
+.. include:: appendix-b.rst
 
 .. include:: appendix-n.rst
