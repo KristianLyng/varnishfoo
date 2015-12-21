@@ -4,16 +4,15 @@
     <meta charset="utf-8">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <style>
-    	img { max-width: 100%%; }
-	object { max-width: 100%%; }
-    </style>
     <!-- The above 3 meta tags *must* come first in the head; any other head content must come *after* these tags -->
     <title>varnishfoo.info</title>
 
     <!-- Bootstrap -->
     <link href="css/bootstrap.min.css" rel="stylesheet">
+    <link href="css/bootstrap-theme.min.css" rel="stylesheet">
     <style>
+    	img { max-width: 100%%; }
+	object { max-width: 100%%; }
       body {
 	padding-top: 15px;
 	}
@@ -36,7 +35,7 @@
     <div class="container">
     <div class="row">
     <div class="col-md-10">
-<nav class="navbar navbar-default navbar-inverse">
+<nav class="navbar navbar-default">
   <div class="container-fluid">
     <!-- Brand and toggle get grouped for better mobile display -->
     <div class="navbar-header">

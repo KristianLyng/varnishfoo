@@ -49,9 +49,8 @@ ${B}/version.rst: $(wildcard *rst Makefile .git/* control/* img/* img/*/*) | ${B
 ${B}/web-version.rst: $(wildcard *rst Makefile .git/* control/* img/* img/*/*) | ${B}
 	@echo "This content was generated from source on $$(date --iso-8601)" > ${B}/web-version.rst
 	@echo >> ${B}/web-version.rst
-	@echo "The git revision used was $$(git describe --always --tags)" >> ${B}/web-version.rst
+	@echo "The git revision used was \`\`$$(git describe --always --tags --dirty)\`\`" >> ${B}/web-version.rst
 	@echo >> ${B}/web-version.rst
-	@git describe --tags --dirty | egrep -q "dirty$$" && echo "*Warning: This was generated with uncomitted local changes!*" >> ${B}/web-version.rst || true
 	@echo " [RST] "$(ok)
 
 ${B}/varnishfoo.rst: Makefile $(wildcard control/*rst) | $(wildcard *rst) ${B}

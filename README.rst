@@ -1,21 +1,20 @@
 About Varnish Foo
 -----------------
 
-Varnish Foo is the ultimate Varnish Cache book out there. Or it will be,
+.. _Varnish Cache: https://varnish-cache.org/
+.. _Kristian Lyngstøl: https://kly.no/
+.. _download a PDF: https://varnishfoo.info/varnishfoo.pdf
+
+Varnish Foo is the ultimate `Varnish Cache`_ book out there. Or it will be,
 when it's done.
 
-.. _Kristian Lyngstøl: https://kly.no/
-
 The book is being written by `Kristian Lyngstøl`_, a long-time Varnish
-hacker. It is being published one chapter at a time under a Creative
-Commons non-commercial licence.
+hacker. It is being published one chapter at a time, and you can either read it
+online (here) or `download a PDF`_.
 
-You can browse the content right here, but be warned: It is not yet
-finished. Chapters marked as "complete" are largely done, but will probably
-receive editorial attention as other chapters progress.
-
-The first chapter is a good start for general information about the book
-and what this is all about.
+This book is not done yet. The content you find at https://varnishfoo.info
+is ready for consumption, but many chapters are yet to be written. The
+individual chapters are meant to stand well by them self, though.
 
 Found something that should be fixed?
 -------------------------------------
@@ -29,24 +28,18 @@ The best way to get in contact with me is to jump over to `the github
 repo`_ and report an issue. If that doesn't work for you, you can also drop
 me a mail at kristian@bohemians.org.
 
-License
--------
+Misc
+----
 
-This work is licensed under the Creative Commons "CC-BY-SA-NC" license.
-The "non-commercial" clause does explicitly not trigger on reading the
-material. Examples where it does trigger: Printing and selling the book.
-Printing it the book and giving it away to your customers or clients. Using
-it in a class-room situation. As explained in the introduction, this is
-meant to be temporary to avoid miss-use of immature material.
-
-Building
---------
-
-After checking the content out from github, just typing ``make`` will
-produce a PDF and web-version, assuming you have all tools installed.
-
-Version
--------
+.. _Creative Commons Attribution-NonCommercial-ShareAlike 4.0 International License: http://creativecommons.org/licenses/by-nc-sa/4.0/
 
 .. include:: build/web-version.rst
+
+.. figure:: https://i.creativecommons.org/l/by-nc-sa/4.0/88x31.png
+        :target: http://creativecommons.org/licenses/by-nc-sa/4.0/
+        :alt: Creative Commons License
+
+        `Varnish Foo` by Kristian Lyngstøl is licensed under a `Creative
+        Commons Attribution-NonCommercial-ShareAlike 4.0 International
+        License`_.
 
