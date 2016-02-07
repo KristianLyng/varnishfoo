@@ -3,15 +3,56 @@ Appendix C: Built-in VCL for Varnish 4.1.1
 
 .. code:: VCL
 
-        # This is the VCL configuration Varnish will automatically append to your VCL
-        # file during compilation/loading. See the vcl(7) man page for details on syntax
-        # and semantics.
-        # New users is recommended to use the example.vcl file as a starting point.
-        # 
+        /*-
+         * Copyright (c) 2006 Verdens Gang AS
+         * Copyright (c) 2006-2015 Varnish Software AS
+         * All rights reserved.
+         *
+         * Author: Poul-Henning Kamp <phk@phk.freebsd.dk>
+         *
+         * Redistribution and use in source and binary forms, with or without
+         * modification, are permitted provided that the following conditions
+         * are met:
+         * 1. Redistributions of source code must retain the above copyright
+         *    notice, this list of conditions and the following disclaimer.
+         * 2. Redistributions in binary form must reproduce the above copyright
+         *    notice, this list of conditions and the following disclaimer in the
+         *    documentation and/or other materials provided with the distribution.
+         *
+         * THIS SOFTWARE IS PROVIDED BY THE AUTHOR AND CONTRIBUTORS ``AS IS'' AND
+         * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+         * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+         * ARE DISCLAIMED.  IN NO EVENT SHALL AUTHOR OR CONTRIBUTORS BE LIABLE
+         * FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
+         * DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS
+         * OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION)
+         * HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
+         * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
+         * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
+         * SUCH DAMAGE.
+         *
+
+         *
+         * The built-in (previously called default) VCL code.
+         *
+         * NB! You do NOT need to copy & paste all of these functions into your
+         * own vcl code, if you do not provide a definition of one of these
+         * functions, the compiler will automatically fall back to the default
+         * code from this file.
+         *
+         * This code will be prefixed with a backend declaration built from the
+         * -b argument.
+         */
+
+        vcl 4.0;
+
+        #######################################################################
+        # Client side
+
         sub vcl_recv {
             if (req.method == "PRI") {
-        	/* We do not support SPDY or HTTP/2.0 */
-        	return (synth(405));
+                /* We do not support SPDY or HTTP/2.0 */
+                return (synth(405));
             }
             if (req.method != "GET" &&
               req.method != "HEAD" &&
@@ -23,7 +64,7 @@ Appendix C: Built-in VCL for Varnish 4.1.1
                 /* Non-RFC2616 or CONNECT which is weird. */
                 return (pipe);
             }
-        
+
             if (req.method != "GET" && req.method != "HEAD") {
                 /* We only deal with GET and HEAD by default */
                 return (pass);
@@ -34,7 +75,7 @@ Appendix C: Built-in VCL for Varnish 4.1.1
             }
             return (hash);
         }
-        
+
         sub vcl_pipe {
             # By default Connection: close is set on all piped requests, to stop
             # connection reuse from sending future requests directly to the
@@ -43,11 +84,11 @@ Appendix C: Built-in VCL for Varnish 4.1.1
             # unset bereq.http.connection;
             return (pipe);
         }
-        
+
         sub vcl_pass {
             return (fetch);
         }
-        
+
         sub vcl_hash {
             hash_data(req.url);
             if (req.http.host) {
@@ -57,11 +98,11 @@ Appendix C: Built-in VCL for Varnish 4.1.1
             }
             return (lookup);
         }
-        
+
         sub vcl_purge {
             return (synth(200, "Purged"));
         }
-        
+
         sub vcl_hit {
             if (obj.ttl >= 0s) {
                 // A pure unadultered hit, deliver it
@@ -75,15 +116,15 @@ Appendix C: Built-in VCL for Varnish 4.1.1
             // fetch & deliver once we get the result
             return (miss);
         }
-        
+
         sub vcl_miss {
             return (fetch);
         }
-        
+
         sub vcl_deliver {
             return (deliver);
         }
-        
+
         /*
          * We can come here "invisibly" with the following errors: 413, 417 & 503
          */
@@ -107,14 +148,14 @@ Appendix C: Built-in VCL for Varnish 4.1.1
         "} );
             return (deliver);
         }
-        
+
         #######################################################################
         # Backend Fetch
-        
+
         sub vcl_backend_fetch {
             return (fetch);
         }
-        
+
         sub vcl_backend_response {
             if (beresp.ttl <= 0s ||
               beresp.http.Set-Cookie ||
@@ -130,7 +171,7 @@ Appendix C: Built-in VCL for Varnish 4.1.1
             }
             return (deliver);
         }
-        
+
         sub vcl_backend_error {
             set beresp.http.Content-Type = "text/html; charset=utf-8";
             set beresp.http.Retry-After = "5";
@@ -151,13 +192,13 @@ Appendix C: Built-in VCL for Varnish 4.1.1
         "} );
             return (deliver);
         }
-        
+
         #######################################################################
         # Housekeeping
-        
+
         sub vcl_init {
         }
-        
+
         sub vcl_fini {
             return (ok);
         }
