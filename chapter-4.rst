@@ -1,6 +1,15 @@
 Introducing VCL
 ===============
 
+.. warning::
+
+   I expect this chapter to change significantly throught its creation, and
+   possibly throught the creation of the rest of the book.
+
+   I advise against reviewing the pedagogical aspects of the chapter until
+   the text is complete (as in: a summary exists). Or until this warning is
+   removed.
+
 The Varnish Configuration Language is a small custom programming language
 that gives you the chance to hook into Varnish's request handling state
 engine at various crucial stages.
