@@ -116,7 +116,7 @@ health checks are not active.
 Hello World
 -----------
 
-.. code:: C
+.. code:: VCL
 
         vcl 4.0;
 
@@ -189,7 +189,7 @@ Let's see how it looks::
 And there you are, a custom VCL header. You can also use ``unset`` to
 remove headers, and overwrite existing headers.
 
-.. code:: C
+.. code:: VCL
 
         vcl 4.0;
 
@@ -230,13 +230,13 @@ Grab a rain coat, you are about to get a bucket full of information thrown
 at you. Many of the concepts in the following example will be expanded upon
 greatly.
 
-.. code:: C
+.. code:: VCL
         
         # Comments start with hash
         // Or C++ style //
-        /*
-         * Or multi-line C-style comments like this.
-         */
+        /* Or
+         * multi-line C-style comments
+         * like this.*/
         vcl 4.0;
        
         # White space is largely optional
@@ -322,5 +322,50 @@ greatly.
         # Last but not least: You do not have to specify all VCL functions.
         # Varnish provides a built-in which is always appended to your own
         # VCL, and it is designed to be sensible and safe.
+
+In future examples, the ``vcl 4.0;`` and ``backend`` might be left out for
+brevity. Other than that, all examples are complete.
+
+More on return-statements
+-------------------------
+
+A fundamental mechanism of VCL is the return-statement, some times referred
+to as terminating statement. It is crucial to understand just what this
+means.
+
+.. XXX: Add recv-pic
+
+All states end with a return-statement. If you do not provide one, VCL
+execution will "fall through" to the built-in VCL, which always provides a
+return-statement.
+
+Similarly, if you provide multiple definitions of ``vcl_recv`` or some
+other function, they will all be glued together as a single block of code.
+Any ``call foo;`` statement will be in-lined (copied into the code).
+
+Because of this, a ``return (pass);`` issued in a custom-function would
+mean that the custom function never returned - that VCL state was
+terminated and Varnish would move on to the next phase of request handling.
+
+Each state has different return methods available. You can see these in the
+request flow chart, at the bottom of each box.
+
+Built-in VCL
+------------
+
+Varnish works out of the box with no VCL, as long as a back-end is
+provided. This is because Varnish provides built-in VCL, sometimes
+confusingly referred to as the default VCL for historic reasons.
+
+This VCL can never be removed or overwritten, but it can be bypassed. You
+can find it in ``/usr/share/doc/varnish/builtin.vcl`` or similar for your
+distribution. It is included in Appendix C for your convenience.
+
+The built-in VCL is designed to make Varnish behave safely on any site. It
+is a good habit to let it execute whenever possible. Chapter 1 already
+demonstrated how you can influence the cache with no VCL at all, and it
+should be a goal to provide as simple VCL as possible.
+
+
 
 

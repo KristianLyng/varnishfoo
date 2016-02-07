@@ -3,7 +3,7 @@
 VARNISHD=/usr/local/sbin/varnishd
 TARGET=$(mktemp -d /tmp/foo.XXXXXX)
 awk -v target=${TARGET} '
-/.. code::/ {
+/.. code:: VCL/ {
 	n += 1
 	code=1
 	next
@@ -20,6 +20,18 @@ END {
 }
 ' "$@"
 
+prefix() {
+	{ echo "$1"; cat $2; } | sponge $2
+}
+cleanup() {
+	if ! egrep -q '^\s*backend ' $1; then
+		prefix 'backend foo { .host = "localhost"; }' $1
+		prefix "vcl 4.0;" $1
+	fi
+	if ! egrep -q '^\s*vcl 4\.0;' $1; then
+		prefix "vcl 4.0;" $1
+	fi
+}
 ok() {
 	echo -e "\033[32m$*\033[0m"
 }
@@ -30,6 +42,7 @@ fail() {
 
 testvcl(){
 	VCL=$1
+	cleanup $1
 	echo -n " [Testing] "
 	OUT=$(${VARNISHD} -n ${TARGET} -C -f ${VCL} 2>&1)
 	if [ $? -eq "0" ]; then
