@@ -13,29 +13,39 @@ awk -v target=${TARGET} '
 }
 {
 	if (code>0)
-		print >> target "/foo" n ".vcl"
+		print >> target "/" FILENAME "-" n ".vcl"
 }
 END {
 	print n " VCLs written to " target
 }
 ' "$@"
 
+ok() {
+	echo -e "\033[32m$*\033[0m"
+}
+
+fail() {
+	echo -e "\033[31m$*\033[0m"
+}
+
 testvcl(){
 	VCL=$1
-	echo "Testing $a"
+	echo -n " [Testing] "
 	OUT=$(${VARNISHD} -n ${TARGET} -C -f ${VCL} 2>&1)
 	if [ $? -eq "0" ]; then
-		echo "FINE!";
+		ok $a
 		return 0
 	else
+		fail $a
 		echo -e "$OUT"
 		return 1
 	fi
 }
 
 _tmp=${TARGET}'/*.vcl'
+_tmp2=$(echo $_tmp)
 
-if [ $_tmp = "$_tmp" ]; then
+if [ "$_tmp2" = "$_tmp" ]; then
 	echo "Nothing to test"
 	rm -r ${TARGET}
 	exit 0
