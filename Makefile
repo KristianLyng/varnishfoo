@@ -23,6 +23,8 @@ endef
 web: ${B}/varnishfoo.pdf ${CHAPTERPDF} ${HTML} ${TESTS} | ${B}/css ${B}/fonts ${B}/js
 	@echo " [WEB] "$(ok)
 
+check: ${TESTS}
+
 dist: web
 	@echo " [WEB] rsync"
 	@rsync --delete -L -a ${B}/ ${WEBTARGET}
@@ -105,6 +107,6 @@ ${B}/index.html: README.rst ${B}/web-version.rst | ${B}
 clean:
 	-rm -rf ${B}
 
-.PHONY: clean web dist
+.PHONY: clean web dist check
 
 .SECONDARY: $(addprefix ${B}/,$(addsuffix .rst,${base}))
