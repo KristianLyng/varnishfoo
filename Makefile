@@ -6,6 +6,7 @@ bases = $(basename $(wildcard chapter*rst appendix*rst))
 CHAPTERS= $(addsuffix .rst,${bases})
 HTML=${B}/index.html $(addprefix ${B}/,$(addsuffix .html,${bases}))
 CHAPTERPDF= $(addprefix ${B}/,$(addsuffix .pdf, ${bases}))
+TESTS= $(addprefix ${B}/,$(addsuffix .test, ${bases}))
 
 define ok =
 "\033[32m$@\033[0m"
@@ -19,7 +20,7 @@ define run-rst2pdf =
 	@echo " [rst2pdf] "$(ok)
 endef
 
-web: ${B}/varnishfoo.pdf ${CHAPTERPDF} ${HTML} | ${B}/css ${B}/fonts ${B}/js
+web: ${B}/varnishfoo.pdf ${CHAPTERPDF} ${HTML} ${TESTS} | ${B}/css ${B}/fonts ${B}/js
 	@echo " [WEB] "$(ok)
 
 dist: web
@@ -72,6 +73,10 @@ ${B}/varnishfoo.rst: Makefile $(wildcard control/*rst) | $(wildcard *rst) ${B}
 
 ${B}/varnishfoo.pdf: ${B}/varnishfoo.rst $(wildcard *rst Makefile .git/* control/* img/* img/*/*) ${B}/version.rst | ${B}
 	$(run-rst2pdf)
+
+$(addprefix ${B}/,$(addsuffix .test,${bases})): ${B}/%.test: %.rst Makefile
+	@util/test.sh $< > $@
+	@echo " [TEST] "$(ok)
 
 $(addprefix ${B}/,$(addsuffix .pdf,${bases})): ${B}/%.pdf: ${B}/%.rst ${B}/img ${B}/version.rst Makefile
 	$(run-rst2pdf)
