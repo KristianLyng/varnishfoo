@@ -24,16 +24,97 @@ robust VCL that allows Varnish to cache efficiently.
 
 VCL is officially documented in the `vcl` manual page (``man vcl``), but
 you would do well if you revisit the state diagrams provided in appendix A.
+Throughout this chapter, those state diagrams will be used as reference and
+you will learn how to read them.
 
-What you will not find in this chapter is an extensive list of every
+What you will not find in this chapter is an extensive description of every
 keyword and operator available. That is precisely what the manual page is
 for.
 
+Working with VCL
+----------------
+
+VCL is normally stored in ``/etc/varnish/``. Most startup-scripts usually
+refer to ``/etc/varnish/default.vcl``, but you are free to call it whatever
+you want, as long as your startup scripts refer to them.
+
+To use new VCL, you have two choices:
+
+1. Restart Varnish, losing all cache
+2. Reload the VCL without restarting Varnish
+
+During development of entirely new VCL, the first option is usually the
+best. Reloading VCL without dropping the cache is a benefit in production,
+but when you are testing your VCL, old (potentially "wrong") objects can
+add a level of confusion that is best avoided. An example of this is if you
+are trying to fix re-write rules. You might end up caching content
+incorrectly due to re-write rules, then fix your rules but find the old
+content due to the previously wrong VCL.
+
+Reloading VCL is always done through the CLI, but most startup scripts
+provide shorthands that does the job for you. You can do it manually using
+``varnishadm``::
+
+        # varnishadm vcl.list
+        active          0 boot
+
+        # varnishadm vcl.load foo-1 /etc/varnish/default.vcl 
+        VCL compiled.
+        # varnishadm vcl.list
+        active          0 boot
+        available       0 foo-1
+
+        # varnishadm vcl.use foo-1
+        VCL 'foo-1' now active
+        # varnishadm vcl.list
+        available       0 boot
+        active          0 foo-1
+
+This also demonstrates that Varnish operates with multiple loaded VCLs, but
+only one can be active at a time. The VCL needs a run-time name, which can
+be anything. The ``boot`` name refers to the VCL varnish booted up with
+initially.
+
+Compiling and loading the VCL is done with ``vcl.load <name> <file>``, and
+this is where any syntax errors would be detected. After it is loaded, you
+need to call ``vcl.use`` to make it the active VCL. You can also switch
+back to the previous one with ``vcl.use`` if you like.
+
+A more practical way is to use your startup scripts. E.g::
+
+        # systemctl reload varnish
+        # varnishadm vcl.list
+        available       0 boot
+        available       0 foo-1
+        active          0 4ca9d8e9-25d0-4b52-b4b1-247f038061a6
+
+This example from Debian demonstrates that the startup script will pick a
+random VCL name, load it and then issue ``vcl.use`` for you.
+
+Over time, VCL files might "pile up" in Varnish, taking up some resources.
+This is specially true for backends, where even unused VCL will have active
+health checks if health checks are defined in the relevant VCL. You can
+explicitly discard old VCL with ``vcl.discard``::
+
+        # varnishadm vcl.list
+        available       0 boot
+        available       0 foo-1
+        active          0 4ca9d8e9-25d0-4b52-b4b1-247f038061a6
+
+        # varnishadm vcl.discard boot
+
+        # varnishadm vcl.list
+        available       0 foo-1
+        active          0 4ca9d8e9-25d0-4b52-b4b1-247f038061a6
+
+This is not necessary if you restart Varnish instead of reloading.
+
+As of Varnish 4.1.1, Varnish also has a concept of cooldown time, where old
+VCL will be set in a "cold" state after a period of time. While "cold",
+health checks are not active.
+
 Hello World
 -----------
-
-Let's just start. You know what an ``if()``-sentence is and I'm sure you
-can figure out that ``{`` starts a new scope.
 
 .. code:: C
 
@@ -48,7 +129,8 @@ can figure out that ``{`` starts a new scope.
                 set resp.http.X-hello = "Hello, world";
         }
 
-Let's take it from the top.
+This is a minimal working VCL that actually does something that requires
+VCL, namely adding an arbitrary response header.
 
 The first line is a VCL version string. Right now, there is only one valid
 VCL version. Even for Varnish 4.1, the VCL version is 4.0. This is intended
@@ -104,13 +186,141 @@ Let's see how it looks::
         X-Varnish: 2
         X-hello: Hello, world
 
-And there you are, a custom VCL header.
+And there you are, a custom VCL header. You can also use ``unset`` to
+remove headers, and overwrite existing headers.
 
-Working with VCL
-----------------
+.. code:: C
 
+        vcl 4.0;
 
+        backend foo {
+                .host = "127.0.0.1";
+                .port = "8080";
+        }
 
+        sub vcl_deliver {
+                set resp.http.X-hello = "Hello, world";
+                unset resp.http.X-Varnish;
+                unset resp.http.Via;
+                unset resp.http.Age;
+                set resp.http.Server = "Generic Webserver 1.0";
+        }
 
+The result would be::
+
+        # systemctl restart varnish
+        # http -p h localhost:6081
+        HTTP/1.1 200 OK
+        Accept-Ranges: bytes
+        Connection: keep-alive
+        Content-Encoding: gzip
+        Content-Type: text/html
+        Date: Sun, 07 Feb 2016 12:24:36 GMT
+        ETag: "2b60-52b20c692a380-gzip"
+        Last-Modified: Sat, 06 Feb 2016 21:37:34 GMT
+        Server: Generic Webserver 1.0
+        Transfer-Encoding: chunked
+        Vary: Accept-Encoding
+        X-hello: Hello, world
+
+Basic language constructs
+-------------------------
+
+Grab a rain coat, you are about to get a bucket full of information thrown
+at you. Many of the concepts in the following example will be expanded upon
+greatly.
+
+.. code:: C
+        
+        # Comments start with hash
+        // Or C++ style //
+        /*
+         * Or multi-line C-style comments like this.
+         */
+        vcl 4.0;
+       
+        # White space is largely optional
+        backend foo { .host = "localhost"; .port = "80"; }
+
+        # vcl_recv is an other VCL state you can modify. It is the first
+        # one in the request chain, and we will discuss it in great detail
+        # shortly.
+        sub vcl_recv {
+                # You can use tilde (~) to do regular expression matching
+                # text strings, or various other "logical" matchings on
+                # things suchs as IP addresses
+                if (req.url ~ "^/foo") {
+                        set req.http.x-test = "foo";
+                } elsif (req.url ~ "^/bar") {
+                        set req.http.x-test = "bar";
+                }
+        }
+
+        # You can define the same VCL functions as many times as you want.
+        # Varnish will concatenate them together into one big function.
+        
+        sub vcl_recv {
+                # Use regsub() to do regular expression substitution.
+                # regsub() returns a string and takes the format of 
+                # regsub(<input>,<expression>,<substitution>)
+                set req.url = regsub(req.url, "cat","dog");
+
+                # Be warned: regsub() only does a single substitution. If
+                # you want to substitute all occurences of the pattern, you
+                # need to use regsuball() instead. So regsuball() is
+                # equivalent to the "/g" option you might have seen in
+                # other languages.
+                set req.http.X-foo = regsuball(req.url,"foo","bar");
+        }
+
+        # You can define your own sub routines, but they can't start with
+        # vcl_, since that is reserved.
+        sub check_request_method {
+                # Custom sub routines can be accessed anywhere, as long as
+                # the variables and return methods used are valid where the
+                # subroutine is called.
+                if (req.method == "POST" || req.method == "PUT") {
+                        # The "return" statement is a terminating statement
+                        # and serves to exit the VCL processing entirely,
+                        # until the next state is reached.
+                        #
+                        # Different VCL states have different return
+                        # statements available to them. A return statement
+                        # tells varnish what to do next.
+                        #
+                        # In this specific example, return (pass); tells
+                        # varnish to bypass the cache for this request.
+                        return (pass);
+                }
+        }
+
+        sub vcl_recv {
+                # Calling the custom-sub is simple.
+                call check_request_method;
+
+                if (req.method == "POST") {
+                        # This will never execute. The 'check_request_method'
+                        # already checked the request method and if it was
+                        # POST, it would have issued "return(pass);"
+                        # already, thereby terminating the VCL state and
+                        # never reaching this code.
+                        set req.http.x-post = "yes";
+                }
+              
+                # The Host header contains the verbatim Host header, as
+                # supplied by the client. Some times, that includes a port
+                # number, but typically only if it is user-visible (e.g.:
+                # the user entered http://www.example.com:8080/)
+                if (req.http.host == "www.example.com" && req.url == "/login") {
+                        # return (pass) is an other return statement. It
+                        # instructs Varnish to by-pass the cache for this
+                        # request.
+                        return (pass);
+                }
+        }
+
+        # Last but not least: You do not have to specify all VCL functions.
+        # Varnish provides a built-in which is always appended to your own
+        # VCL, and it is designed to be sensible and safe.
 
 
