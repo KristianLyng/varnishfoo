@@ -45,6 +45,16 @@ div.warning p.admonition-title {
   color: #a94442;
   font-weight: bold ;
   font-family: sans-serif }
+
+
+pre.code .ln { color: grey; } /* line numbers */
+pre.code, code { background-color: #eeeeee }
+pre.code .comment, code .comment { color: #777 }
+pre.code .keyword, code .keyword { color: #3c763d; font-weight: bold }
+pre.code .literal.string, code .literal.string { color: #a94442 }
+pre.code .name.builtin, code .name.builtin { color: red }
+pre.code .deleted, code .deleted { background-color: #DEB0A1}
+pre.code .inserted, code .inserted { background-color: #A3D289}
 	</style>
 
     <!-- HTML5 shim and Respond.js for IE8 support of HTML5 elements and media queries -->

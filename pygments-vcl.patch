@@ -1,0 +1,146 @@
+diff -r 1b9478f8e2e3 pygments/lexers/_mapping.py
+--- a/pygments/lexers/_mapping.py	Wed Feb 03 23:42:54 2016 +0100
++++ b/pygments/lexers/_mapping.py	Mon Feb 08 00:04:49 2016 +0100
+@@ -396,6 +396,7 @@
+     'TypoScriptHtmlDataLexer': ('pygments.lexers.typoscript', 'TypoScriptHtmlData', ('typoscripthtmldata',), (), ()),
+     'TypoScriptLexer': ('pygments.lexers.typoscript', 'TypoScript', ('typoscript',), ('*.ts', '*.txt'), ('text/x-typoscript',)),
+     'UrbiscriptLexer': ('pygments.lexers.urbi', 'UrbiScript', ('urbiscript',), ('*.u',), ('application/x-urbiscript',)),
++    'VCL': ('pygments.lexers.c_like', 'VCL', ('vcl',), ('*.vcl',), ('text/x-vclsrc',)),
+     'VCTreeStatusLexer': ('pygments.lexers.console', 'VCTreeStatus', ('vctreestatus',), (), ()),
+     'VGLLexer': ('pygments.lexers.dsls', 'VGL', ('vgl',), ('*.rpf',), ()),
+     'ValaLexer': ('pygments.lexers.c_like', 'Vala', ('vala', 'vapi'), ('*.vala', '*.vapi'), ('text/x-vala',)),
+diff -r 1b9478f8e2e3 pygments/lexers/c_like.py
+--- a/pygments/lexers/c_like.py	Wed Feb 03 23:42:54 2016 +0100
++++ b/pygments/lexers/c_like.py	Mon Feb 08 00:04:49 2016 +0100
+@@ -11,7 +11,7 @@
+ 
+ import re
+ 
+-from pygments.lexer import RegexLexer, include, bygroups, inherit, words, \
++from pygments.lexer import RegexLexer, include, bygroups, using, this, inherit, words, \
+     default
+ from pygments.token import Text, Comment, Operator, Keyword, Name, String, \
+     Number, Punctuation
+@@ -20,7 +20,7 @@
+ from pygments.lexers import _mql_builtins
+ 
+ __all__ = ['PikeLexer', 'NesCLexer', 'ClayLexer', 'ECLexer', 'ValaLexer',
+-           'CudaLexer', 'SwigLexer', 'MqlLexer', 'ArduinoLexer']
++           'CudaLexer', 'SwigLexer', 'MqlLexer', 'ArduinoLexer', 'VCL']
+ 
+ 
+ class PikeLexer(CppLexer):
+@@ -63,6 +63,113 @@
+     }
+ 
+ 
++class VCL(CLexer):
++    """
++    For Varnish Configuration Language (VCL).
++
++    """
++    name = 'VCL'
++    aliases = ['vcl']
++    filenames = [ '*.vcl' ]
++    mimetypes = ['text/x-vclsrc']
++
++    tokens = {
++        'time': [
++            (r'\d+(s|d|w|h|m)',Number)
++            ],
++        'backend': [
++            include('whitespace'),
++            (r'(\s*)(\.host|\.port)(\s*=\s*)([^;]*)(\s*;)',
++            bygroups(Punctuation, Keyword, Punctuation, using(this), Punctuation)),
++            (r'{',Punctuation,'#push'),
++            (r'}',Punctuation,'#pop')
++        ],
++        'statements': [
++            include('time'),
++            (r'[~!%^&*+=|?:<>/-]', Operator),
++            (r'\s*(hash_data)(\()(.+)(\)\s*;\s*$)',
++            bygroups(Keyword, Punctuation, using(this), Punctuation)),
++            (r'\s*(set )([^\s]+)(\s*=\s*)(.+)(\s*;\s*)($|#.*$|//.*$|/\*.*$)',
++            bygroups(Keyword, Name, Punctuation, using(this), Punctuation, using(this))),
++            (r'(\s*regsub\s*)(\()(.*)(,)(.*)(,)(.*)(\))',
++            bygroups(Keyword, Punctuation, using(this), Punctuation,
++            using(this), Punctuation, using(this), Punctuation)),
++            (r'(import )(\w+)(;\s*)$',
++            bygroups(Keyword, Name, Punctuation)),
++            (words(('vcl_recv','vcl_pipe','vcl_pass','vcl_hash','vcl_purge',
++                    'vcl_hit','vcl_miss','vcl_deliver','vcl_synth','vcl_backend_fetch',
++                    'vcl_backend_response','vcl_backend_error','vcl_init','vcl_fini'),
++                    suffix=r'\b'),Keyword.Reserved),
++            (words(('regsub','regsuball','if','else','elsif','synth',
++                    'synthetic','obj.ttl','true','false'), suffix=r'\b'),Keyword),
++            (r'(\s*call \s*)([^\s;]+)(;)',
++            bygroups(Keyword,Name,Punctuation)),
++            (r'(req|bereq|obj|resp|beresp)\.http\.[^\s]+',Keyword),
++            (r'(req|bereq)\.(url|method|xid)',Keyword),
++            (r'(resp|beresp|obj)\.(status|reason)',Keyword),
++            (r'(beresp|obj)\.(ttl|grace)',Keyword),
++            (r'(backend )(\w*)(\s*{)',
++            bygroups(Keyword, Name, Punctuation), 'backend'),
++            (r'backend',Keyword),
++            (r'probe',Keyword),
++            (r'[();]', Punctuation),
++            (r'(client|server)\.(ip|identity)',Keyword),
++            (r'^vcl 4.0;$',Keyword.Reserved)
++            ],
++        'sub': [
++            include('whitespace'),
++            include('comments'),
++            include('returns'),
++            include('statements'),
++            (r'\s*\{\s*',Punctuation,'#push'),
++            (r'\s*\}\s*',Punctuation,'#pop') 
++        ],
++        'comment': [
++            (r'[^*/]', Comment.Multiline),
++            (r'/\*', Comment.Multiline, '#push'),
++            (r'\*/', Comment.Multiline, '#pop'),
++            (r'[*/]', Comment.Multiline)
++            ],
++        'comments': [
++            (r'#.*$', Comment.Singleline),
++            (r'/\*', Comment.Multiline, 'comment'),
++            (r'//.*$', Comment.Singleline)
++        ],
++        'string': [
++            (r'"', String, '#pop'),
++            (r'[^\\"\n]+', String),  # all other characters
++
++            ],
++        'multistring': [
++            (r'[^"}]', String),
++            (r'{"', String, '#push'),
++            (r'"}', String, '#pop'),
++            (r'["}]', String)
++        ],
++        'whitespace': [
++            (r'L?"', String, 'string'),
++            (r'{"', String, 'multistring'),
++            (r'\n', Text),
++            (r'\s+', Text),
++            (r'\\\n', Text)  # line continuation
++        ],
++        'returns': [
++            ('\s*(return )(\()(hash|lookup|ok|deliver|miss|fetch|pass|pipe)(\)\s*;$)',
++            bygroups(Keyword, Punctuation, Name, Punctuation)),
++            ('\s*(return )(\()(\w+\(.*\))(\)\s*;)',
++            bygroups(Keyword, Punctuation, Name, Punctuation))
++        ],
++        'root': [
++            include('whitespace'),
++            include('comments'),
++            include('returns'),
++            (r'(sub )(\w+)(\s*{)',
++                bygroups(Keyword, Name, Punctuation),'sub'),
++            include('statements'),
++            (r'\s+', Text)
++        ],
++    }
++
+ class NesCLexer(CLexer):
+     """
+     For `nesC <https://github.com/tinyos/nesc>`_ source code with preprocessor
