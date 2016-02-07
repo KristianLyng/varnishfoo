@@ -1,6 +1,11 @@
 Appendix C: Built-in VCL for Varnish 4.1.1
 ==========================================
 
+This is the built-in VCL that shipped with Varnish 4.1.1.
+
+The up-to-date VCL of your Varnish version can  usually be found in
+``/usr/share/doc/varnish/builtin.vcl`` or similar directory.
+
 .. code:: VCL
 
         /*-
