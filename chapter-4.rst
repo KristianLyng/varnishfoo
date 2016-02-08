@@ -2,7 +2,7 @@ Introducing VCL
 ===============
 
 .. role:: vcl(code)
-      :language: VCL
+      :language: VCLSnippet
 
 .. warning::
 
@@ -146,23 +146,23 @@ different names. As long as you only define a single backend, you don't
 need to explicitly reference it anywhere, but if you have multiple backends
 you need to be explicit about which to use when.
 
-Last, but not least, we provide some code for the ``vcl_deliver`` state. If
-you look at the ``cache_req_fsm.svg`` in appendix A, you will find
-``vcl_deliver`` at the bottom left. It is the last VCL before the request
-is delivered back to the client.
+Last, but not least, we provide some code for the :vcl:`vcl_deliver` state.
+If you look at the ``cache_req_fsm.svg`` in appendix A, you will find
+:vcl:`vcl_deliver` at the bottom left. It is the last VCL before the
+request is delivered back to the client.
 
 .. image:: img/c4/vcl_deliver.png
 
 The :vcl:`set resp.http.X-hello = "Hello, world";` line demonstrates how you
 can alter variables. :vcl:`set <variable> = <value>;` is the general syntax
 here. Each VCL state has access to different variables. The different
-variables are split up in families: ``req``, ``bereq``, ``beresp``,
-``resp``, ``obj``, ``client`` and ``server``.
+variables are split up in families: :vcl:`req`, :vcl:`bereq`,
+:vcl:`beresp`, :vcl:`resp`, :vcl:`obj`, :vcl:`client` and :vcl:`server`.
 
 In the state diagram (again, see Appendix A), looking closer at the box
-where :vcl:`vcl_deliver` is listed, you will find ``resp.*`` and ``req.*``
-listed, suggesting that those families of variables are available to us in
-:vcl:`vcl_deliver`.
+where :vcl:`vcl_deliver` is listed, you will find :vcl:`resp.*` and
+:vcl:`req.*` listed, suggesting that those families of variables are
+available to us in :vcl:`vcl_deliver`.
 
 In our specific example, :vcl:`resp.http.X-hello` refers to the artificial
 response header ``X-hello`` which we just invented. You can set any
