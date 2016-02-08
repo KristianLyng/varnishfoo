@@ -1,5 +1,7 @@
 #!/bin/bash
 
+set -e
+
 VARNISHD=/usr/local/sbin/varnishd
 TARGET=$(mktemp -d /tmp/foo.XXXXXX)
 awk -v target=${TARGET} '
@@ -14,9 +16,6 @@ awk -v target=${TARGET} '
 {
 	if (code>0)
 		print >> target "/" FILENAME "-" n ".vcl"
-}
-END {
-	print n " VCLs written to " target
 }
 ' "$@"
 
@@ -43,7 +42,7 @@ fail() {
 testvcl(){
 	VCL=$1
 	cleanup $1
-	echo -n " [Testing] "
+	echo -n " [VCL Syntax] "
 	OUT=$(${VARNISHD} -n ${TARGET} -C -f ${VCL} 2>&1)
 	if [ $? -eq "0" ]; then
 		ok $a
@@ -59,7 +58,6 @@ _tmp=${TARGET}'/*.vcl'
 _tmp2=$(echo $_tmp)
 
 if [ "$_tmp2" = "$_tmp" ]; then
-	echo "Nothing to test"
 	rm -r ${TARGET}
 	exit 0
 fi
