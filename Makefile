@@ -97,11 +97,11 @@ $(addprefix ${B}/,$(addsuffix .rst,${bases})): ${B}/%.rst: %.rst Makefile | ${B}
 	@echo " [RST] "$(ok)
 
 $(addprefix ${B}/,$(addsuffix .html,${bases})): ${B}/%.html: %.rst Makefile ${C}/template.raw | ${B}/img ${B}
-	@rst2html --initial-header-level=2 --template ${C}/template.raw $< > $@
+	@rst2html --initial-header-level=2 --syntax-highlight=short --template ${C}/template.raw $< > $@
 	@echo " [rst2html] "$(ok)
 
 ${B}/index.html: README.rst ${B}/web-version.rst | ${B}
-	@rst2html --initial-header-level=2 --template ${C}/template.raw $< > $@
+	@rst2html --initial-header-level=2 --syntax-highlight=short --template ${C}/template.raw $< > $@
 	@echo " [rst2html] "$(ok)
 
 clean:
