@@ -13,12 +13,15 @@ Introducing VCL
    the text is complete (as in: a summary exists). Or until this warning is
    removed.
 
+   That said, the content itself is correct and you are welcome to read it
+   and coment.
+
 The Varnish Configuration Language is a small custom programming language
-that gives you the chance to hook into Varnish's request handling state
+that gives you the mechanism to hook into Varnish's request handling state
 engine at various crucial stages.
 
 Mastering VCL is a matter of learning the language itself, understanding
-what the different states mean and how you can exploit the tools that are
+what the different states mean and how you can utilize the tools that are
 you at your disposal.
 
 This chapter focuses on the language itself and a small subset of the
@@ -33,6 +36,9 @@ you will learn how to read them.
 What you will not find in this chapter is an extensive description of every
 keyword and operator available. That is precisely what the manual page is
 for.
+
+Since VCL leans heavily on regular expressions, there is also a small
+cheat sheet towards the end, including VCL snippets.
 
 Working with VCL
 ----------------
