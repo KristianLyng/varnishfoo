@@ -1,17 +1,18 @@
 diff -r 1b9478f8e2e3 pygments/lexers/_mapping.py
 --- a/pygments/lexers/_mapping.py	Wed Feb 03 23:42:54 2016 +0100
-+++ b/pygments/lexers/_mapping.py	Mon Feb 08 05:19:04 2016 +0100
-@@ -396,6 +396,7 @@
++++ b/pygments/lexers/_mapping.py	Mon Feb 08 11:19:22 2016 +0100
+@@ -396,6 +396,8 @@
      'TypoScriptHtmlDataLexer': ('pygments.lexers.typoscript', 'TypoScriptHtmlData', ('typoscripthtmldata',), (), ()),
      'TypoScriptLexer': ('pygments.lexers.typoscript', 'TypoScript', ('typoscript',), ('*.ts', '*.txt'), ('text/x-typoscript',)),
      'UrbiscriptLexer': ('pygments.lexers.urbi', 'UrbiScript', ('urbiscript',), ('*.u',), ('application/x-urbiscript',)),
-+    'VCL': ('pygments.lexers.c_like', 'VCL', ('vcl',), ('*.vcl',), ('text/x-vclsrc',)),
++    'VCLLexer': ('pygments.lexers.c_like', 'VCL', ('vcl',), ('*.vcl',), ('text/x-vclsrc',)),
++    'VCLSnippetLexer': ('pygments.lexers.c_like', 'VCLSnippets', ('vclsnippets', 'vclsnippet'), ('*.vcl',), ('text/x-vclsrc',)),
      'VCTreeStatusLexer': ('pygments.lexers.console', 'VCTreeStatus', ('vctreestatus',), (), ()),
      'VGLLexer': ('pygments.lexers.dsls', 'VGL', ('vgl',), ('*.rpf',), ()),
      'ValaLexer': ('pygments.lexers.c_like', 'Vala', ('vala', 'vapi'), ('*.vala', '*.vapi'), ('text/x-vala',)),
 diff -r 1b9478f8e2e3 pygments/lexers/c_like.py
 --- a/pygments/lexers/c_like.py	Wed Feb 03 23:42:54 2016 +0100
-+++ b/pygments/lexers/c_like.py	Mon Feb 08 05:19:04 2016 +0100
++++ b/pygments/lexers/c_like.py	Mon Feb 08 11:19:22 2016 +0100
 @@ -11,7 +11,7 @@
  
  import re
@@ -21,20 +22,21 @@ diff -r 1b9478f8e2e3 pygments/lexers/c_like.py
      default
  from pygments.token import Text, Comment, Operator, Keyword, Name, String, \
      Number, Punctuation
-@@ -20,7 +20,7 @@
+@@ -20,7 +20,8 @@
  from pygments.lexers import _mql_builtins
  
  __all__ = ['PikeLexer', 'NesCLexer', 'ClayLexer', 'ECLexer', 'ValaLexer',
 -           'CudaLexer', 'SwigLexer', 'MqlLexer', 'ArduinoLexer']
-+           'CudaLexer', 'SwigLexer', 'MqlLexer', 'ArduinoLexer', 'VCL']
++           'CudaLexer', 'SwigLexer', 'MqlLexer', 'ArduinoLexer', 'VCLLexer',
++           'VCLSnippetLexer']
  
  
  class PikeLexer(CppLexer):
-@@ -63,6 +63,132 @@
+@@ -63,6 +64,156 @@
      }
  
  
-+class VCL(CLexer):
++class VCLLexer(CLexer):
 +    """
 +    For Varnish Configuration Language (VCL).
 +
@@ -69,9 +71,9 @@ diff -r 1b9478f8e2e3 pygments/lexers/c_like.py
 +            (r'[~!%^&*+=|?:<>/-]', Operator),
 +            (r'\s*(hash_data)(\()(.+)(\)\s*;\s*$)',
 +            bygroups(Keyword, Punctuation, using(this), Punctuation)),
-+            (r'(\s*set )([^\s]+)(\s*=\s*)(.+)(\s*;\s*)($|#.*$|//.*$|/\*.*$)',
++            (r'(\s*set\s)([^\s]+)(\s*=\s*)(.+)(\s*;\s*)($|#.*$|//.*$|/\*.*$)',
 +            bygroups(Keyword, Name.Variable, Punctuation, using(this), Punctuation, using(this))),
-+            (r'(\s*unset )(\s*[^\s]+)(\s*;)',
++            (r'(\s*unset\s)(\s*[^\s]+)(\s*;)',
 +            bygroups(Keyword, Name.Variable, Punctuation)),
 +            (r'(\s*regsub\s*)(\()(.*)(,)(.*)(,)(.*)(\))',
 +            bygroups(Keyword, Punctuation, using(this), Punctuation,
@@ -79,12 +81,12 @@ diff -r 1b9478f8e2e3 pygments/lexers/c_like.py
 +            (r'(\s*regsuball\s*)(\()(.*)(,)(.*)(,)(.*)(\))',
 +            bygroups(Keyword, Punctuation, using(this), Punctuation,
 +            using(this), Punctuation, using(this), Punctuation)),
-+            (r'(import )(\w+)(;\s*)$',
++            (r'(import\s)(\w+)(;\s*)$',
 +            bygroups(Keyword, Name.Variable.Global, Punctuation)),
 +            (words(('vcl_recv','vcl_pipe','vcl_pass','vcl_hash','vcl_purge',
 +                    'vcl_hit','vcl_miss','vcl_deliver','vcl_synth','vcl_backend_fetch',
 +                    'vcl_backend_response','vcl_backend_error','vcl_init','vcl_fini'),
-+                    suffix=r'\b'),Keyword.Reserved),
++                    suffix=r'\b'),Name.Function),
 +            (words(('if','else','elsif','synth',
 +                    'synthetic'), suffix=r'\b'),Keyword),
 +            (words(('true','false')),Name.Builtin),
@@ -102,7 +104,7 @@ diff -r 1b9478f8e2e3 pygments/lexers/c_like.py
 +            (r'[();]', Punctuation),
 +            (r'(client|server)\.(ip|identity)',Name.Variable),
 +            (r'^(vcl )(4.0)(;)$',
-+            bygroups(Keyword.Reserved,Name.Constant,Punctuation))
++            bygroups(Keyword.Reserved,Name.Constant,Punctuation)),
 +            ],
 +        'sub': [
 +            include('whitespace'),
@@ -158,6 +160,30 @@ diff -r 1b9478f8e2e3 pygments/lexers/c_like.py
 +            include('statements'),
 +            (r'\s+', Text)
 +        ],
++    }
++
++class VCLSnippetLexer(VCLLexer):
++    """
++    For Varnish Configuration Language snippets.
++    """
++
++    name = 'VCLSnippets'
++    aliases = ['vclsnippets', 'vclsnippet']
++    tokens = {
++        'snippetspre': [
++            (r'\<variable\>', Name.Variable),
++            (r'\<value\>', Name.Variable)
++            ],
++        'snippetspost': [
++            (r'(req|bereq|obj|resp|beresp|client|server)(\.http)?\.\*',Name.Variable),
++            (r'(req|bereq|obj|resp|beresp|client|server)',Name.Variable),
++            (r'(backend)', Keyword.Reserved)
++        ],
++        'root': [
++            include('snippetspre'),
++            inherit,
++            include('snippetspost')
++            ]
 +    }
 +
  class NesCLexer(CLexer):
