@@ -42,12 +42,13 @@ fail() {
 testvcl(){
 	VCL=$1
 	cleanup $1
-	echo -n " [VCL Syntax] "
 	OUT=$(${VARNISHD} -n ${TARGET} -C -f ${VCL} 2>&1)
 	if [ $? -eq "0" ]; then
+		echo -n " [VCL Syntax] "
 		ok $a
 		return 0
 	else
+		echo -n " [VCL Syntax] "
 		fail $a
 		echo -e "$OUT"
 		return 1
