@@ -915,3 +915,57 @@ the rewritten URL, but it is a good idea to get used to ``varnishlog``.
 Future examples will not include quite as verbose testing transcripts,
 though.
 
+`vcl_hash`
+----------
+
++------------------------------------------------------------+
+| `vcl_hash`                                                 |
++=============+==============================================+
+| Context     | Client request                               |
++-------------+----------------------------------------------+
+| Variables   | `req`, `req_top`, `client`, `server`         |
+|             | `local`, `remote`, `storage`, `now`          |
++-------------+----------------------------------------------+
+| Return      | `lookup`                                     |
+| statements  |                                              |
++-------------+----------------------------------------------+
+| Typical use | - Adjusting the cache hash.                  |
+|             | - Adding the Cookie to the hash              |
++-------------+----------------------------------------------+
+
+If you return `hash` or `purge` in `vcl_recv`, Varnish will immediately
+execute the `vcl_hash` function. It has a very simple purpose: Defining
+what identifies a unique object in the cache. The built in VCL shows us
+what it's all about:
+
+.. code:: VCL
+
+        sub vcl_hash {
+            hash_data(req.url);
+            if (req.http.host) {
+                hash_data(req.http.host);
+            } else {
+                hash_data(server.ip);
+            }
+            return (lookup);
+        }
+
+As you might have guessed, you use `hash_data()` to add anything to what
+becomes the unique cache hash. The built-in VCL is often all you need. It
+first adds the URL, then adds the Host header if one is present, or the
+server IP if the Host header isn't present.
+
+In short: It says that different URLs identify different resources. There
+are very few scenarios in which this doesn't make sense.
+
+One thing that can be smart to do is add the ``Cookie`` header to the hash.
+If you do that, then every combination of ``Cookie`` header and URL would
+identify a uniquely cached object. However, that shouldn't be done without
+first thoroughly cleaning up cookies, otherwise you would get a very very
+bloated cache.
+
+The only valid return statement in `vcl_hash` is `return (lookup);`,
+telling Varnish that it's time to look the hash up in cache to see if it's
+a cache hit or not.
+
+
