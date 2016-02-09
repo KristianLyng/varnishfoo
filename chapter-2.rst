@@ -965,8 +965,8 @@ do both in later chapters. For now, just know that these are challenges.
 ``stale-while-revalidate``
 --------------------------
 
-In addition to `RFC2616`_, there's also the more recent `RFC5861`_ defines
-two additional variables for ``Cache-Control``::
+In addition to `RFC2616`_, there's also the more recent `RFC5861`_ which
+defines two additional variables for ``Cache-Control``::
 
      stale-while-revalidate = "stale-while-revalidate" "=" delta-seconds
 
@@ -974,7 +974,7 @@ and::
 
      stale-if-error = "stale-if-error" "=" delta-seconds
 
-These two variables map very well to Varnish' `grace` mechanics, which
+These two variables map very well to Varnish's `grace` mechanics, which
 existed a few years before `RFC5861`_ came about.
 
 Varnish 4.1 implements ``stale-while-revalidate`` for the first time, but
