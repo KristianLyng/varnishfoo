@@ -4,6 +4,8 @@ Introducing VCL
 .. role:: vcl(code)
       :language: VCLSnippet
 
+.. default-role:: vcl
+
 .. warning::
 
    I expect this chapter to change significantly throught its creation, and
@@ -28,10 +30,10 @@ This chapter focuses on the language itself and a small subset of the
 states you can affect. The goal is to give you the skills needed to write
 robust VCL that allows Varnish to cache efficiently.
 
-VCL is officially documented in the `vcl` manual page (``man vcl``), but
-you would do well if you revisit the state diagrams provided in appendix A.
-Throughout this chapter, those state diagrams will be used as reference and
-you will learn how to read them.
+VCL is officially documented in the :title:`vcl` manual page (``man vcl``),
+but you would do well if you revisit the state diagrams provided in
+appendix A.  Throughout this chapter, those state diagrams will be used as
+reference and you will learn how to read them.
 
 What you will not find in this chapter is an extensive description of every
 keyword and operator available. That is precisely what the manual page is
@@ -144,33 +146,33 @@ VCL, namely adding an arbitrary response header.
 The first line is a VCL version string. Right now, there is only one valid
 VCL version. Even for Varnish 4.1, the VCL version is 4.0. This is intended
 to make transitions to newer versions of Varnish simpler. Every VCL file
-starts with :vcl:`vcl 4.0;` for now.
+starts with `vcl 4.0;` for now.
 
-Next up, we define a backend server named `foo`. We set the IP of the
+Next up, we define a backend server named ``foo``. We set the IP of the
 backend and port. You can have multiple backends, as long as they have
 different names. As long as you only define a single backend, you don't
 need to explicitly reference it anywhere, but if you have multiple backends
 you need to be explicit about which to use when.
 
-Last, but not least, we provide some code for the :vcl:`vcl_deliver` state.
-If you look at the ``cache_req_fsm.svg`` in appendix A, you will find
-:vcl:`vcl_deliver` at the bottom left. It is the last VCL before the
-request is delivered back to the client.
+Last, but not least, we provide some code for the `vcl_deliver` state.  If
+you look at the ``cache_req_fsm.svg`` in appendix A, you will find
+`vcl_deliver` at the bottom left. It is the last VCL before the request is
+delivered back to the client.
 
 .. image:: img/c4/vcl_deliver.png
 
-The :vcl:`set resp.http.X-hello = "Hello, world";` line demonstrates how you
-can alter variables. :vcl:`set <variable> = <value>;` is the general syntax
+The `set resp.http.X-hello = "Hello, world";` line demonstrates how you
+can alter variables. `set <variable> = <value>;` is the general syntax
 here. Each VCL state has access to different variables. The different
-variables are split up in families: :vcl:`req`, :vcl:`bereq`,
-:vcl:`beresp`, :vcl:`resp`, :vcl:`obj`, :vcl:`client` and :vcl:`server`.
+variables are split up in families: `req`, `bereq`, `beresp`, `resp`,
+`obj`, `client` and `server`.
 
 In the state diagram (again, see Appendix A), looking closer at the box
-where :vcl:`vcl_deliver` is listed, you will find :vcl:`resp.*` and
-:vcl:`req.*` listed, suggesting that those families of variables are
-available to us in :vcl:`vcl_deliver`.
+where `vcl_deliver` is listed, you will find `resp.*` and `req.*` listed,
+suggesting that those families of variables are
+available to us in `vcl_deliver`.
 
-In our specific example, :vcl:`resp.http.X-hello` refers to the artificial
+In our specific example, `resp.http.X-hello` refers to the artificial
 response header ``X-hello`` which we just invented. You can set any
 response header you want, but as general rule (and per RFC), prefixing
 custom-headers with ``X-`` is the safest choice to avoid conflicts with
@@ -195,8 +197,8 @@ Let's see how it looks::
         X-Varnish: 2
         X-hello: Hello, world
 
-And there you are, a custom VCL header. You can also use :vcl:`unset
-variable;` to remove headers, and overwrite existing headers.
+And there you are, a custom VCL header. You can also use `unset variable;`
+to remove headers, and overwrite existing headers.
 
 .. code:: VCL
 
@@ -332,7 +334,7 @@ greatly.
         # Varnish provides a built-in which is always appended to your own
         # VCL, and it is designed to be sensible and safe.
 
-In future examples, the :vcl:`vcl 4.0;` and :vcl:`backend` might be left out for
+In future examples, the `vcl 4.0;` and `backend` might be left out for
 brevity. Other than that, all examples are complete.
 
 More on return-statements
@@ -348,11 +350,11 @@ All states end with a return-statement. If you do not provide one, VCL
 execution will "fall through" to the built-in VCL, which always provides a
 return-statement.
 
-Similarly, if you provide multiple definitions of :vcl:`vcl_recv` or some
+Similarly, if you provide multiple definitions of `vcl_recv` or some
 other function, they will all be glued together as a single block of code.
-Any :vcl:`call foo;` statement will be in-lined (copied into the code).
+Any `call foo;` statement will be in-lined (copied into the code).
 
-Because of this, a :vcl:`return (pass);` issued in a custom-function would
+Because of this, a `return (pass);` issued in a custom-function would
 mean that the custom function never returned - that VCL state was
 terminated and Varnish would move on to the next phase of request handling.
 
