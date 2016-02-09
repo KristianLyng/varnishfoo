@@ -251,7 +251,7 @@ greatly.
         vcl 4.0;
        
         # White space is largely optional
-        backend foo { .host = "localhost"; .port = "80"; }
+        backend foo{.host="localhost";.port="80";}
 
         # vcl_recv is an other VCL state you can modify. It is the first
         # one in the request chain, and we will discuss it in great detail
@@ -267,14 +267,17 @@ greatly.
                 }
         }
 
-        # You can define the same VCL functions as many times as you want.
+        # You can define the same VCL function as many times as you want.
         # Varnish will concatenate them together into one big function.
-        
         sub vcl_recv {
                 # Use regsub() to do regular expression substitution.
-                # regsub() returns a string and takes the format of 
+                # regsub() returns a string and takes the format of
                 # regsub(<input>,<expression>,<substitution>)
                 set req.url = regsub(req.url, "cat","dog");
+
+                # The input of regsub() doesn't have to match where you
+                # are storing it, even if it is the most common form.
+                set req.http.x-base-url = regsub(req.url, "\?.*$","");
 
                 # Be warned: regsub() only does a single substitution. If
                 # you want to substitute all occurences of the pattern, you
@@ -285,7 +288,8 @@ greatly.
         }
 
         # You can define your own sub routines, but they can't start with
-        # vcl_, since that is reserved.
+        # vcl_. Varnish reserves all VCL function names that start with
+        # vcl_ for it self.
         sub check_request_method {
                 # Custom sub routines can be accessed anywhere, as long as
                 # the variables and return methods used are valid where the
@@ -307,8 +311,17 @@ greatly.
 
         sub vcl_recv {
                 # Calling the custom-sub is simple.
+                # There are no arguments or return values, because under
+                # the hood, "call" just copies the VCL into where the call
+                # was made. It is not a true function call.
                 call check_request_method;
 
+                # As a consequence, you can not write recursive custom
+                # functions.
+
+                # You can use == to check for exact matches. Both for
+                # strings and numbers. Varnish either does the right thing
+                # or throws a syntax error at you.
                 if (req.method == "POST") {
                         # This will never execute. The 'check_request_method'
                         # already checked the request method and if it was
@@ -317,7 +330,7 @@ greatly.
                         # never reaching this code.
                         set req.http.x-post = "yes";
                 }
-              
+
                 # The Host header contains the verbatim Host header, as
                 # supplied by the client. Some times, that includes a port
                 # number, but typically only if it is user-visible (e.g.:
@@ -334,8 +347,12 @@ greatly.
         # Varnish provides a built-in which is always appended to your own
         # VCL, and it is designed to be sensible and safe.
 
-In future examples, the `vcl 4.0;` and `backend` might be left out for
-brevity. Other than that, all examples are complete.
+.. note::
+
+   All VCL code examples are tested for syntax errors against Varnish
+   4.1.1, and are provided in complete form, with the only exception beng
+   that smaller examples will leave out the `backend` and `vcl 4.0;` lines
+   to preserve brevity.
 
 More on return-statements
 -------------------------
@@ -352,11 +369,41 @@ return-statement.
 
 Similarly, if you provide multiple definitions of `vcl_recv` or some
 other function, they will all be glued together as a single block of code.
-Any `call foo;` statement will be in-lined (copied into the code).
+Any `call foo;` statement will be in-lined (copied into the code). In other
+words, the following two examples produce the same C code:
 
-Because of this, a `return (pass);` issued in a custom-function would
-mean that the custom function never returned - that VCL state was
-terminated and Varnish would move on to the next phase of request handling.
+With custom function:
+
+.. code:: VCL
+
+   sub clean_host_header {
+           # Strip leading www in host header to avoid caching the same
+           # content twice if it is accessed both with and without a
+           # leading wwww.
+           set req.http.Host = regsub(req.http.Host, "^www\.","");
+   }
+
+   sub vcl_recv {
+           call clean_host_header;
+   }
+
+Without:
+
+.. code:: VCL
+
+   sub vcl_recv {
+           set req.http.Host = regsub(req.http.Host, "^www\.","");
+   }
+
+Which form you chose is a matter of style. However, it is usually helpful
+to split logical bits of code into separate custom functions. This lets you
+split cleaning of Host header into a single block of code that doesn't get
+mixed with device detection (for example).
+
+But because the custom functions are in-lined, a `return (pass);` issued in
+a custom-function would mean that the custom function never returned - that
+VCL state was terminated and Varnish would move on to the next phase of
+request handling.
 
 Each state has different return methods available. You can see these in the
 request flow chart, at the bottom of each box.
