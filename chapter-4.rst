@@ -436,8 +436,8 @@ should be a goal to provide as simple VCL as possible.
 Each of the built-in VCL functions will be covered individually when we are
 dealing with the individual states.
 
-``vcl_recv``
-------------
+`vcl_recv`
+----------
 
 +------------------------------------------------------------+
 | `vcl_recv`                                                 |
