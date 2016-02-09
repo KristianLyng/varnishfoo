@@ -1,4 +1,7 @@
 WEBTARGET=pathfinder.kly.no:public_html/varnishfoo.info/
+PYGMENTSTYLE=default
+RST2HTML=rst2html5.py
+
 C=control/
 B=build
 
@@ -8,7 +11,6 @@ HTML=${B}/index.html $(addprefix ${B}/,$(addsuffix .html,${bases}))
 CHAPTERPDF= $(addprefix ${B}/,$(addsuffix .pdf, ${bases}))
 TESTS= $(addprefix ${B}/,$(addsuffix .test, ${bases}))
 PYGCSS=${B}/css/pygment-style.css
-RST2HTML=rst2html5.py
 
 define ok =
 "\033[32m$@\033[0m"
@@ -114,7 +116,8 @@ $(addprefix ${B}/html-,$(addsuffix .rst,${bases})): ${B}/html-%.rst: %.rst Makef
 	@echo " [WEBRST] "$(ok)
 
 ${B}/css/pygment-style.css: Makefile | ${B} ${B}/css/
-	pygmentize -f html -S default > $@
+	@pygmentize -f html -S ${PYGMENTSTYLE} > $@
+	@echo " [styles] "$(ok)
 
 $(addprefix ${B}/,$(addsuffix .html,${bases})): ${B}/%.html: ${B}/html-%.rst Makefile ${C}/template.raw | ${B}/img ${B}
 	@${RST2HTML} --initial-header-level=2 --syntax-highlight=short --template ${C}/template.raw $< > $@
