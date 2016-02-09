@@ -120,7 +120,7 @@ ${B}/css/pygment-style.css: Makefile | ${B} ${B}/css/
 	@echo " [styles] "$(ok)
 
 $(addprefix ${B}/,$(addsuffix .html,${bases})): ${B}/%.html: ${B}/html-%.rst Makefile ${C}/template.raw | ${B}/img ${B}
-	@${RST2HTML} --initial-header-level=2 --syntax-highlight=short --template ${C}/template.raw $< > $@
+	@${RST2HTML} --initial-header-level=2 --toc-top-backlinks --syntax-highlight=short --template ${C}/template.raw $< > $@
 	@echo " [rst2html] "$(ok)
 
 ${B}/index.html: README.rst ${B}/web-version.rst | ${B}
