@@ -22,6 +22,9 @@
 	body h2 a {
 		color: black;
 	}
+	body h3 a {
+		color: black;
+	}
 
 div.admonition, div.attention, div.caution, div.danger, div.error,
 div.hint, div.important, div.note, div.tip, div.warning {
@@ -189,23 +192,5 @@ body .il { color: #666666 } /* Literal.Number.Integer.Long */
     <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.11.3/jquery.min.js"></script>
     <!-- Include all compiled plugins (below), or include individual files as needed -->
     <script src="js/bootstrap.min.js"></script>
-    <script>
-    /*
-     * This is pretty nasty, but works for now.
-     */
-    function linkify() {
-	    foo = document.getElementsByTagName("h2");
-	    for (i in foo) {
-		    if (foo[i].parentElement != null && foo[i].parentElement.id != null) {
-	    		foo[i].innerHTML = "<a href=\"#" + foo[i].parentElement.id + "\">" + foo[i].innerHTML + "</a>"
-		    }
-	    }
-	    foo = document.getElementsByTagName("h1");
-	    for (i in foo) {
-	    	foo[i].innerHTML = "<a href=\"#\">" + foo[i].innerHTML + "</a>"
-	    }
-    }
-    document.addEventListener('DOMContentLoaded',linkify);
-    </script>
   </body>
 </html>

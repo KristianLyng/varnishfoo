@@ -96,7 +96,22 @@ $(addprefix ${B}/,$(addsuffix .rst,${bases})): ${B}/%.rst: %.rst Makefile | ${B}
 	@echo >> $@
 	@echo " [RST] "$(ok)
 
-$(addprefix ${B}/,$(addsuffix .html,${bases})): ${B}/%.html: %.rst Makefile ${C}/template.raw | ${B}/img ${B}
+$(addprefix ${B}/html-,$(addsuffix .rst,${bases})): ${B}/html-%.rst: %.rst Makefile | ${B}
+	@echo > $@
+	@echo ".. contents:: " >> $@
+	@echo >> $@
+	@echo ".. sectnum:: " >> $@
+	@TMP=$$(echo "$<" | sed 's/^.*\(.\)\.rst$$/\1/' | tr a-z A-Z); \
+	if echo "$$TMP" | egrep -q '[A-Z]'; then \
+		echo "   :prefix: $${TMP}." >> $@ ; \
+	else \
+		echo "   :start: $${TMP}" >> $@ ;\
+	fi
+	@echo ".. include:: ../$<" >> $@
+	@echo >> $@
+	@echo " [WEBRST] "$(ok)
+
+$(addprefix ${B}/,$(addsuffix .html,${bases})): ${B}/%.html: ${B}/html-%.rst Makefile ${C}/template.raw | ${B}/img ${B}
 	@rst2html --initial-header-level=2 --syntax-highlight=short --template ${C}/template.raw $< > $@
 	@echo " [rst2html] "$(ok)
 
