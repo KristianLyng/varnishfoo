@@ -7,6 +7,8 @@ CHAPTERS= $(addsuffix .rst,${bases})
 HTML=${B}/index.html $(addprefix ${B}/,$(addsuffix .html,${bases}))
 CHAPTERPDF= $(addprefix ${B}/,$(addsuffix .pdf, ${bases}))
 TESTS= $(addprefix ${B}/,$(addsuffix .test, ${bases}))
+PYGCSS=${B}/css/pygment-style.css
+RST2HTML=rst2html5.py
 
 define ok =
 "\033[32m$@\033[0m"
@@ -20,7 +22,7 @@ define run-rst2pdf =
 	@echo " [rst2pdf] "$(ok)
 endef
 
-web: ${B}/varnishfoo.pdf ${CHAPTERPDF} ${HTML} ${TESTS} | ${B}/css ${B}/fonts ${B}/js
+web: ${B}/varnishfoo.pdf ${CHAPTERPDF} ${HTML} ${TESTS} ${PYGCSS} | ${B}/css ${B}/fonts ${B}/js
 	@echo " [WEB] "$(ok)
 
 check: ${TESTS}
@@ -111,12 +113,15 @@ $(addprefix ${B}/html-,$(addsuffix .rst,${bases})): ${B}/html-%.rst: %.rst Makef
 	@echo >> $@
 	@echo " [WEBRST] "$(ok)
 
+${B}/css/pygment-style.css: Makefile | ${B} ${B}/css/
+	pygmentize -f html -S default > $@
+
 $(addprefix ${B}/,$(addsuffix .html,${bases})): ${B}/%.html: ${B}/html-%.rst Makefile ${C}/template.raw | ${B}/img ${B}
-	@rst2html --initial-header-level=2 --syntax-highlight=short --template ${C}/template.raw $< > $@
+	@${RST2HTML} --initial-header-level=2 --syntax-highlight=short --template ${C}/template.raw $< > $@
 	@echo " [rst2html] "$(ok)
 
 ${B}/index.html: README.rst ${B}/web-version.rst | ${B}
-	@rst2html --initial-header-level=2 --syntax-highlight=short --template ${C}/template.raw $< > $@
+	@${RST2HTML} --initial-header-level=2 --syntax-highlight=short --template ${C}/template.raw $< > $@
 	@echo " [rst2html] "$(ok)
 
 clean:

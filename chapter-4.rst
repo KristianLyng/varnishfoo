@@ -141,7 +141,7 @@ request or a soon-to-be-executed backend request.
 The following is a minimal VCL that defines a backend and sets a custom
 response header:
 
-.. code:: VCL
+.. sourcecode:: VCL
 
         vcl 4.0;
 
