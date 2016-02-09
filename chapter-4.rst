@@ -127,6 +127,20 @@ health checks are not active.
 Hello World
 -----------
 
+VCL can be split into three groups:
+
+1. Global declarations. Backends and ACLs fit into this category.
+2. Initialization functions. This almost exclusively about setting up
+   Varnish Modules.
+3. Request handling.
+
+Of the three, the third one is by far the biggest part of most VCL files.
+In this mode, VCL deals with a single request. Either as seen as a client
+request or a soon-to-be-executed backend request.
+
+The following is a minimal VCL that defines a backend and sets a custom
+response header:
+
 .. code:: VCL
 
         vcl 4.0;
@@ -139,9 +153,6 @@ Hello World
         sub vcl_deliver {
                 set resp.http.X-hello = "Hello, world";
         }
-
-This is a minimal working VCL that actually does something that requires
-VCL, namely adding an arbitrary response header.
 
 The first line is a VCL version string. Right now, there is only one valid
 VCL version. Even for Varnish 4.1, the VCL version is 4.0. This is intended
@@ -357,11 +368,9 @@ greatly.
 More on return-statements
 -------------------------
 
-A fundamental mechanism of VCL is the return-statement, some times referred
-to as terminating statement. It is crucial to understand just what this
+A central mechanism of VCL is the return-statement, some times referred to
+as a terminating statement. It is important to understand just what this
 means.
-
-.. XXX: Add recv-pic
 
 All states end with a return-statement. If you do not provide one, VCL
 execution will "fall through" to the built-in VCL, which always provides a
@@ -424,6 +433,8 @@ is a good habit to let it execute whenever possible. Chapter 1 already
 demonstrated how you can influence the cache with no VCL at all, and it
 should be a goal to provide as simple VCL as possible.
 
+Each of the built-in VCL functions will be covered individually when we are
+dealing with the individual states.
 
 
 
