@@ -436,5 +436,482 @@ should be a goal to provide as simple VCL as possible.
 Each of the built-in VCL functions will be covered individually when we are
 dealing with the individual states.
 
+``vcl_recv``
+------------
 
++------------------------------------------------------------+
+| `vcl_recv`                                                 |
++=============+==============================================+
+| Context     | Client request                               |
++-------------+----------------------------------------------+
+| Variables   | `req`, `req_top`, `client`, `server`         |
+|             | `local`, `remote`, `storage`, `now`          |
++-------------+----------------------------------------------+
+| Return      | `purge`, `hash`, `pass`, `pipe`, `synth`     |
+| statements  |                                              |
++-------------+----------------------------------------------+
+| Typical use | - Request validation                         |
+|             | - Request normalization                      |
+|             | - Cookie normalization/cleanup               |
+|             | - URL rewrites                               |
+|             | - Backend selection                          |
+|             | - Purging                                    |
+|             | - Request classification (Mobile, IP, etc)   |
+|             | - Request-based cache policies               |
++-------------+----------------------------------------------+
+
+The first VCL function that is run after a request is received is called
+`vcl_recv`. The only processing Varnish has done at this point is parse the
+request into manageable structures.
+
+As the extensive list of typical use cases suggests, it is one of the most
+versatile VCL functions available. Almost every Varnish server has a good
+chunk of logic and policy in `vcl_recv`.
+
+Let's go through the built-in `vcl_recv` function:
+
+.. code:: VCL
+
+        sub vcl_recv {
+            if (req.method == "PRI") {
+                /* We do not support SPDY or HTTP/2.0 */
+                return (synth(405));
+            }
+            if (req.method != "GET" &&
+              req.method != "HEAD" &&
+              req.method != "PUT" &&
+              req.method != "POST" &&
+              req.method != "TRACE" &&
+              req.method != "OPTIONS" &&
+              req.method != "DELETE") {
+                /* Non-RFC2616 or CONNECT which is weird. */
+                return (pipe);
+            }
+
+            if (req.method != "GET" && req.method != "HEAD") {
+                /* We only deal with GET and HEAD by default */
+                return (pass);
+            }
+            if (req.http.Authorization || req.http.Cookie) {
+                /* Not cacheable by default */
+                return (pass);
+            }
+            return (hash);
+        }
+
+The built-in VCL is meant to provide a safe, standards-compliant cache that
+works with most sites. However, what it is not meant to do is provide a
+perfect cache hit rate.
+
+Walking through the list from the top, it starts out by checking if the
+request method is ``PRI``, which is a request method for the SPDY protocol,
+and/or HTTP/2.0. This is currently unsuported, so Varnish terminates the
+VCL state with a ``synth(405)``.
+
+This will cause Varnish to synthesize an error message with a pre-set
+status code of 405. If you leave out the status message (e.g "File Not
+Found" and "Internal Server Error"), Varnish will pick the standard
+response message matching that status code.
+
+You can provide your own error message and even change the status code
+later if you decide to add a `vcl_synth` function.
+
+Next, Varnish checks if the request method is one of the valid RFC 2616
+request methods (with the exception of ``CONNECT``). If it is not, then
+Varnish issues `return (pipe);`, which causes Varnish to enter "pipe mode".
+
+In pipe mode, Varnish connects the client directly to the backend and stops
+interpreting the data stream at all. This is best suited for situations
+where you need to do something Varnish doesn't support, and should be a
+last resort. If you do issue a `pipe` return, then you should probably also
+have `set req.http.Connection = "close";`. This will tell your origin
+server to close the connection after a single request. If you do not, then
+the client will be free to issue other, potentially cacheable, requests
+without Varnish being any the wiser.
+
+In short: If in doubt, don't use pipe.
+
+Next, Varnish checks if the request method is ``GET`` or ``HEAD``. If it is
+not, then Varnish issues `return (pass);`. This is the best method of
+disabling cache based on client input. Unlike in pipe mode, Varnish still
+parses the request and and potentially buffers it if you use pass. In fact,
+it goes through all the normal VCL states as any other request, allowing
+you to do things like retry the request if the backend failed.
+
+At the very end is the biggest challenge with the built-in VCL. If the
+request has an ``Authorization`` header, indicating HTTP Basic
+Authentication, or if the request has a ``Cookie`` header, the request is
+passed (not cached). Since almost all web sites today will have clients
+sending cookies, this is one of the most important jobs a VCL author has.
+
+At the end, if none of the other return statements have been issued,
+Varnish issues a `return (hash);`. This tells Varnish to create a cache
+hash and look it up in the cache. Exactly how that cache hash is
+constructed is defined in `vcl_hash`.
+
+To summarize the built in VCL:
+
+- Reject SPDY / HTTP/2.0 requests
+- Pipe unknown (possibly unsafe) request methods directly to the backend
+- By-pass cache for anything except ``GET`` and ``HEAD`` requests
+- By-pass cache for requests with ``Authorization`` or ``Cookie`` headers.
+
+And the return states that are valid are:
+
+- `return (synth());` to generate a response from Varnish. E.g: error
+  messages and more.
+- `return (pipe);` to connect the client directly to the backend. Avoid if
+  possible.
+- `return (pass);` to bypass the cache, but otherwise process the request
+  as normal.
+- `return (hash);` to get ready to check the cache for content.
+- `return (purge);` to invalidate matching content in the cache (covered in
+  greater detail later).
+
+`vcl_recv` - Massasing a request
+--------------------------------
+
+A typical thing to do in `vcl_recv` is to handle URL rewrites, and to
+normalize a request. For example, your site might be available on both
+``www.example.com`` and ``example.com``. Varnish has no way of knowing that
+these host names are the same so without intervention, they would take up
+two separate namespaces in your cache: you would cache the content twice.
+
+Similarily, you might offer sports news under both
+``http://example.com/sports/`` and ``http://sports.example.com/``. Same
+problem.
+
+The best solution to this problem is to do internal rewriting in Varnish,
+changing one of them to the other. This is quite easy in VCL.
+
+.. code:: VCL
+
+        sub normalize_sports {
+                if (req.http.host == "sports.example.com") {
+                        set req.http.host = "example.com";
+                        set req.url = "/sports" + req.url;
+                }
+        }
+
+        sub strip_www {
+                set req.http.host = regsub(req.http.host,"^www\.","");
+        }
+
+        sub vcl_recv {
+                call normalize_sports;
+                call strip_www;
+        }
+
+Notice how the above VCL split the logically separate problems into two
+different sub routines. We could just as easily have placed them both
+directly in `vcl_recv`, but the above form will yield a VCL file that is
+easier to read and organize over time.
+
+In `normalize_sports` we do an exact string compare between the
+client-provided ``Host`` header and ``sports.example.com``. In HTTP, the
+name of the header is case insensitive, so it doesn't matter if you type
+`req.http.host`, `req.http.Host` or `req.http.HoST`. Varnish will figure it
+out.
+
+If the ``Host`` header does match the sports-domain, we change the ``Host``
+header to the primary domain name, ``example.com``, and then set the url to
+be the same as it was, but with "/sports" prefixed. Note how the example
+uses "/sports", not "/sports/". That is because `req.url` always starts
+with a ``/``.
+
+The second function, `strip_www`, uses the `regsub()` function to do a
+regular expression substitution. The result of that substitution is stored
+back onto the Host header.
+
+`regsub()` takes three arguments. The input, the regular expression and
+what to change it with. If you are unfamiliar with regular expressions,
+there's a brief introduction and cheat sheet later in the chapter.
+
+Note how we do not check if the ``Host`` header contains ``www.`` before we
+issue the `regsub()`. That is because the process of checking and the
+process of substitution is the same, so there would be no gain.
+
+Testing your work as you go is crucial. You have many alternatives to test
+this. I have modified the ``foo.sh`` CGI script to output HTTP headers, so
+I can see what the backend sees. Here's an example::
+
+        # http localhost/cgi-bin/foo.sh "Host: example.com"
+        HTTP/1.1 200 OK
+        Accept-Ranges: bytes
+        Age: 0
+        Cache-Control: max-age=10
+        Connection: keep-alive
+        Content-Encoding: gzip
+        Content-Type: text/plain
+        Date: Tue, 09 Feb 2016 21:19:41 GMT
+        Server: Apache/2.4.10 (Debian)
+        Transfer-Encoding: chunked
+        Vary: Accept-Encoding
+        Via: 1.1 varnish-v4
+        X-Varnish: 2
+
+        Hello. Random number: 13449
+        Tue Feb  9 21:19:41 UTC 2016
+        HTTP_ACCEPT='*/*'
+        HTTP_ACCEPT_ENCODING=gzip
+        HTTP_HOST=example.com
+        HTTP_USER_AGENT=HTTPie/0.8.0
+        HTTP_X_FORWARDED_FOR=::1
+        HTTP_X_VARNISH=3
+
+        # http localhost/cgi-bin/foo.sh "Host: www.example.com"
+        HTTP/1.1 200 OK
+        Accept-Ranges: bytes
+        Age: 3
+        Cache-Control: max-age=10
+        Connection: keep-alive
+        Content-Encoding: gzip
+        Content-Length: 175
+        Content-Type: text/plain
+        Date: Tue, 09 Feb 2016 21:19:41 GMT
+        Server: Apache/2.4.10 (Debian)
+        Vary: Accept-Encoding
+        Via: 1.1 varnish-v4
+        X-Varnish: 32770 3
+
+        Hello. Random number: 13449
+        Tue Feb  9 21:19:41 UTC 2016
+        HTTP_ACCEPT='*/*'
+        HTTP_ACCEPT_ENCODING=gzip
+        HTTP_HOST=example.com
+        HTTP_USER_AGENT=HTTPie/0.8.0
+        HTTP_X_FORWARDED_FOR=::1
+        HTTP_X_VARNISH=3
+
+        # http localhost/cgi-bin/foo.sh "Host: example.com"
+        HTTP/1.1 200 OK
+        Accept-Ranges: bytes
+        Age: 6
+        Cache-Control: max-age=10
+        Connection: keep-alive
+        Content-Encoding: gzip
+        Content-Length: 175
+        Content-Type: text/plain
+        Date: Tue, 09 Feb 2016 21:19:41 GMT
+        Server: Apache/2.4.10 (Debian)
+        Vary: Accept-Encoding
+        Via: 1.1 varnish-v4
+        X-Varnish: 32772 3
+
+        Hello. Random number: 13449
+        Tue Feb  9 21:19:41 UTC 2016
+        HTTP_ACCEPT='*/*'
+        HTTP_ACCEPT_ENCODING=gzip
+        HTTP_HOST=example.com
+        HTTP_USER_AGENT=HTTPie/0.8.0
+        HTTP_X_FORWARDED_FOR=::1
+        HTTP_X_VARNISH=3
+
+The test issues three requests. The first is a cache miss for
+``www.example.com``, the second is a cache hit for `example.com`. Looking
+at the content, we can easily see that it's the same. Our rewrite
+apparently worked!
+
+The third request is again for ``www.example.com`` and is also a cache hit.
+This is included so you can look closer at what happens to the
+``X-Varnish`` header.
+
+In the cache miss, it had a value of "2", however, the backend reports that
+``HTTP_X_VARNISH=3``. The second request gets a ``X-Varnish`` response of 
+``X-Varnish: 32770 3``. The first number is the ``xid`` of the request
+being processed, while the second is the ``xid`` of the backend request
+that generated the content. You can verify that the two last requests gives
+the same content by looking at that header instead of the content.
+
+We can also see this in ``varnishlog``. Since we already covered
+``varnishlog`` in detail, we aren't going to repeat that, except as it
+pertains to VCL. This is from the above requests::
+
+        *   << Request  >> 32770     
+        -   Begin          req 32769 rxreq
+        -   Timestamp      Start: 1455052784.964533 0.000000 0.000000
+        -   Timestamp      Req: 1455052784.964533 0.000000 0.000000
+        -   ReqStart       ::1 46964
+        -   ReqMethod      GET
+        -   ReqURL         /cgi-bin/foo.sh
+        -   ReqProtocol    HTTP/1.1
+        -   ReqHeader      Connection: keep-alive
+        -   ReqHeader      Host:  www.example.com
+        -   ReqHeader      Accept-Encoding: gzip, deflate
+        -   ReqHeader      Accept: */*
+        -   ReqHeader      User-Agent: HTTPie/0.8.0
+        -   ReqHeader      X-Forwarded-For: ::1
+        -   VCL_call       RECV
+        -   ReqUnset       Host:  www.example.com
+        -   ReqHeader      host: example.com
+        -   VCL_return     hash
+        -   ReqUnset       Accept-Encoding: gzip, deflate
+        -   ReqHeader      Accept-Encoding: gzip
+        -   VCL_call       HASH
+        -   VCL_return     lookup
+        -   Hit            2147483651
+        -   VCL_call       HIT
+        -   VCL_return     deliver
+        -   RespProtocol   HTTP/1.1
+        -   RespStatus     200
+        -   RespReason     OK
+        -   RespHeader     Date: Tue, 09 Feb 2016 21:19:41 GMT
+        -   RespHeader     Server: Apache/2.4.10 (Debian)
+        -   RespHeader     Cache-Control: max-age=10
+        -   RespHeader     Vary: Accept-Encoding
+        -   RespHeader     Content-Encoding: gzip
+        -   RespHeader     Content-Type: text/plain
+        -   RespHeader     X-Varnish: 32770 3
+        -   RespHeader     Age: 3
+        -   RespHeader     Via: 1.1 varnish-v4
+        -   VCL_call       DELIVER
+        -   VCL_return     deliver
+        -   Timestamp      Process: 1455052784.964572 0.000039 0.000039
+        -   RespHeader     Content-Length: 175
+        -   Debug          "RES_MODE 2"
+        -   RespHeader     Connection: keep-alive
+        -   RespHeader     Accept-Ranges: bytes
+        -   Timestamp      Resp: 1455052784.964609 0.000076 0.000037
+        -   Debug          "XXX REF 2"
+        -   ReqAcct        151 0 151 304 175 479
+        -   End            
+
+What you want to take special notice of is this bit::
+
+        -   VCL_call       RECV
+        -   ReqUnset       Host:  www.example.com
+        -   ReqHeader      host: example.com
+        -   VCL_return     hash
+
+This tells you that the RECV functions in VCL was called, or `vcl_recv` if
+you'd like, then it tells you that the Host header was first `unset`, then
+`set` again with a changed value, and last, it reveals the return statement
+from `vcl_recv`: hash.
+
+Testing the other rewrite is also pretty easy::
+
+        # http localhost/cgi-bin/foo.sh "Host: sports.example.com" 
+        HTTP/1.1 404 Not Found
+        Age: 0
+        Connection: keep-alive
+        Content-Length: 298
+        Content-Type: text/html; charset=iso-8859-1
+        Date: Tue, 09 Feb 2016 21:32:03 GMT
+        Server: Apache/2.4.10 (Debian)
+        Via: 1.1 varnish-v4
+        X-Varnish: 2
+
+        <!DOCTYPE HTML PUBLIC "-//IETF//DTD HTML 2.0//EN">
+        <html><head>
+        <title>404 Not Found</title>
+        </head><body>
+        <h1>Not Found</h1>
+        <p>The requested URL /sports/cgi-bin/foo.sh was not found on this server.</p>
+        <hr>
+        <address>Apache/2.4.10 (Debian) Server at example.com Port 8080</address>
+        </body></html>
+
+        # varnishlog -d -g session -q 'ReqHeader:Host ~ "sports.example.com"'
+        *   << Session  >> 1         
+        -   Begin          sess 0 HTTP/1
+        -   SessOpen       ::1 46980 :80 ::1 80 1455053523.467424 12
+        -   Link           req 2 rxreq
+        -   SessClose      REM_CLOSE 0.008
+        -   End            
+        **  << Request  >> 2         
+        --  Begin          req 1 rxreq
+        --  Timestamp      Start: 1455053523.467464 0.000000 0.000000
+        --  Timestamp      Req: 1455053523.467464 0.000000 0.000000
+        --  ReqStart       ::1 46980
+        --  ReqMethod      GET
+        --  ReqURL         /cgi-bin/foo.sh
+        --  ReqProtocol    HTTP/1.1
+        --  ReqHeader      Connection: keep-alive
+        --  ReqHeader      Host:  sports.example.com
+        --  ReqHeader      Accept-Encoding: gzip, deflate
+        --  ReqHeader      Accept: */*
+        --  ReqHeader      User-Agent: HTTPie/0.8.0
+        --  ReqHeader      X-Forwarded-For: ::1
+        --  VCL_call       RECV
+        --  ReqUnset       Host:  sports.example.com
+        --  ReqHeader      host: example.com
+        --  ReqURL         /sports/cgi-bin/foo.sh
+        --  ReqUnset       host: example.com
+        --  ReqHeader      host: example.com
+        --  VCL_return     hash
+        --  ReqUnset       Accept-Encoding: gzip, deflate
+        --  ReqHeader      Accept-Encoding: gzip
+        --  VCL_call       HASH
+        --  VCL_return     lookup
+        --  Debug          "XXXX MISS"
+        --  VCL_call       MISS
+        --  VCL_return     fetch
+        --  Link           bereq 3 fetch
+        --  Timestamp      Fetch: 1455053523.467898 0.000435 0.000435
+        --  RespProtocol   HTTP/1.1
+        --  RespStatus     404
+        --  RespReason     Not Found
+        --  RespHeader     Date: Tue, 09 Feb 2016 21:32:03 GMT
+        --  RespHeader     Server: Apache/2.4.10 (Debian)
+        --  RespHeader     Content-Type: text/html; charset=iso-8859-1
+        --  RespHeader     X-Varnish: 2
+        --  RespHeader     Age: 0
+        --  RespHeader     Via: 1.1 varnish-v4
+        --  VCL_call       DELIVER
+        --  VCL_return     deliver
+        --  Timestamp      Process: 1455053523.467942 0.000478 0.000043
+        --  RespHeader     Content-Length: 298
+        --  Debug          "RES_MODE 2"
+        --  RespHeader     Connection: keep-alive
+        --  Timestamp      Resp: 1455053523.467967 0.000503 0.000025
+        --  Debug          "XXX REF 2"
+        --  ReqAcct        154 0 154 228 298 526
+        --  End            
+        *** << BeReq    >> 3         
+        --- Begin          bereq 2 fetch
+        --- Timestamp      Start: 1455053523.467534 0.000000 0.000000
+        --- BereqMethod    GET
+        --- BereqURL       /sports/cgi-bin/foo.sh
+        --- BereqProtocol  HTTP/1.1
+        --- BereqHeader    Accept: */*
+        --- BereqHeader    User-Agent: HTTPie/0.8.0
+        --- BereqHeader    X-Forwarded-For: ::1
+        --- BereqHeader    host: example.com
+        --- BereqHeader    Accept-Encoding: gzip
+        --- BereqHeader    X-Varnish: 3
+        --- VCL_call       BACKEND_FETCH
+        --- VCL_return     fetch
+        --- BackendOpen    17 default(127.0.0.1,,8080) 127.0.0.1 46558 
+        --- Backend        17 default default(127.0.0.1,,8080)
+        --- Timestamp      Bereq: 1455053523.467666 0.000133 0.000133
+        --- Timestamp      Beresp: 1455053523.467808 0.000274 0.000142
+        --- BerespProtocol HTTP/1.1
+        --- BerespStatus   404
+        --- BerespReason   Not Found
+        --- BerespHeader   Date: Tue, 09 Feb 2016 21:32:03 GMT
+        --- BerespHeader   Server: Apache/2.4.10 (Debian)
+        --- BerespHeader   Content-Length: 298
+        --- BerespHeader   Content-Type: text/html; charset=iso-8859-1
+        --- TTL            RFC 120 -1 -1 1455053523 1455053523 1455053523 0 0
+        --- VCL_call       BACKEND_RESPONSE
+        --- VCL_return     deliver
+        --- Storage        malloc s0
+        --- ObjProtocol    HTTP/1.1
+        --- ObjStatus      404
+        --- ObjReason      Not Found
+        --- ObjHeader      Date: Tue, 09 Feb 2016 21:32:03 GMT
+        --- ObjHeader      Server: Apache/2.4.10 (Debian)
+        --- ObjHeader      Content-Type: text/html; charset=iso-8859-1
+        --- Fetch_Body     3 length stream
+        --- BackendReuse   17 default(127.0.0.1,,8080)
+        --- Timestamp      BerespBody: 1455053523.467896 0.000362 0.000087
+        --- Length         298
+        --- BereqAcct      156 0 156 161 298 459
+        --- End      
+
+The backend sort of confirmed it for us due to the 404 message outputting
+the rewritten URL, but it is a good idea to get used to ``varnishlog``.
+
+Future examples will not include quite as verbose testing transcripts,
+though.
 

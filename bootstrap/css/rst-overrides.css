@@ -20,3 +20,11 @@ div.warning p.admonition-title {
   font-weight: bold ;
   font-family: sans-serif }
 
+table {
+	padding: 8px;
+}
+
+td, th {
+	padding: 1ex;
+}
+
