@@ -33,7 +33,10 @@ robust VCL that allows Varnish to cache efficiently.
 VCL is officially documented in the :title:`vcl` manual page (``man vcl``),
 but you would do well if you revisit the state diagrams provided in
 appendix A.  Throughout this chapter, those state diagrams will be used as
-reference and you will learn how to read them.
+reference and you will learn how to read them. An other interesting source
+of documentation is the actual generator code in VCL, found in
+``lib/libvcc/generate.py`` in Varnish 4.1.1 (and other versions), which is
+also used to generate the manual files.
 
 What you will not find in this chapter is an extensive description of every
 keyword and operator available. That is precisely what the manual page is
@@ -41,6 +44,7 @@ for.
 
 Since VCL leans heavily on regular expressions, there is also a small
 cheat sheet towards the end, including VCL snippets.
+
 
 Working with VCL
 ----------------
@@ -127,16 +131,18 @@ health checks are not active.
 Hello World
 -----------
 
-VCL can be split into three groups:
+VCL can be split into two parts, the global scope and the request handling.
+Both of those can again be further divided.
 
-1. Global declarations. Backends and ACLs fit into this category.
-2. Initialization functions. This almost exclusively about setting up
-   Varnish Modules.
-3. Request handling.
+Backends, access control lists (ACLs), initialization and finalization
+functions are all defined in a global scope, but referenced in the request
+handling.
 
-Of the three, the third one is by far the biggest part of most VCL files.
-In this mode, VCL deals with a single request. Either as seen as a client
-request or a soon-to-be-executed backend request.
+The request handling is where you will do most of your VCL-work. With
+Varnish 4.0, that is further divided into client requests and backend
+requests. In older versions of Varnish, there was no separation between
+backend and client requests, but today they represent two somewhat isolated
+state machines and are executed in different threads.
 
 The following is a minimal VCL that defines a backend and sets a custom
 response header:
@@ -157,13 +163,15 @@ response header:
 The first line is a VCL version string. Right now, there is only one valid
 VCL version. Even for Varnish 4.1, the VCL version is 4.0. This is intended
 to make transitions to newer versions of Varnish simpler. Every VCL file
-starts with `vcl 4.0;` for now.
+starts with `vcl 4.0;` until a significant change in the VCL language is
+announced.
 
-Next up, we define a backend server named ``foo``. We set the IP of the
-backend and port. You can have multiple backends, as long as they have
-different names. As long as you only define a single backend, you don't
-need to explicitly reference it anywhere, but if you have multiple backends
-you need to be explicit about which to use when.
+Next up, we define a backend server named ``foo``. This is where Varnish
+will fetch content. We set the IP of the backend and port. You can have
+multiple backends, as long as they have different names. If you only define
+a single backend, you don't need to explicitly reference it anywhere, but
+if you have multiple backends you need to be explicit about which to use
+when. We will deal primarily with simple backends in this chapter.
 
 Last, but not least, we provide some code for the `vcl_deliver` state.  If
 you look at the ``cache_req_fsm.svg`` in appendix A, you will find
@@ -967,5 +975,62 @@ bloated cache.
 The only valid return statement in `vcl_hash` is `return (lookup);`,
 telling Varnish that it's time to look the hash up in cache to see if it's
 a cache hit or not.
+
+`vcl_deliver`
+-------------
+
++------------------------------------------------------------+
+| `vcl_hash`                                                 |
++=============+==============================================+
+| Context     | Client request                               |
++-------------+----------------------------------------------+
+| Variables   | `req`, `req_top`, `client`, `server`         |
+|             | `local`, `remote`, `storage`, `now`,         |
+|             | `obj.hits`, `obj.uncacheable`                |
++-------------+----------------------------------------------+
+| Return      | `deliver`, `synth`, `restart`                |
+| statements  |                                              |
++-------------+----------------------------------------------+
+| Typical use | - Adding or removing response headers        |
+|             | - Restarting the request in case of errors   |
++-------------+----------------------------------------------+
+
+You saw in the :title:`Hello world` VCL what `vcl_deliver` is all about. It
+is the very last VCL state to execute before Varnish starts sending data to
+the client. The built-in VCL for `vcl_deliver` is completely empty.
+
+.. code:: VCL
+
+        sub vcl_deliver {
+            return (deliver);
+        }
+
+A very popular thing to do in `vcl_deliver` is to add a response header
+indicating if the request was a cache hit or a cache miss. This can be done
+by evaluating the `obj.hits` variable, which is a reference to the cached
+object (if any), and how any times it has been hit. If this was a cache
+hit, the value will be 1 or greater.
+
+.. code:: VCL
+
+   sub vcl_deliver {
+           if (obj.hits > 0) {
+                   set resp.http.X-Cache-Hit = "true";
+                   set resp.http.X-Cache-Hits = obj.hits;
+           } else {
+                   set resp.http.X-Cache-Hit = "true";
+           }
+   }
+
+Other than `obj.hits` and `obj.uncacheable`, you do not have direct access
+to the object. You do, however, have most of what you need in `resp.*`. The
+cached object is always read-only, but the `resp` data structure represents
+a this specific response, not the cached object it self. As such, you can
+modify it.
+
+The `obj.uncacheable` variable can be used to identify if the response was
+cacheable at all. If you issued `return (hash);` in `vcl_recv`, and the
+backend and relevant VCL didn't prevent it, the value will be true.
+
 
 
