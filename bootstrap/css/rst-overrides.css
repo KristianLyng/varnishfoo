@@ -28,3 +28,6 @@ td, th {
 	padding: 1ex;
 }
 
+th {
+	text-align: center;
+}
