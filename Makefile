@@ -115,7 +115,7 @@ $(addprefix ${B}/html-,$(addsuffix .rst,${bases})): ${B}/html-%.rst: %.rst Makef
 	@echo >> $@
 	@echo " [WEBRST] "$(ok)
 
-${B}/css/pygment-style.css: Makefile | ${B} ${B}/css/
+${B}/css/pygment-style.css: Makefile | ${B} ${B}/css
 	@pygmentize -f html -S ${PYGMENTSTYLE} > $@
 	@echo " [styles] "$(ok)
 
