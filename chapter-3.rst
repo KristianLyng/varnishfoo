@@ -45,9 +45,10 @@ initialization, parsing of VCL, interactive administration through the CLI
 interface, and basic monitoring of the child process.
 
 Varnish has two different logging mechanisms. The manager process will
-typically log to `syslog`, like you would expect, but the child logs to a
-shared memory log instead. This shared memory can be accessed by Varnish
-itself and any tool that knows where to find the log and how to parse it.
+typically log to :title:`syslog`, like you would expect, but the child logs
+to a shared memory log instead. This shared memory can be accessed by
+Varnish itself and any tool that knows where to find the log and how to
+parse it.
 
 A shared memory log was chosen over a traditional log file for two reasons.
 First of all, it is quite fast, and doesn't eat up disk space. The second
@@ -93,7 +94,7 @@ by 64-bit operating systems and multi-core hardware.
 
 Varnish also uses a great deal of ``assert()`` statements and other fail
 safes in the code base. An ``assert()`` statement is a very simple
-mechanism. ``assert(x == 0);`` means "make sure x is 0". If x is `not` 0,
+mechanism. ``assert(x == 0);`` means "make sure x is 0". If x is *not* 0,
 Varnish will abort. In most cases, that means the entire child process
 shuts down, only to have the manager start it back up. You lose all
 connections, you lose all cache.
@@ -101,15 +102,15 @@ connections, you lose all cache.
 Hopefully, you wont run into assert errors. They are there to handle what
 is believed to be the unthinkable. A more realistic example can be:
 
-- Create an object, called `foo`. Set ``foo.magic`` to ``0x123765``.
-- Store `foo` in the cache.
+- Create an object, called *foo*. Set ``foo.magic`` to ``0x123765``.
+- Store *foo* in the cache.
 - (time passes)
-- Read `foo` from the cache.
+- Read *foo* from the cache.
 - Assert that ``foo.magic`` is still ``0x123765``.
 
 This is a crude safe guard against memory corruption, and is used for
 almost all data structures that are kept around for a while in Varnish. An
-arbitrary `magic` value is picked during development, and whenever the
+arbitrary *magic* value is picked during development, and whenever the
 object is used, that value is read back and checked. If it doesn't match,
 your memory was corrupted. Either by something Varnish did or by the host
 it's running on.
@@ -124,7 +125,7 @@ Other typical assert statements will check the return codes for library
 calls that should never fail.
 
 If Varnish does hit an assert error, it will (try to) log it to syslog. In
-addition to that, it keeps the last `panic` message available through
+addition to that, it keeps the last *panic* message available through
 ``varnishadm panic.show``::
 
         # varnishadm panic.show 
@@ -265,7 +266,7 @@ Version 4 and newer is a random port and secret file.
 
 The ``-S`` argument lets you specify a file which contains a shared secret
 that management tools can use to authenticate to Varnish. This is referred
-to as the `secret file` and should contain data, typically 256 bytes randomly
+to as the *secret file* and should contain data, typically 256 bytes randomly
 generated at installation. The content is never sent over the network, but
 used to verify clients. All tools that are to interact with Varnish must be
 able to read the content of this file.
@@ -305,7 +306,7 @@ what underlying method is used to cache. Varnish provides three storage
 backends, called ``malloc``, ``file`` and ``persistent``. The most used, by
 far, is ``malloc``. It works by allocating the memory needed with the
 ``malloc()`` library call, and adds as little logic as possible on top of
-it. Under the hood, Varnish uses the `jemalloc` library to achieve better
+it. Under the hood, Varnish uses the *jemalloc* library to achieve better
 performance for multi-threaded applications. If you specify a larger cache
 than you have physical memory, it is up to your operating system to utilize
 swap instead.
@@ -540,8 +541,8 @@ You can also get detailed information on individual parameters::
                 everything.
 
 Changing a parameter takes effect immediately, but is not always
-immediately visible, as the above description of `default_ttl`
-demonstrates. Changing `default_ttl` will affect any new object entered
+immediately visible, as the above description of *default_ttl*
+demonstrates. Changing *default_ttl* will affect any new object entered
 into the cache, but not what is already there.
 
 Many of the parameters Varnish exposes are meant for tweaking very
@@ -644,7 +645,7 @@ generally advised. To accomplish this, you must:
 
 - Use a ``-T`` option that binds the CLI to an externally-available port.
   E.g.: Not ``-T localhost:6082``.
-- Copy the `secret file` from the Varnish host to the one you wish to run
+- Copy the *secret file* from the Varnish host to the one you wish to run
   ``varnishadm`` from.
 - Make sure all firewalls etc are open.
 - Issue ``varnishadm`` with ``-T`` and ``-S``.
@@ -728,7 +729,7 @@ The main area shows 7 columns:
         ``CURRENT`` divided by ``MAIN.uptime``.
 
 ``AVERAGE_n``
-        Similar the cache hit rate, this is the average over the last `n`
+        Similar the cache hit rate, this is the average over the last *n*
         seconds. Note that the header says ``AVERAGE_1000`` immediately,
         but the actual time period is the same as the ``Hitrate n:`` line,
         so it depends on how long ``varnishstat`` has been running.
@@ -758,10 +759,10 @@ A note on threads
 Now that you've been acquainted with parameters and counters, it might be
 worth looking at threads.
 
-Varnish uses one `worker thread` per active TCP connection. A typical user
+Varnish uses one *worker thread* per active TCP connection. A typical user
 can easily set up 5 or more concurrent TCP sessions, depending on the
-content and browser. Varnish also organizes worker threads into `thread
-pools`. Each pool of threads is managed by a separate thread, and can grow
+content and browser. Varnish also organizes worker threads into *thread
+pools*. Each pool of threads is managed by a separate thread, and can grow
 and shrink on demand. By default, Varnish uses two thread pools, this can
 be tuned with the ``thread_pools`` parameter.
 
@@ -900,21 +901,21 @@ log entries.
 The very first column is used to help you group requests. The single ``*``
 tells you that this particular line is just informing you about the
 following grouping. ``<< Request  >> 2`` tells you that the following is
-grouped as a request, and the `vxid` is 2. A `vixid` is an ID attached to
+grouped as a request, and the *vxid* is 2. A *vixid* is an ID attached to
 all log records. You will also see it in the response header ``X-Varnish``.
 
 Next, you see what is more typical entries. Each log line starts with a
 ``-`` to indicate that it's related to the above grouping, using the same
-`vxid`. Other grouping methods might have more dashes here to indicate what
+*vxid*. Other grouping methods might have more dashes here to indicate what
 happened first and last. The actual grouping is a logic done in the
 ``varnishlog`` tool itself, using information from the shmlog. It is
 useful, because the shmlog is the result of hundreds, potentially thousands
 of threads writing to a log at the same time. Without grouping it, tracking
 a single request would be very hard.
 
-Each line starts with a `vxid` followed by a `log tag`. Each type of tag
+Each line starts with a *vxid* followed by a *log tag*. Each type of tag
 has a different format, documented in the ``vsl(7)`` manual page. In our
-example, the first real log line has the `tag` ``Begin``.
+example, the first real log line has the *tag* ``Begin``.
 
 You can tell ``varnishlog`` to only output some tags using the ``-i``
 command line argument::
@@ -941,14 +942,14 @@ grouping method using ``-g``. Or disable it entirely with ``-g raw``::
                  2 ReqURL         c /
              32770 ReqURL         c /demo/
 
-Here you can see the `vxid` directly, instead of a ``-``.
+Here you can see the *vxid* directly, instead of a ``-``.
 
 You can also exclude individual tags with ``-x``, or use a regular expression
 to match their content using ``-I``. The latter can be interesting if you want
 to look at a specific header.
 
-More importantly, however, is the use of the ``-q`` option, to specify a `VSL
-query`. VSL stands for `Varnish Shared memory Log` and refers to the part
+More importantly, however, is the use of the ``-q`` option, to specify a *VSL
+query*. VSL stands for *Varnish Shared memory Log* and refers to the part
 of the log we are working with, and a VSL query allows you to filter it
 intelligently. It is documented in the manual page ``vsl-query(7)``.
 
@@ -1371,7 +1372,7 @@ Unfortunately, there's a miss-match between the documentation and
 implementation in Varnish 4.0 and 4.1. The documentation suggests that
 the first number should take ``Age`` into account, but as we just
 demonstrated, that is clearly not happening (if it was, then the first
-number of the ``TTL`` line should have read `3590`). However, the other
+number of the ``TTL`` line should have read *3590*). However, the other
 numbers are correct, so you can infer the ``Age`` from that, but not really
 use it directly in a VSL query.
 

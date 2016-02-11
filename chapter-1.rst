@@ -135,7 +135,7 @@ that name at the time. It was the result of somewhat conflicting interests.
 Varnish Software had customer obligations that required features, and the
 development power to implement them, but they did not necessarily align
 with the goals and time frames of Varnish Cache. Varnish Plus became a
-commercial test-bed for features that were not `yet` in Varnish Cache for
+commercial test-bed for features that were not *yet* in Varnish Cache for
 various reasons. As time passed, many of the features that begun life in
 Varnish Plus have trickled into Varnish Cache proper in one way or an other
 (streaming, surrogate keys, and more), and some have still to make it. Some

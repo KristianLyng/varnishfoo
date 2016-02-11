@@ -35,10 +35,10 @@ a developer- or debug console, but we will focus on Chrome.
 Both Firefox and Chrome will open the debug console if you hit ``<F12>``.
 It's a good habit to test and experiment with more than one browser, and
 luckily these consoles are very similar. A strong case in favor of Chrome
-is `Incognito Mode`, activated through ``<Ctrl>+<Shift>+N``. This is an
-advantage both because it removes old cookies and because most extensions
-are disabled. Most examples use Chrome to keep things consistent and
-simple, but could just as well have been performed on Firefox.
+is :title:`Incognito Mode`, activated through ``<Ctrl>+<Shift>+N``. This is
+an advantage both because it removes old cookies and because most
+extensions are disabled. Most examples use Chrome to keep things consistent
+and simple, but could just as well have been performed on Firefox.
 
 The importance of Incognito Mode can be easily demonstrated. The following
 is a test with a typical Chrome session:
@@ -60,7 +60,7 @@ In both Firefox and Chrome, a refresh triggered by ``<F5>`` or
 
 Look closer on the screenshots above, specially the return code. The return
 code is a ``304 Not Modified``, not a ``200 OK``. The browser had the image
-in cache already and issued a `conditional GET request`. A closer
+in cache already and issued a *conditional GET request*. A closer
 inspection:
 
 .. image:: img/c2/chromium-dev-304-1.png
@@ -102,9 +102,9 @@ client" Chrome extension, or simply SSH'ing to a GNU/Linux VM and using one
 of the many tools available there. The list goes on, and so it could for
 Mac OS X and Linux too.
 
-`HTTPie` is a small CLI tool which has the above properties. It's used
-throughout this book because it is a good tool, but also because it's easy
-to see what's going on without knowledge of the tool.
+:title:`HTTPie` is a small CLI tool which has the above properties. It's
+used throughout this book because it is a good tool, but also because it's
+easy to see what's going on without knowledge of the tool.
 
 HTTPie is available on Linux, Mac OS X and Windows. On a Debian or Ubuntu
 system HTTPie can be installed with ``apt-get install httpie``. For other
@@ -410,8 +410,8 @@ later chapters.
 Conditional GET requests
 ------------------------
 
-In the tool-examples earlier we saw real examples of a `conditional GET
-requests`. In many ways, they are quite simple mechanisms to allow a HTTP
+In the tool-examples earlier we saw real examples of a *conditional GET
+requests*. In many ways, they are quite simple mechanisms to allow a HTTP
 client - typically a browser - to verify that they have the most up-to-date
 version of the HTTP object. There are two different types of conditional
 GET requests: ``If-Modified-Since`` and ``If-None-Match``.
@@ -424,7 +424,7 @@ been updated.
 Some times it isn't trivial to know the modification time, but you might be
 able to uniquely identify the content anyway. For that matter, the content
 might have been changed back to a previous state. This is where the
-`entity tag`, or ``ETag`` response header is useful.
+*entity tag*, or ``ETag`` response header is useful.
 
 An ``Etag`` header can be used to provide an arbitrary ID to an HTTP
 response, and the client can then re-use that in a ``If-None-Match``
@@ -712,7 +712,7 @@ explanation is that Varnish keeps an object a little longer (10 seconds by
 default) than the regular cache duration. If the object is requested during
 this period, the cached variant of the object is sent to the client, while
 Varnish issues a request to the backend server in parallel. This is also
-called `stale while revalidate`. This happens even with zero configuration
+called *stale while revalidate*. This happens even with zero configuration
 for Varnish, and is covered detailed in later chapters. For now, it's good
 to just get used to issuing an extra request to Varnish after the expiry
 time to see the update take place.
@@ -974,7 +974,7 @@ and::
 
      stale-if-error = "stale-if-error" "=" delta-seconds
 
-These two variables map very well to Varnish's `grace` mechanics, which
+These two variables map very well to Varnish's *grace* mechanics, which
 existed a few years before `RFC5861`_ came about.
 
 Varnish 4.1 implements ``stale-while-revalidate`` for the first time, but
@@ -1047,7 +1047,7 @@ from the backend-request started when the third request was received. So:
 1. Request: Nothing in cache. Varnish requests content from backend, waits,
    and responds with that result.
 2. Request: Standard cache hit.
-3. Request: Varnish sees that the object in cache is `stale`, initiates a
+3. Request: Varnish sees that the object in cache is *stale*, initiates a
    request to a backend server, but does NOT wait for the response.
    Instead, the result from cache is returned.
 4. Request: By now, the backend-request initiated from the third request is
@@ -1234,7 +1234,7 @@ cache for the same URL, accessible by modifying the arbitrarily chosen
 ``X-demo`` request header - which is not a real header.
 
 The most important use-case for Vary is to support content encoding such as
-`gzip`. In earlier versions of Varnish, the web server needed to do the
+*gzip*. In earlier versions of Varnish, the web server needed to do the
 compression and Varnish would store the compressed content and (assuming a
 client asked for it), the uncompressed content. This was supported through
 the Vary header, which the server would set to ``Vary: Accept-Encoding``.
