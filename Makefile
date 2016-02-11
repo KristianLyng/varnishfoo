@@ -92,6 +92,11 @@ $(addprefix ${B}/,$(addsuffix .rst,${bases})): ${B}/%.rst: %.rst Makefile | ${B}
 	@echo "$<" >> $@
 	@echo "$<" | sed 's/./=/g' >> $@
 	@echo >> $@
+	@echo ".. role:: vcl(code)" >> $@
+	@echo "      :language: VCLSnippet" >> $@
+	@echo >> $@
+	@echo ".. default-role:: vcl" >> $@
+	@echo >> $@
 	@echo ".. include:: ../control/secondpage.rst" >> $@
 	@echo >> $@
 	@echo ".. include:: ../control/headerfooter.rst" >> $@
@@ -111,6 +116,12 @@ $(addprefix ${B}/html-,$(addsuffix .rst,${bases})): ${B}/html-%.rst: %.rst Makef
 	else \
 		echo "   :start: $${TMP}" >> $@ ;\
 	fi
+	@echo >> $@
+	@echo ".. role:: vcl(code)" >> $@
+	@echo "      :language: VCLSnippet" >> $@
+	@echo >> $@
+	@echo ".. default-role:: vcl" >> $@
+	@echo >> $@
 	@echo ".. include:: ../$<" >> $@
 	@echo >> $@
 	@echo " [WEBRST] "$(ok)

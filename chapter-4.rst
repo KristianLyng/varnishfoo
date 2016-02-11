@@ -1,11 +1,6 @@
 Introducing VCL
 ===============
 
-.. role:: vcl(code)
-      :language: VCLSnippet
-
-.. default-role:: vcl
-
 .. warning::
 
    I expect this chapter to change significantly throught its creation, and
