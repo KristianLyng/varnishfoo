@@ -24,12 +24,18 @@ define run-rst2pdf =
 	@echo " [rst2pdf] "$(ok)
 endef
 
-web: ${B}/varnishfoo.pdf ${CHAPTERPDF} ${HTML} ${TESTS} ${PYGCSS} | ${B}/css ${B}/fonts ${B}/js
+web: ${HTML} ${PYGCSS} | ${B}/css ${B}/fonts ${B}/js
 	@echo " [WEB] "$(ok)
+
+pdfs: ${B}/varnishfoo.pdf ${CHAPTERPDF}
+	@echo " [PDFS "$(ok)
+
+all: web pdfs
+	@echo " [ALL] "$(ok)
 
 check: ${TESTS}
 
-dist: web
+dist: all
 	@echo " [WEB] rsync"
 	@rsync --delete -L -a ${B}/ ${WEBTARGET}
 	@echo " [WEB] Purge"
@@ -141,6 +147,6 @@ ${B}/index.html: README.rst ${B}/web-version.rst | ${B}
 clean:
 	-rm -rf ${B}
 
-.PHONY: clean web dist check
+.PHONY: clean web dist check all pdfs
 
 .SECONDARY: $(addprefix ${B}/,$(addsuffix .rst,${base}))
