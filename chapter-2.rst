@@ -97,7 +97,7 @@ Your requirement for a simple HTTP request synthesizer should be:
 - Show complete response headers.
 
 Some suggestions for Windows users are ``curl`` in Powershell, Charles Web
-Debugging Proxy, the "Test and Rest Client" in PhpStorm, an "Adanced RST
+Debugging Proxy, the "Test and Rest Client" in PhpStorm, an "Adanced REST
 client" Chrome extension, or simply SSH'ing to a GNU/Linux VM and using one
 of the many tools available there. The list goes on, and so it could for
 Mac OS X and Linux too.
@@ -1278,7 +1278,7 @@ Request methods
 Only the ``GET`` request method is cached. However, Varnish will re-write a
 ``HEAD`` request to a ``GET`` request, cache the result and strip the
 response body before answering the client. A ``HEAD`` request is supposed
-to be exactl the same as a ``GET`` request, with the response body
+to be exactly the same as a ``GET`` request, with the response body
 stripped, so this makes sense. To see this effect, issue a HEAD request
 first directly to Apache::
 
