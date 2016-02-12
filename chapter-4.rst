@@ -938,8 +938,11 @@ though.
 
 If you return `hash` or `purge` in `vcl_recv`, Varnish will immediately
 execute the `vcl_hash` function. It has a very simple purpose: Defining
-what identifies a unique object in the cache. The built in VCL shows us
-what it's all about:
+what identifies a unique object in the cache. You add items to cache hash,
+and as long as two requests add up to the same hash, they are treated as
+the same object.
+
+The built in VCL shows us what it's all about:
 
 .. code:: VCL
 
@@ -953,23 +956,73 @@ what it's all about:
             return (lookup);
         }
 
-As you might have guessed, you use `hash_data()` to add anything to what
-becomes the unique cache hash. The built-in VCL is often all you need. It
-first adds the URL, then adds the Host header if one is present, or the
-server IP if the Host header isn't present.
+The `hash_data()` keyword is used to add items to hash. The built-in VCL is
+simple enough. It adds the URL and either the server IP or the Host header.
 
-In short: It says that different URLs identify different resources. There
-are very few scenarios in which this doesn't make sense.
+In other words: If the URL and the ``Host``-header is the same, the object
+is the same.
 
-One thing that can be smart to do is add the ``Cookie`` header to the hash.
-If you do that, then every combination of ``Cookie`` header and URL would
-identify a uniquely cached object. However, that shouldn't be done without
-first thoroughly cleaning up cookies, otherwise you would get a very very
-bloated cache.
+It is rare that you need to add extra logic to `vcl_hash`. The most common
+use case is when you want to cache content generated based on cookies.
 
 The only valid return statement in `vcl_hash` is `return (lookup);`,
 telling Varnish that it's time to look the hash up in cache to see if it's
 a cache hit or not.
+
+`vcl_pipe`
+----------
+
++------------------------------------------------------------+
+| `vcl_pipe`                                                 |
++=============+==============================================+
+| Context     | Client request                               |
++-------------+----------------------------------------------+
+| Variables   | `req`, `req_top`, `client`, `server`         |
+|             | `local`, `remote`, `storage`, `now`,         |
+|             | `obj.hits`, `obj.uncacheable`                |
++-------------+----------------------------------------------+
+| Return      | `pipe`, `synth`                              |
+| statements  |                                              |
++-------------+----------------------------------------------+
+| Typical use | - Addding ``Connection: close`` before pipe  |
+|             | - Working around bugs until they are fixed   |
++-------------+----------------------------------------------+
+
+In *pipe mode*, Varnish opens a connection to the backend and starts moving
+data between the client and backend without any interference. It is used as
+a last resort if what you need to do isn't supported by Varnish.
+
+It is very important to understand that once Varnish enters into pipe mode,
+the client can send whatever it wants to the backend server. Normally
+that's exactly what you want. The one big exception is keep-alive.
+
+HTTP provides a connection mode where you can issue multiple requests over
+the same TCP connection, instead of opening a new TCP connection for each
+request. This mode is called keep-alive and is the default connection mode
+in HTTP 1.1.
+
+If the client uses a keep-alive request, not only the first request, but
+all subsequent requests will also be sent directly to the backend, even if
+that is not what you wanted.
+
+To prevent this, you can add the HTTP request heder ``Connection: close``
+before going into pipe mode. This tells the web server to close the
+connection after the first request is handled.
+
+Varnish does this for you *before* entering the built-in VCL, as the
+built-in VCL documents:
+
+.. code:: VCL
+
+        sub vcl_pipe {
+            # By default Connection: close is set on all piped requests, to stop
+            # connection reuse from sending future requests directly to the
+            # (potentially) wrong backend. If you do want this to happen, you can undo
+            # it here.
+            # unset bereq.http.connection;
+            return (pipe);
+        }
+
 
 `vcl_deliver`
 -------------
