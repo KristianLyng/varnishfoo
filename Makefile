@@ -45,7 +45,7 @@ ${B}:
 	@mkdir -p ${B}
 	@echo " [mkdir] "$(ok)
 
-${B}/css ${B}/fonts ${B}/js: ${B}/%: bootstrap/% | ${B}
+${B}/css ${B}/fonts ${B}/js: ${B}/%: web/% | ${B}
 	@cp -a $< ${B}
 	@echo " [cp] "$(ok)
 
