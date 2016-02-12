@@ -439,8 +439,20 @@ should be a goal to provide as simple VCL as possible.
 Each of the built-in VCL functions will be covered individually when we are
 dealing with the individual states.
 
+Client side states
+------------------
+
+With Varnish 4.0, VCL became split in two different state engines, so to
+speak. The client-side processing and the backend-processing is isolated,
+and can in fact take place in parallel in the case of a background fetch.
+
+There are a number of states in each of these code paths, some more
+critical than others. Before we can begin looking at the more complex
+ways to utilize VCL, we will go through each function, starting with the
+client side.
+
 `vcl_recv`
-----------
+..........
 
 +------------------------------------------------------------+
 | `vcl_recv`                                                 |
@@ -572,7 +584,7 @@ And the return states that are valid are:
   greater detail later).
 
 `vcl_recv` - Massasing a request
---------------------------------
+................................
 
 A typical thing to do in `vcl_recv` is to handle URL rewrites, and to
 normalize a request. For example, your site might be available on both
@@ -919,7 +931,7 @@ Future examples will not include quite as verbose testing transcripts,
 though.
 
 `vcl_hash`
-----------
+..........
 
 +------------------------------------------------------------+
 | `vcl_hash`                                                 |
@@ -932,8 +944,7 @@ though.
 | Return      | `lookup`                                     |
 | statements  |                                              |
 +-------------+----------------------------------------------+
-| Typical use | - Adjusting the cache hash.                  |
-|             | - Adding the Cookie to the hash              |
+| Typical use | - Adding the Cookie to the hash              |
 +-------------+----------------------------------------------+
 
 If you return `hash` or `purge` in `vcl_recv`, Varnish will immediately
@@ -970,7 +981,7 @@ telling Varnish that it's time to look the hash up in cache to see if it's
 a cache hit or not.
 
 `vcl_pipe`
-----------
+..........
 
 +------------------------------------------------------------+
 | `vcl_pipe`                                                 |
@@ -1016,7 +1027,7 @@ any good reason to do so that the author is aware of. The built-in VCL for
 
 
 `vcl_deliver`
--------------
+.............
 
 +------------------------------------------------------------+
 | `vcl_deliver`                                              |
