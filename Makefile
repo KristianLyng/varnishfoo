@@ -87,7 +87,7 @@ $(addprefix ${B}/,$(addsuffix .test,${bases})): ${B}/%.test: %.rst Makefile util
 $(addprefix ${B}/,$(addsuffix .pdf,${bases})): ${B}/%.pdf: ${B}/%.rst ${B}/img ${B}/version.rst Makefile
 	$(run-rst2pdf)
 
-$(addprefix ${B}/,$(addsuffix .rst,${bases})): ${B}/%.rst: %.rst Makefile | ${B}
+$(addprefix ${B}/,$(addsuffix .rst,${bases})): ${B}/%.rst: %.rst ${B}/%.test Makefile | ${B}
 	@echo "$<" | sed 's/./=/g' > $@
 	@echo "$<" >> $@
 	@echo "$<" | sed 's/./=/g' >> $@
@@ -105,7 +105,7 @@ $(addprefix ${B}/,$(addsuffix .rst,${bases})): ${B}/%.rst: %.rst Makefile | ${B}
 	@echo >> $@
 	@echo " [RST] "$(ok)
 
-$(addprefix ${B}/html-,$(addsuffix .rst,${bases})): ${B}/html-%.rst: %.rst Makefile | ${B}
+$(addprefix ${B}/html-,$(addsuffix .rst,${bases})): ${B}/html-%.rst: %.rst ${B}/%.test Makefile | ${B}
 	@echo > $@
 	@echo ".. contents:: " >> $@
 	@echo >> $@
