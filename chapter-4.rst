@@ -977,40 +977,31 @@ a cache hit or not.
 +=============+==============================================+
 | Context     | Client request                               |
 +-------------+----------------------------------------------+
-| Variables   | `req`, `req_top`, `client`, `server`         |
-|             | `local`, `remote`, `storage`, `now`,         |
-|             | `obj.hits`, `obj.uncacheable`                |
+| Variables   | `req`, `bereq`, `req_top`, `client`, `server`|
+|             | `server`, `local`, `remote`, `storage`, `now`|
 +-------------+----------------------------------------------+
 | Return      | `pipe`, `synth`                              |
 | statements  |                                              |
 +-------------+----------------------------------------------+
-| Typical use | - Addding ``Connection: close`` before pipe  |
-|             | - Working around bugs until they are fixed   |
+| Typical use |                                              |
 +-------------+----------------------------------------------+
 
 In *pipe mode*, Varnish opens a connection to the backend and starts moving
 data between the client and backend without any interference. It is used as
-a last resort if what you need to do isn't supported by Varnish.
+a last resort if what you need to do isn't supported by Varnish. Once in
+pipe mode, the client can send unfiltered data to the server and get
+replies without Varnish interpreting them - for better or worse.
 
-It is very important to understand that once Varnish enters into pipe mode,
-the client can send whatever it wants to the backend server. Normally
-that's exactly what you want. The one big exception is keep-alive.
+In HTTP 1.1, *keep-alive* is the default connection mode. This means a
+client can send multiple requests serialized over the same TCP connection.
+For pipe mode, Varnish suggests that the server should disable this by
+adding ``Connection: close`` before entering `vcl_pipe`. If it didn't, then
+subsequent requests after the piped requests would also bypass the cache
+completely.
 
-HTTP provides a connection mode where you can issue multiple requests over
-the same TCP connection, instead of opening a new TCP connection for each
-request. This mode is called keep-alive and is the default connection mode
-in HTTP 1.1.
-
-If the client uses a keep-alive request, not only the first request, but
-all subsequent requests will also be sent directly to the backend, even if
-that is not what you wanted.
-
-To prevent this, you can add the HTTP request heder ``Connection: close``
-before going into pipe mode. This tells the web server to close the
-connection after the first request is handled.
-
-Varnish does this for you *before* entering the built-in VCL, as the
-built-in VCL documents:
+You can override this in `vcl_pipe` if you really want to, but there isn't
+any good reason to do so that the author is aware of. The built-in VCL for
+`vcl_pipe` is empty, save for a comment:
 
 .. code:: VCL
 
@@ -1028,13 +1019,13 @@ built-in VCL documents:
 -------------
 
 +------------------------------------------------------------+
-| `vcl_hash`                                                 |
+| `vcl_deliver`                                              |
 +=============+==============================================+
 | Context     | Client request                               |
 +-------------+----------------------------------------------+
 | Variables   | `req`, `req_top`, `client`, `server`         |
 |             | `local`, `remote`, `storage`, `now`,         |
-|             | `obj.hits`, `obj.uncacheable`                |
+|             | `obj.hits`, `obj.uncacheable`, `resp`        |
 +-------------+----------------------------------------------+
 | Return      | `deliver`, `synth`, `restart`                |
 | statements  |                                              |
