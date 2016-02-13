@@ -1160,11 +1160,132 @@ handling is `vcl_backend_fetch`.
 | Next state  | `vcl_backend_fetch`, `vcl_synth`             |
 +-------------+----------------------------------------------+
 | Typical use |                                              |
-|             |                                              |
 +-------------+----------------------------------------------+
 
-The last
+In `vcl_pass`, Varnish is bypassing the cache.
 
+Like `vcl_miss`, the built-in VCL for `vcl_pass` is blank:
+
+.. code:: VCL
+
+        sub vcl_pass {
+            return (fetch);
+        }
+
+There are three ways to enter `vcl_pass`. Either directly from `vcl_recv`
+by explicitly calling `return (pass);`, by calling `return (pass);` in
+`vcl_hit` or `vcl_miss`, or lastly by finding a *hit-for-pass* object in
+the cache.
+
+A *hit-for-pass* object is an object in the cache with no content that
+only serves to force varnish into pass mode.
+
+A cache miss and a pass both results in a backend request. The difference
+between them is that with a cache miss, Varnish assumes that the backend
+response can be used to satisfy multiple client requests. If multiple
+clients request the same resource at the same time, Varnish will only send
+a single request to the backend if they are cache misses. If the response
+is cached, then all client requests will get the same object returned.
+
+If, however, the result can not be cached, Varnish needs to send one
+backend request for each client request. To avoid serializing these
+requests, Varnish stores a *hit-for-pass* object in cache, telling Varnish
+that requests for this object will not be cachable, should bypass the pass
+and executed independently of other requests for the same request.
+
+We will look more at this later.
+
+`vcl_synth`
+...........
+
++------------------------------------------------------------+
+| `vcl_synth`                                                |
++=============+==============================================+
+| Context     | Client request                               |
++-------------+----------------------------------------------+
+| Variables   | `remote`, `resp`, `req`, `req_top`,          |
+|             | `server`, `client`, `local`                  |
++-------------+----------------------------------------------+
+| Return      | `restart`,`deliver`                          |
+| statements  |                                              |
++-------------+----------------------------------------------+
+| Next state  | `vcl_deliver`                                |
++-------------+----------------------------------------------+
+| Typical use | - Customizing error messages                 |
+|             | - Generating 301/302 redirects               |
++-------------+----------------------------------------------+
+
+`vcl_synth` is called whenever Varnish needs to synthesize a response
+instead of delivering one fetched from a backend server.
+
+In its simplest form it just a different error message, but it can be used
+for more than that. The built-in VCL provides the default error message you
+might have seen once in a while:
+
+.. code:: VCL
+
+        /*
+         * We can come here "invisibly" with the following errors: 413, 417 & 503
+         */
+        sub vcl_synth {
+            set resp.http.Content-Type = "text/html; charset=utf-8";
+            set resp.http.Retry-After = "5";
+            synthetic( {"<!DOCTYPE html>
+        <html>
+          <head>
+            <title>"} + resp.status + " " + resp.reason + {"</title>
+          </head>
+          <body>
+            <h1>Error "} + resp.status + " " + resp.reason + {"</h1>
+            <p>"} + resp.reason + {"</p>
+            <h3>Guru Meditation:</h3>
+            <p>XID: "} + req.xid + {"</p>
+            <hr>
+            <p>Varnish cache server</p>
+          </body>
+        </html>
+        "} );
+            return (deliver);
+        }
+
+Note that `vcl_synth` can also be called without `vcl_recv` ever being
+called first if certain specific error situations occur.
+
+Normally, `vcl_synth` is only called upon if you explicitly call `return
+(synth());` from some other VCL state.
+
+A common use case for `vcl_synth` is to redirect clients to the proper URL
+that you want them to access the content from. This is different from URL
+rewriting which is internal to Varnish. A redirect causes Varnish to send a
+regular HTTP reponse to the client, which will then make an other request
+using the provided Location.
+
+A very simple variant of this can be done like this:
+
+.. code:: VCL
+
+   sub vcl_recv {
+           if (req.http.host ~ "^www\.") {
+                   return (synth(301));
+           }
+   }
+
+   sub vcl_deliver {
+           if (resp.status == 301) {
+                   set resp.http.Location = 
+                        regsub(req.http.host, "^www\.","") + req.url;
+           }
+   }
+
+In `vcl_recv` we check if the ``Host``-header starts with a leading "www".
+If it does, we issue a `return (synth(301));`. Next up, Varnish enters
+`vcl_synth`.
+
+In `vcl_synth` we check if the response code is 301 - the one we provided
+in `vcl_recv`. If it is, we set a ``Location`` response header, which the
+client will use to re-request the content. The ``Location``-header is a
+combination of the ``Host``-header with the leading "www." stripped away,
+and the url stored in `req.url`.
 
 
 `vcl_deliver`
