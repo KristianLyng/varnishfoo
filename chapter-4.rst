@@ -994,7 +994,8 @@ any good reason to do so that the author is aware of. The built-in VCL for
 | Return      | `lookup`                                     |
 | statements  |                                              |
 +-------------+----------------------------------------------+
-| Next state  | `vcl_hit`, `vcl_miss`, `vcl_pass`,`vcl_purge`|
+| Next state  | `vcl_hit`, `vcl_miss`, `vcl_pass`,           |
+|             | `vcl_purge`                                  |
 +-------------+----------------------------------------------+
 | Typical use | - Adding the Cookie to the hash              |
 +-------------+----------------------------------------------+
@@ -1045,10 +1046,11 @@ a cache hit or not.
 |             | `local`, `remote`, `storage`, `now`,         |
 |             | `obj`                                        |
 +-------------+----------------------------------------------+
-| Return      | `synth`,`restart`,`pass`,`deliver`,`miss`,   |
-| statements  | `fetch` (deprecated, use `miss` instead)     |
+| Return      | `synth`, `restart`, `pass`, `deliver`,       |
+| statements  | `miss`, `fetch` (deprecated, use `miss`      |
+|             | instead)                                     |
 +-------------+----------------------------------------------+
-| Next state  | `vcl_deliver`, `vcl_miss`,`vcl_synth`        |
+| Next state  | `vcl_deliver`, `vcl_miss`, `vcl_synth`       |
 +-------------+----------------------------------------------+
 | Typical use | - Overriding grace mode                      |
 +-------------+----------------------------------------------+
@@ -1114,13 +1116,13 @@ grace period, but it's still within the keep period.
 +=============+==============================================+
 | Context     | Client request                               |
 +-------------+----------------------------------------------+
-| Variables   | `remote`,`req`,`req_top`,`server`,`client`,  |
-|             | `local`                                      |
+| Variables   | `remote`, `req`, `req_top`, `server`         |
+|             | `client`, `local`                            |
 +-------------+----------------------------------------------+
-| Return      | `synth`,`restart`,`pass`,`fetch`             |
+| Return      | `synth`, `restart`, `pass`, `fetch`          |
 | statements  |                                              |
 +-------------+----------------------------------------------+
-| Next state  | `vcl_deliver`, `vcl_pass`,`vcl_synth`        |
+| Next state  | `vcl_deliver`, `vcl_pass`, `vcl_synth`       |
 +-------------+----------------------------------------------+
 | Typical use |                                              |
 |             |                                              |
@@ -1149,10 +1151,10 @@ handling is `vcl_backend_fetch`.
 +=============+==============================================+
 | Context     | Client request                               |
 +-------------+----------------------------------------------+
-| Variables   | `remote`,`req`,`req_top`,`server`,`client`,  |
-|             | `local`                                      |
+| Variables   | `remote`, `req`, `req_top`, `server`         |
+|             | `client`, `local`                            |
 +-------------+----------------------------------------------+
-| Return      | `synth`,`restart`,`fetch`                    |
+| Return      | `synth`, `restart`, `fetch`                  |
 | statements  |                                              |
 +-------------+----------------------------------------------+
 | Next state  | `vcl_backend_fetch`, `vcl_synth`             |
