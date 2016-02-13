@@ -363,7 +363,7 @@ greatly.
 .. note::
 
    All VCL code examples are tested for syntax errors against Varnish
-   4.1.1, and are provided in complete form, with the only exception beng
+   4.1.1, and are provided in complete form, with the only exception being
    that smaller examples will leave out the `backend` and `vcl 4.0;` lines
    to preserve brevity.
 
@@ -380,7 +380,7 @@ return-statement.
 
 Similarly, if you provide multiple definitions of `vcl_recv` or some
 other function, they will all be glued together as a single block of code.
-Any `call foo;` statement will be in-lined (copied into the code). In other
+Any `call foo;` statement will be inlined (copied into the code). In other
 words, the following two examples produce the same C code:
 
 With custom function:
@@ -416,13 +416,13 @@ a custom-function would mean that the custom function never returned - that
 VCL state was terminated and Varnish would move on to the next phase of
 request handling.
 
-Each state has different return methods available. You can see these in the
+Each state has different return statements available. You can see these in the
 request flow chart, at the bottom of each box.
 
 Built-in VCL
 ------------
 
-Varnish works out of the box with no VCL, as long as a back-end is
+Varnish works out of the box with no VCL, as long as a backend is
 provided. This is because Varnish provides built-in VCL, sometimes
 confusingly referred to as the default VCL for historic reasons.
 
@@ -585,7 +585,7 @@ And the return states that are valid are:
 - `return (purge);` to invalidate matching content in the cache (covered in
   greater detail later).
 
-`vcl_recv` - Massasing a request
+`vcl_recv` - Massaging a request
 ................................
 
 A typical thing to do in `vcl_recv` is to handle URL rewrites, and to
@@ -624,7 +624,7 @@ different sub routines. We could just as easily have placed them both
 directly in `vcl_recv`, but the above form will yield a VCL file that is
 easier to read and organize over time.
 
-In `normalize_sports` we do an exact string compare between the
+In `normalize_sports` we do an exact string comparison between the
 client-provided ``Host`` header and ``sports.example.com``. In HTTP, the
 name of the header is case insensitive, so it doesn't matter if you type
 `req.http.host`, `req.http.Host` or `req.http.HoST`. Varnish will figure it
@@ -1058,7 +1058,7 @@ a cache hit or not.
 After Varnish looks up the content in cache, one out of three things can
 happen:
 
-- Varnish finds the content i cache. This is a cache hit and `vcl_hit` is
+- Varnish finds the content in cache. This is a cache hit and `vcl_hit` is
   run
 - Varnish does not find the content in cache. This is a cache miss and
   `vcl_miss` is run.
@@ -1089,7 +1089,7 @@ This VCL is all about grace mode. Once an object is inserted into the
 cache, it has a *Time to live*, a TTL. This is the regular cache duration.
 On top of TTL, there is the grace period. This is an extended period of
 time in which the object is kept in cache. During grace mode, the object
-can be delivered to clients, ut a request to the backend will be initiated
+can be delivered to clients, but a request to the backend will be initiated
 in the background to update the content.
 
 In addition to grace mode, Varnish also supports conditional backend
@@ -1101,8 +1101,8 @@ in grace mode.
 The total duration Varnish keeps an object is:
 
 - TTL - regular cache duration
-- + grace - Grace period
-- + keep - Extra period for conditional GET requests
+- \+ grace - Grace period
+- \+ keep - Extra period for conditional GET requests
 
 This is why, in `vcl_hit`, there is still a chance to return a miss. This
 typically happens if the object found is outside the TTL and outside the
@@ -1138,7 +1138,7 @@ The built-in `vcl_miss` again demonstrates the simplicity of it.
 
 The content was not found in cache. Go fetch it from the backend.
 
-The next VCL state seen from the client request is `vcl_deliver`, but after
+The next VCL state from the perspective of the client request is `vcl_deliver`, but after
 `vcl_miss` is done, the backend request will be initiated and that has a
 set of VCL states all of its own. The first state in the backend request
 handling is `vcl_backend_fetch`.
@@ -1178,22 +1178,22 @@ by explicitly calling `return (pass);`, by calling `return (pass);` in
 the cache.
 
 A *hit-for-pass* object is an object in the cache with no content that
-only serves to force varnish into pass mode.
+only serves to force Varnish into pass mode.
 
 A cache miss and a pass both results in a backend request. The difference
 between them is that with a cache miss, Varnish assumes that the backend
 response can be used to satisfy multiple client requests. If multiple
 clients request the same resource at the same time, Varnish will only send
 a single request to the backend if they are cache misses. If the response
-is cached, then all client requests will get the same object returned.
+is cacheable, then all client requests will get the same object returned.
 
 If, however, the result can not be cached, Varnish needs to send one
 backend request for each client request. To avoid serializing these
 requests, Varnish stores a *hit-for-pass* object in cache, telling Varnish
-that requests for this object will not be cachable, should bypass the pass
-and executed independently of other requests for the same request.
+that requests for this object are not cachable, should bypass the pass
+and executed independently of other requests for the same object.
 
-We will look more at this later.
+We will look at this later in more detail.
 
 `vcl_synth`
 ...........
@@ -1218,9 +1218,9 @@ We will look more at this later.
 `vcl_synth` is called whenever Varnish needs to synthesize a response
 instead of delivering one fetched from a backend server.
 
-In its simplest form it just a different error message, but it can be used
+In its simplest form it is just a different error message, but it can be used
 for more than that. The built-in VCL provides the default error message you
-might have seen once in a while:
+might have already seen:
 
 .. code:: VCL
 
@@ -1257,8 +1257,8 @@ Normally, `vcl_synth` is only called upon if you explicitly call `return
 A common use case for `vcl_synth` is to redirect clients to the proper URL
 that you want them to access the content from. This is different from URL
 rewriting which is internal to Varnish. A redirect causes Varnish to send a
-regular HTTP reponse to the client, which will then make an other request
-using the provided Location.
+regular HTTP reponse to the client, which will then make another request
+using the provided location.
 
 A very simple variant of this can be done like this:
 
@@ -1332,14 +1332,14 @@ hit, the value will be 1 or greater.
                    set resp.http.X-Cache-Hit = "true";
                    set resp.http.X-Cache-Hits = obj.hits;
            } else {
-                   set resp.http.X-Cache-Hit = "true";
+                   set resp.http.X-Cache-Hit = "false";
            }
    }
 
 Other than `obj.hits` and `obj.uncacheable`, you do not have direct access
 to the object. You do, however, have most of what you need in `resp.*`. The
 cached object is always read-only, but the `resp` data structure represents
-a this specific response, not the cached object it self. As such, you can
+this specific response, not the cached object it self. As such, you can
 modify it.
 
 The `obj.uncacheable` variable can be used to identify if the response was
