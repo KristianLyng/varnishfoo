@@ -20,6 +20,7 @@ define run-rst2pdf =
 	@FOO=$$(rst2pdf -e inkscape -b2 -s ${C}/pdf.style $(firstword $^) -o $@ 2>&1); \
 		ret=$$? ; \
 		echo -n "$$FOO" | egrep -v 'is too.*frame.*scaling'; \
+		echo -n "$$FOO" | grep -q "ERROR" && exit 1; \
 		exit $$ret
 	@echo " [rst2pdf] "$(ok)
 endef
@@ -97,11 +98,6 @@ $(addprefix ${B}/,$(addsuffix .rst,${bases})): ${B}/%.rst: %.rst ${B}/%.test Mak
 	@echo "$<" | sed 's/./=/g' > $@
 	@echo "$<" >> $@
 	@echo "$<" | sed 's/./=/g' >> $@
-	@echo >> $@
-	@echo ".. role:: vcl(code)" >> $@
-	@echo "      :language: VCLSnippet" >> $@
-	@echo >> $@
-	@echo ".. default-role:: vcl" >> $@
 	@echo >> $@
 	@echo ".. include:: ../control/secondpage.rst" >> $@
 	@echo >> $@
