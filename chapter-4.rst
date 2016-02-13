@@ -1206,10 +1206,10 @@ We will look more at this later.
 | Variables   | `remote`, `resp`, `req`, `req_top`,          |
 |             | `server`, `client`, `local`                  |
 +-------------+----------------------------------------------+
-| Return      | `restart`,`deliver`                          |
+| Return      | `restart`, `deliver`                         |
 | statements  |                                              |
 +-------------+----------------------------------------------+
-| Next state  | `vcl_deliver`                                |
+| Next state  | delivery                                     |
 +-------------+----------------------------------------------+
 | Typical use | - Customizing error messages                 |
 |             | - Generating 301/302 redirects               |
