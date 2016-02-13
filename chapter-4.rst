@@ -21,17 +21,17 @@ Mastering VCL is a matter of learning the language itself, understanding
 what the different states mean and how you can utilize the tools that are
 you at your disposal.
 
-This chapter focuses on the language itself and a small subset of the
-states you can affect. The goal is to give you the skills needed to write
-robust VCL that allows Varnish to cache efficiently.
+This chapter is split into several logical parts. It begins with a short
+introduction and some example code, goes on to detail the individual VCL
+states available in both client request handling and backend request
+handling, then closes up by tying it all together in more practical terms.
 
 VCL is officially documented in the :title:`vcl` manual page (``man vcl``),
 but you would do well if you revisit the state diagrams provided in
-appendix A.  Throughout this chapter, those state diagrams will be used as
-reference and you will learn how to read them. An other interesting source
-of documentation is the actual generator code in VCL, found in
-``lib/libvcc/generate.py`` in Varnish 4.1.1 (and other versions), which is
-also used to generate the manual files.
+appendix A. In addition to the flow chart, each sub chapter detailing each
+of the individual VCL states starts with a simple table giving you an
+overview of relevant facts about that state, and a list of the most typical
+uses of the state is - if there are any at all.
 
 What you will not find in this chapter is an extensive description of every
 keyword and operator available. That is precisely what the manual page is
@@ -39,7 +39,6 @@ for.
 
 Since VCL leans heavily on regular expressions, there is also a small
 cheat sheet towards the end, including VCL snippets.
-
 
 Working with VCL
 ----------------
@@ -439,8 +438,8 @@ should be a goal to provide as simple VCL as possible.
 Each of the built-in VCL functions will be covered individually when we are
 dealing with the individual states.
 
-Client side states
-------------------
+Client requests
+---------------
 
 With Varnish 4.0, VCL became split in two different state engines, so to
 speak. The client-side processing and the backend-processing is isolated,
@@ -464,6 +463,9 @@ client side.
 +-------------+----------------------------------------------+
 | Return      | `purge`, `hash`, `pass`, `pipe`, `synth`     |
 | statements  |                                              |
++-------------+----------------------------------------------+
+| Next state  | `vcl_hash`, `vcl_pass`, `vcl_pipe`,          |
+|             | `vcl_synth`                                  |
 +-------------+----------------------------------------------+
 | Typical use | - Request validation                         |
 |             | - Request normalization                      |
@@ -930,6 +932,54 @@ the rewritten URL, but it is a good idea to get used to ``varnishlog``.
 Future examples will not include quite as verbose testing transcripts,
 though.
 
+`vcl_pipe`
+..........
+
++------------------------------------------------------------+
+| `vcl_pipe`                                                 |
++=============+==============================================+
+| Context     | Client request                               |
++-------------+----------------------------------------------+
+| Variables   | `req`, `bereq`, `req_top`, `client`, `server`|
+|             | `server`, `local`, `remote`, `storage`, `now`|
++-------------+----------------------------------------------+
+| Return      | `pipe`, `synth`                              |
+| statements  |                                              |
++-------------+----------------------------------------------+
+| Next state  | `vcl_synth`, delivery                        |
++-------------+----------------------------------------------+
+| Typical use |                                              |
++-------------+----------------------------------------------+
+
+In *pipe mode*, Varnish opens a connection to the backend and starts moving
+data between the client and backend without any interference. It is used as
+a last resort if what you need to do isn't supported by Varnish. Once in
+pipe mode, the client can send unfiltered data to the server and get
+replies without Varnish interpreting them - for better or worse.
+
+In HTTP 1.1, *keep-alive* is the default connection mode. This means a
+client can send multiple requests serialized over the same TCP connection.
+For pipe mode, Varnish suggests that the server should disable this by
+adding ``Connection: close`` before entering `vcl_pipe`. If it didn't, then
+subsequent requests after the piped requests would also bypass the cache
+completely.
+
+You can override this in `vcl_pipe` if you really want to, but there isn't
+any good reason to do so that the author is aware of. The built-in VCL for
+`vcl_pipe` is empty, save for a comment:
+
+.. code:: VCL
+
+        sub vcl_pipe {
+            # By default Connection: close is set on all piped requests, to stop
+            # connection reuse from sending future requests directly to the
+            # (potentially) wrong backend. If you do want this to happen, you can undo
+            # it here.
+            # unset bereq.http.connection;
+            return (pipe);
+        }
+
+
 `vcl_hash`
 ..........
 
@@ -943,6 +993,8 @@ though.
 +-------------+----------------------------------------------+
 | Return      | `lookup`                                     |
 | statements  |                                              |
++-------------+----------------------------------------------+
+| Next state  | `vcl_hit`, `vcl_miss`, `vcl_pass`,`vcl_purge`|
 +-------------+----------------------------------------------+
 | Typical use | - Adding the Cookie to the hash              |
 +-------------+----------------------------------------------+
@@ -980,50 +1032,137 @@ The only valid return statement in `vcl_hash` is `return (lookup);`,
 telling Varnish that it's time to look the hash up in cache to see if it's
 a cache hit or not.
 
-`vcl_pipe`
-..........
+
+`vcl_hit`
+.........
 
 +------------------------------------------------------------+
-| `vcl_pipe`                                                 |
+| `vcl_hit`                                                  |
 +=============+==============================================+
 | Context     | Client request                               |
 +-------------+----------------------------------------------+
-| Variables   | `req`, `bereq`, `req_top`, `client`, `server`|
-|             | `server`, `local`, `remote`, `storage`, `now`|
+| Variables   | `req`, `req_top`, `client`, `server`         |
+|             | `local`, `remote`, `storage`, `now`,         |
+|             | `obj`                                        |
 +-------------+----------------------------------------------+
-| Return      | `pipe`, `synth`                              |
-| statements  |                                              |
+| Return      | `synth`,`restart`,`pass`,`deliver`,`miss`,   |
+| statements  | `fetch` (deprecated, use `miss` instead)     |
 +-------------+----------------------------------------------+
-| Typical use |                                              |
+| Next state  | `vcl_deliver`, `vcl_miss`,`vcl_synth`        |
++-------------+----------------------------------------------+
+| Typical use | - Overriding grace mode                      |
 +-------------+----------------------------------------------+
 
-In *pipe mode*, Varnish opens a connection to the backend and starts moving
-data between the client and backend without any interference. It is used as
-a last resort if what you need to do isn't supported by Varnish. Once in
-pipe mode, the client can send unfiltered data to the server and get
-replies without Varnish interpreting them - for better or worse.
+After Varnish looks up the content in cache, one out of three things can
+happen:
 
-In HTTP 1.1, *keep-alive* is the default connection mode. This means a
-client can send multiple requests serialized over the same TCP connection.
-For pipe mode, Varnish suggests that the server should disable this by
-adding ``Connection: close`` before entering `vcl_pipe`. If it didn't, then
-subsequent requests after the piped requests would also bypass the cache
-completely.
+- Varnish finds the content i cache. This is a cache hit and `vcl_hit` is
+  run
+- Varnish does not find the content in cache. This is a cache miss and
+  `vcl_miss` is run.
+- Varnish finds a special *hit-for-pass* object in the cache, this is the
+  result of a previous decision not to cache responses for that hash.
+  `vcl_pass` is run and content is fetched from the backend.
 
-You can override this in `vcl_pipe` if you really want to, but there isn't
-any good reason to do so that the author is aware of. The built-in VCL for
-`vcl_pipe` is empty, save for a comment:
+It is rare that you need to modify these VCL states, but it happens. The
+built-in VCL for `vcl_hit` is a bit strange.
 
 .. code:: VCL
 
-        sub vcl_pipe {
-            # By default Connection: close is set on all piped requests, to stop
-            # connection reuse from sending future requests directly to the
-            # (potentially) wrong backend. If you do want this to happen, you can undo
-            # it here.
-            # unset bereq.http.connection;
-            return (pipe);
+        sub vcl_hit {
+            if (obj.ttl >= 0s) {
+                // A pure unadultered hit, deliver it
+                return (deliver);
+            }
+            if (obj.ttl + obj.grace > 0s) {
+                // Object is in grace, deliver it
+                // Automatically triggers a background fetch
+                return (deliver);
+            }
+            // fetch & deliver once we get the result
+            return (miss);
         }
+
+This VCL is all about grace mode. Once an object is inserted into the
+cache, it has a *Time to live*, a TTL. This is the regular cache duration.
+On top of TTL, there is the grace period. This is an extended period of
+time in which the object is kept in cache. During grace mode, the object
+can be delivered to clients, ut a request to the backend will be initiated
+in the background to update the content.
+
+In addition to grace mode, Varnish also supports conditional backend
+requests to the backend. If Varnish has an old object in cache with either
+an ``ETag`` or ``Last-Modified`` tag, Varnish can issue a conditional
+``GET`` request, potentially saving bandwidth. This happens automatically
+in grace mode.
+
+The total duration Varnish keeps an object is:
+
+- TTL - regular cache duration
+- + grace - Grace period
+- + keep - Extra period for conditional GET requests
+
+This is why, in `vcl_hit`, there is still a chance to return a miss. This
+typically happens if the object found is outside the TTL and outside the
+grace period, but it's still within the keep period.
+
+`vcl_miss`
+..........
+
++------------------------------------------------------------+
+| `vcl_miss`                                                 |
++=============+==============================================+
+| Context     | Client request                               |
++-------------+----------------------------------------------+
+| Variables   | `remote`,`req`,`req_top`,`server`,`client`,  |
+|             | `local`                                      |
++-------------+----------------------------------------------+
+| Return      | `synth`,`restart`,`pass`,`fetch`             |
+| statements  |                                              |
++-------------+----------------------------------------------+
+| Next state  | `vcl_deliver`, `vcl_pass`,`vcl_synth`        |
++-------------+----------------------------------------------+
+| Typical use |                                              |
+|             |                                              |
++-------------+----------------------------------------------+
+
+The built-in `vcl_miss` again demonstrates the simplicity of it.
+
+.. code:: VCL
+
+        sub vcl_miss {
+            return (fetch);
+        }
+
+The content was not found in cache. Go fetch it from the backend.
+
+The next VCL state seen from the client request is `vcl_deliver`, but after
+`vcl_miss` is done, the backend request will be initiated and that has a
+set of VCL states all of its own. The first state in the backend request
+handling is `vcl_backend_fetch`.
+
+`vcl_pass`
+..........
+
++------------------------------------------------------------+
+| `vcl_pass`                                                 |
++=============+==============================================+
+| Context     | Client request                               |
++-------------+----------------------------------------------+
+| Variables   | `remote`,`req`,`req_top`,`server`,`client`,  |
+|             | `local`                                      |
++-------------+----------------------------------------------+
+| Return      | `synth`,`restart`,`fetch`                    |
+| statements  |                                              |
++-------------+----------------------------------------------+
+| Next state  | `vcl_backend_fetch`, `vcl_synth`             |
++-------------+----------------------------------------------+
+| Typical use |                                              |
+|             |                                              |
++-------------+----------------------------------------------+
+
+The last
+
 
 
 `vcl_deliver`
@@ -1040,6 +1179,8 @@ any good reason to do so that the author is aware of. The built-in VCL for
 +-------------+----------------------------------------------+
 | Return      | `deliver`, `synth`, `restart`                |
 | statements  |                                              |
++-------------+----------------------------------------------+
+| Next state  | `vcl_synth`, delivery                        |
 +-------------+----------------------------------------------+
 | Typical use | - Adding or removing response headers        |
 |             | - Restarting the request in case of errors   |
@@ -1081,6 +1222,5 @@ modify it.
 The `obj.uncacheable` variable can be used to identify if the response was
 cacheable at all. If you issued `return (hash);` in `vcl_recv`, and the
 backend and relevant VCL didn't prevent it, the value will be true.
-
 
 
