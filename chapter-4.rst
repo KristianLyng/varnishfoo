@@ -1157,7 +1157,7 @@ handling is `vcl_backend_fetch`.
 | Return      | `synth`, `restart`, `fetch`                  |
 | statements  |                                              |
 +-------------+----------------------------------------------+
-| Next state  | `vcl_backend_fetch`, `vcl_synth`             |
+| Next state  | `vcl_deliver`, `vcl_synth`                   |
 +-------------+----------------------------------------------+
 | Typical use |                                              |
 +-------------+----------------------------------------------+
@@ -1346,4 +1346,113 @@ The `obj.uncacheable` variable can be used to identify if the response was
 cacheable at all. If you issued `return (hash);` in `vcl_recv`, and the
 backend and relevant VCL didn't prevent it, the value will be true.
 
+Backend requests
+----------------
+
+`vcl_backend_fetch`
+...................
+
++------------------------------------------------------------+
+| `vcl_backend_fetch`                                        |
++=============+==============================================+
+| Context     | Backend request                              |
++-------------+----------------------------------------------+
+| Variables   | `bereq`, `server`, `now`                     |
+|             |                                              |
++-------------+----------------------------------------------+
+| Return      | `fetch`,`abandon`                            |
+| statements  |                                              |
++-------------+----------------------------------------------+
+| Next state  | `vcl_backend_response`, `vcl_backend_error`  |
++-------------+----------------------------------------------+
+| Typical use |                                              |
++-------------+----------------------------------------------+
+
+`vcl_backend_fetch` is called right before a backend request is initiated.
+It has a copy of the client request in `bereq`, with some modifications
+where relevant. It can, for example, add ``If-Modified-Since`` or
+``If-None-Match`` headers if a conditional GET request can be made.
+
+The built-in VCL is empty:
+
+.. code:: VCL
+
+        sub vcl_backend_fetch {
+            return (fetch);
+        }
+
+`vcl_backend_response`
+......................
+
++------------------------------------------------------------+
+| `vcl_backend_response`                                     |
++=============+==============================================+
+| Context     | Backend request                              |
++-------------+----------------------------------------------+
+| Variables   | `bereq`,`beresp`, `server`, `now`            |
++-------------+----------------------------------------------+
+| Return      | `deliver`,`retry`,`abandon`                  |
+| statements  |                                              |
++-------------+----------------------------------------------+
+| Next state  | `vcl_backend_error`                          |
++-------------+----------------------------------------------+
+| Typical use | - Override cache duration                    |
+|             | - Clean up backend response                  |
+|             | - Set grace and keep periods                 |
+|             | - Decide what to do with errors              |
++-------------+----------------------------------------------+
+
+`vcl_backend_response` is executed right after a response from a backend
+has been received, but before it is inserted into the cache. The `beresp`
+data structure represents the backend response which is potentially soon to
+be the cached object. Before `vcl_backend_response` is executed, Varnish
+has parsed the ``Cache-Control`` and ``Expires`` headers associated with
+the response and set the *Time To Live* (TTL) accordingly. Any change to
+TTL that you make in `vcl_backend_response` will override default values.
+
+If you have a perfect backend there is little or no reason to add anything
+to `vcl_backend_response`.
+
+In the real world, it turns out that `vcl_backend_response` is, along with
+`vcl_recv`, one of the most important VCL states you have.
+
+The built-in VCL provides a safety net:
+
+.. code:: VCL
+
+        sub vcl_backend_response {
+            if (beresp.ttl <= 0s ||
+              beresp.http.Set-Cookie ||
+              beresp.http.Surrogate-control ~ "no-store" ||
+              (!beresp.http.Surrogate-Control &&
+                beresp.http.Cache-Control ~ "no-cache|no-store|private") ||
+              beresp.http.Vary == "*") {
+                /*
+                * Mark as "Hit-For-Pass" for the next 2 minutes
+                */
+                set beresp.ttl = 120s;
+                set beresp.uncacheable = true;
+            }
+            return (deliver);
+        }
+
+In other words, if any of the following conditions are true, Varnish will
+not cache this response:
+
+- The TTL is 0 or less. As set by RFC2616 rules (see summary of chapter 2)
+- The response has a ``Set-Cookie`` header
+- The response has a ``Surrogate-Control`` header with "no-store" set
+- The response has a ``Vary`` header with the exact value of ``*``
+- The response does *not* have a ``Surrogate-Control`` header, but *does*
+  have a ``Cache-Control`` header with either ``no-cache``, ``no-store`` or
+  ``private`` set.
+
+Note that when not caching, Varnish sets the TTL to 120s, then sets
+`beresp.uncacheable = true;`. This is how a *hit-for-pass* object is born.
+For the next 2 minutes, requests matching this cache hash will not be
+cached.
+
+It is tempting to set `beresp.uncacheable = true;` if your backend server
+is serving an error that you believe to be intermittent, but this is not
+without problems. 
 
