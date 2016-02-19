@@ -84,14 +84,14 @@ ${B}/varnishfoo.rst: Makefile $(wildcard control/*rst) | $(wildcard *rst) ${B}
 	done
 	@echo " [RST] "$(ok)
 
-${B}/varnishfoo.pdf: ${B}/varnishfoo.rst $(wildcard *rst Makefile .git/* control/* img/* img/*/*) ${B}/version.rst | ${B}
+${B}/varnishfoo.pdf: ${B}/varnishfoo.rst $(wildcard *rst Makefile .git/* control/* img/* img/*/*) ${B}/version.rst | ${B} ${B}/img
 	$(run-rst2pdf)
 
 $(addprefix ${B}/,$(addsuffix .test,${bases})): ${B}/%.test: %.rst Makefile util/test.sh | ${B}
-	@util/test.sh $< | tee $@
+	@util/test.sh $< > $@ || { cat $@; exit 1; }
 	@echo " [TEST] "$(ok)
 
-$(addprefix ${B}/,$(addsuffix .pdf,${bases})): ${B}/%.pdf: ${B}/%.rst ${B}/img ${B}/version.rst Makefile
+$(addprefix ${B}/,$(addsuffix .pdf,${bases})): ${B}/%.pdf: ${B}/%.rst ${B}/img ${B}/version.rst Makefile | ${B} ${B}/img
 	$(run-rst2pdf)
 
 $(addprefix ${B}/,$(addsuffix .rst,${bases})): ${B}/%.rst: %.rst ${B}/%.test Makefile | ${B}

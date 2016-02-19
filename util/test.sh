@@ -4,6 +4,10 @@ set -e
 
 VARNISHD=/usr/local/sbin/varnishd
 TARGET=$(mktemp -d /tmp/foo.XXXXXX)
+if [ ! -x "$VARNISHD" ]; then
+	echo "No executable found at $VARNISHD"
+	exit 1;
+fi
 awk -v target=${TARGET} '
 /.. code:: VCL/ {
 	n += 1
