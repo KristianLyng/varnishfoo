@@ -2,7 +2,7 @@
 
 set -e
 
-VARNISHD=/usr/local/sbin/varnishd
+VARNISHD=${VARNISHD:-varnishd}
 TARGET=$(mktemp -d /tmp/foo.XXXXXX)
 if [ ! -x "$VARNISHD" ]; then
 	echo "No executable found at $VARNISHD"

@@ -88,7 +88,7 @@ ${B}/varnishfoo.pdf: ${B}/varnishfoo.rst $(wildcard *rst Makefile .git/* control
 	$(run-rst2pdf)
 
 $(addprefix ${B}/,$(addsuffix .test,${bases})): ${B}/%.test: %.rst Makefile util/test.sh | ${B}
-	@util/test.sh $< > $@ || { cat $@; exit 1; }
+	@util/test.sh $< > $@ || { cat $@; rm $@; exit 1; }
 	@echo " [TEST] "$(ok)
 
 $(addprefix ${B}/,$(addsuffix .pdf,${bases})): ${B}/%.pdf: ${B}/%.rst ${B}/img ${B}/version.rst Makefile | ${B} ${B}/img
