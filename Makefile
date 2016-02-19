@@ -12,11 +12,11 @@ CHAPTERPDF= $(addprefix ${B}/,$(addsuffix .pdf, ${bases}))
 TESTS= $(addprefix ${B}/,$(addsuffix .test, ${bases}))
 PYGCSS=${B}/css/pygment-style.css
 
-define ok =
+define ok
 "\033[32m$@\033[0m"
 endef
 
-define run-rst2pdf = 
+define run-rst2pdf
 	@FOO=$$(rst2pdf -e inkscape -b2 -s ${C}/pdf.style $(firstword $^) -o $@ 2>&1); \
 		ret=$$? ; \
 		echo -n "$$FOO" | egrep -v 'is too.*frame.*scaling'; \
@@ -29,7 +29,7 @@ web: ${HTML} ${PYGCSS} | ${B}/css ${B}/fonts ${B}/js
 	@echo " [WEB] "$(ok)
 
 pdfs: ${B}/varnishfoo.pdf ${CHAPTERPDF}
-	@echo " [PDFS "$(ok)
+	@echo " [PDFS] "$(ok)
 
 all: web pdfs
 	@echo " [ALL] "$(ok)
