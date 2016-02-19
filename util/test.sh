@@ -1,7 +1,5 @@
 #!/bin/bash
 
-set -e
-
 VARNISHD=${VARNISHD:-varnishd}
 TARGET=$(mktemp -d /tmp/foo.XXXXXX)
 if [ ! -x "$VARNISHD" ]; then
