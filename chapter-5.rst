@@ -34,6 +34,14 @@ you can add and remove (predefined) backends from regular VCL - and that
 directors can be nested. We'll look at both these features and what they
 offer you.
 
+A closer look at a backend
+--------------------------
+
+We've looked at backends only briefly at backends so far. Only specifying
+the host and port-options. But backends can have a few more options.
+
+
+
 Basic health probes
 -------------------
 
@@ -142,6 +150,11 @@ can be avoided by using named probes instead.
            .host = "192.168.2.1";
            .probe = myprobe;
    }
+
+Reviewing health probe status
+.............................
+
+.. FIXME: Varnishlog output and varnishstat and vanrishadm
 
 Load balancing of backends
 --------------------------
