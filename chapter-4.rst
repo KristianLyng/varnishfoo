@@ -38,7 +38,7 @@ keyword and operator available. That is precisely what the manual page is
 for.
 
 Since VCL leans heavily on regular expressions, there is also a small
-cheat sheet towards the end, including VCL snippets.
+cheat sheet in appendix D, including VCL snippets.
 
 Working with VCL
 ----------------
@@ -645,7 +645,7 @@ back onto the Host header.
 
 `regsub()` takes three arguments. The input, the regular expression and
 what to change it with. If you are unfamiliar with regular expressions,
-there's a brief introduction and cheat sheet later in the chapter.
+there's a brief introduction and cheat sheet in appendix D.
 
 Note how we do not check if the ``Host`` header contains ``www.`` before we
 issue the `regsub()`. That is because the process of checking and the
