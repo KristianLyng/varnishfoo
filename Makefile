@@ -67,7 +67,7 @@ ${B}/web-version.rst: $(wildcard *rst Makefile .git/* control/* img/* img/*/*) |
 	@echo >> ${B}/web-version.rst
 	@echo " [RST] "$(ok)
 
-${B}/varnishfoo.rst: Makefile $(wildcard control/*rst) | $(wildcard *rst) ${B}
+${B}/varnishfoo.rst: Makefile $(wildcard control/*rst) $(wildcard *rst) | ${B}
 	@echo ".. include:: ../control/front.rst" > $@
 	@echo >> $@
 	@echo ".. include:: ../control/secondpage.rst" >> $@
