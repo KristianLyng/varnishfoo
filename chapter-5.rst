@@ -61,19 +61,19 @@ the host and port-options. But backends can have a few more options.
 +-----------------------+------------+------------------------------------------------------+
 | connect_timeout       | From       | Timeout waiting for the TCP connection to be         |
 |                       | parameters | established. Should be low, as this is usually       |
-|                       |            | handled by the operating system. Factors that are    |
+|                       | (3.5s)     | handled by the operating system. Factors that are    |
 |                       |            | relevant: Geographic distance, virtualization.       |
 +-----------------------+------------+------------------------------------------------------+
 | first_byte_timeout    | From       | Timeout waiting for the very first byte of a reply.  |
 |                       | parameters | This is application-dependant. Typically, an         |
-|                       |            | application will send the entire response in one go  |
+|                       | (60s)      | application will send the entire response in one go  |
 |                       |            | after generating it, so this is basically            |
 |                       |            | how long you expect/allow the application to generate|
 |                       |            | a response.                                          |
 +-----------------------+------------+------------------------------------------------------+
 | between_bytes_timeout | From       | The timeout between individual read-operations after |
 |                       | parameters | the backend has started sending data. Should rarely  |
-|                       |            | be long, depending on the application. This is       |
+|                       | (60s)      | be long, depending on the application. This is       |
 |                       |            | essentially a means to detect stalled connections.   |
 +-----------------------+------------+------------------------------------------------------+
 | max_connections       | unlimited  | The maximum number of connections Varnish will open  |
@@ -82,6 +82,10 @@ the host and port-options. But backends can have a few more options.
 | probe                 |            | Health check definition or reference.                |
 |                       |            | Covered in detail in the next sub-chapter.           |
 +-----------------------+------------+------------------------------------------------------+
+
+All the timeout values default to whatever the matching parameters are set
+to. The default values in parentheses is the default parameter value of
+Varnish 4.1.
 
 Over a number of years, the default values for various timeouts have been
 tweaked frequently to adapt to what has proven to work. This is specially
@@ -381,6 +385,124 @@ far from perfect.
 
 .. FIXME: Need to update this for varnish 4.1 and include other states than
    the usual suspects.
+
+Forcing state
+.............
+
+You can forcibly set the state of a backend to sick if you want to remove
+it from rotation. This is easily done with varnishadm::
+
+        # varnishadm backend.list
+        Backend name                   Admin      Probe
+        boot.default                   probe      Healthy 6/8
+
+        # varnishadm backend.set_health boot.default sick
+        # varnishadm backend.list
+        Backend name                   Admin      Probe
+        boot.default                   sick       Healthy 8/8
+
+        # varnishadm backend.set_health boot.default healthy
+        # varnishadm backend.list
+        Backend name                   Admin      Probe
+        boot.default                   healthy    Healthy 8/8
+
+        # varnishadm backend.set_health boot.default probe
+        # varnishadm backend.list
+        Backend name                   Admin      Probe
+        boot.default                   probe      Healthy 8/8
+
+In the above example we first list the backends. The naming scheme is
+``<vcl>.<name>``. The "Admin" column lists the administrative state. It
+starts out as "probe" - use whatever the probe state is. The next column is
+the probe state itself. In the beginning you see that the probe is
+considering the backend healthy, with 6 out of 8 healthy probes (Varnish
+was just restarted).
+
+We can use ``backend.set_health <name> <state>`` to modify the state. The
+states available are ``healthy``, ``sick`` and ``probe``.
+
+Here you can see it in action::
+
+        # http -ph http://localhost:6081/?$RANDOM
+        HTTP/1.1 200 OK
+        Accept-Ranges: bytes
+        Age: 0
+        Connection: keep-alive
+        Content-Encoding: gzip
+        Content-Length: 3041
+        Content-Type: text/html
+        Date: Mon, 15 Aug 2016 10:57:29 GMT
+        ETag: "29cd-53a19199f0a80-gzip"
+        Last-Modified: Mon, 15 Aug 2016 09:46:02 GMT
+        Server: Apache/2.4.23 (Debian)
+        Vary: Accept-Encoding
+        Via: 1.1 varnish-v4
+        X-Varnish: 15
+
+        # varnishadm backend.set_health boot.default sick
+
+        # http -ph http://localhost:6081/?$RANDOM
+        HTTP/1.1 503 Backend fetch failed
+        Age: 0
+        Connection: keep-alive
+        Content-Length: 282
+        Content-Type: text/html; charset=utf-8
+        Date: Mon, 15 Aug 2016 10:57:37 GMT
+        Retry-After: 5
+        Server: Varnish
+        Via: 1.1 varnish-v4
+        X-Varnish: 32775
+
+Alternatively, let's set up an incorrect health probe, by using a bogus ``.url`` in the VCL::
+
+        # http -ph http://localhost:6081/?$RANDOM
+        HTTP/1.1 503 Backend fetch failed
+        Age: 0
+        Connection: keep-alive
+        Content-Length: 278
+        Content-Type: text/html; charset=utf-8
+        Date: Mon, 15 Aug 2016 10:59:14 GMT
+        Retry-After: 5
+        Server: Varnish
+        Via: 1.1 varnish-v4
+        X-Varnish: 2
+
+        # varnishadm backend.list
+        Backend name                   Admin      Probe
+        boot.default                   probe      Sick 2/8
+
+        # varnishadm backend.set_health boot.default healthy
+
+        # http -ph http://localhost:6081/?$RANDOM
+        HTTP/1.1 200 OK
+        Accept-Ranges: bytes
+        Age: 0
+        Connection: keep-alive
+        Content-Encoding: gzip
+        Content-Length: 3041
+        Content-Type: text/html
+        Date: Mon, 15 Aug 2016 10:59:52 GMT
+        ETag: "29cd-53a19199f0a80-gzip"
+        Last-Modified: Mon, 15 Aug 2016 09:46:02 GMT
+        Server: Apache/2.4.23 (Debian)
+        Vary: Accept-Encoding
+        Via: 1.1 varnish-v4
+        X-Varnish: 32773
+
+        # varnishadm backend.list
+        Backend name                   Admin      Probe
+        boot.default                   healthy    Sick 0/8
+
+As you can see, Varnish starts out failing, because it believes the backend
+to be down. Once we forcibly set it to healthy, then everything works, even
+if ``backend.list`` still reveals that the health checks are failing.
+
+Using ``backend.set_health`` is mainly meant to help you take things out of
+production temporarily. Specially when you put backends back into
+production, it is important to remember that you want to use
+``backend.set_health <name> probe``, not ``backend.set_health <name>
+healthy``. The latter will essentially make your probes worthless.
+
 
 Load balancing of backends
 --------------------------
