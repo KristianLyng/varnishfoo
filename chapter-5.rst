@@ -697,13 +697,16 @@ backend.
 
    import directors;
 
+   probe myprobe = { .url = "/"; }
    backend primary {
            .host = "192.168.0.1";
+           .probe = myprobe;
    }
 
    backend secondary {
            .host = "127.0.0.1";
            .port = "8080";
+           .probe = myprobe;
    }
 
    sub vcl_init {
@@ -742,17 +745,21 @@ ways to use the second backend. One is simple VCL, using ``std.healthy``:
    import directors;
    import std;
 
+   probe myprobe = { .url = "/"; }
    backend primary {
            .host = "192.168.0.1";
+           .probe = myprobe;
    }
 
    backend secondary {
            .host = "192.168.0.2";
+           .probe = myprobe;
    }
 
    backend fallback {
            .host = "127.0.0.1";
            .port = "8080";
+           .probe = myprobe;
    }
 
    sub vcl_init {
@@ -778,23 +785,29 @@ such:
 
    import directors;
 
+   probe myprobe = { .url = "/"; }
+
    backend primary {
            .host = "192.168.0.1";
+           .probe = myprobe;
    }
 
    backend secondary {
            .host = "192.168.0.2";
+           .probe = myprobe;
    }
 
    backend fallback {
            .host = "127.0.0.1";
            .port = "8080";
+           .probe = myprobe;
    }
 
    sub vcl_init {
         new rrdirector = directors.round_robin();
         rrdirector.add_backend(primary);
         rrdirector.add_backend(secondary);
+   
         new fbdirector = directors.fallback();
         fbdirector.add_backend(rrdirector.backend());
         fbdirector.add_backend(fallback);
@@ -809,7 +822,7 @@ before you start working with `vcl_recv`.
 
 Other examples where this is useful is if you have a set of application
 servers and a set of servers for static content, but the static content is
-_also_ present on the application servers. You might want to have a
+*also* present on the application servers. You might want to have a
 director for the static-only servers and a separate one for application
 servers. Then a director for the combined result can be used for static
 resources:
