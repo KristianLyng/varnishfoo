@@ -112,8 +112,8 @@ the Varnish-host waiting for backends that will never respond. By timing
 out, you might be able to deliver stale content to a user (who would be
 none the wiser) instead of waiting until the user leaves.
 
-Basic health probes
--------------------
+Health probes
+-------------
 
 A health check allows you to test that a backend is working as it should
 before you start fetching resources from it. In its simplest form, it is
@@ -504,27 +504,24 @@ production, it is important to remember that you want to use
 healthy``. The latter will essentially make your probes worthless.
 
 
-Load balancing of backends
---------------------------
+Load balancing
+--------------
 
 Varnish has always offered a few different ways to provide load balancing
 of backends. With Varnish 4, this is done through varnish modules. Mostly
-through the `directors` vmod.
+through the `directors` vmod, though any vmod can offer it.
 
 The idea is simple enough: Provide multiple backends that share the load of
-a single application. But it is not always that simple.
+a single application.
 
 In varnish, a load balancing scheme is usually referred to as a backend
-director, or just director.
-
-We'll start with the simplest type of load balacning.
+director, or just a director.
 
 Basic round-robin and random load balancing
 ...........................................
 
-Round-robin load balancing will simply rotate which backend is used. At the
-end of the day, all backends will have received the same amount of
-requests.
+Round-robin load balancing will rotate which backend is used. At the end of
+the day, all backends will have received the same amount of requests.
 
 The random-director is almost just as simple. The traffic is randomly
 distributed among the backends. At the end of the day, that means each
@@ -594,5 +591,285 @@ is relative to the other backends. In this example, the backend called
 You can add any number of backends to the same director, and you can use
 any number of directors.
 
+Health probes and directors
+...........................
 
+Health probes and directors are meant for each other. If you have two or
+more application servers that can serve the same site, putting them in a
+single director and adding health probes to them allows you to ensure that
+only known good backends are used.
+
+This does offer some challenges, however. First of all, if you are doing
+weighted load balancing, then the total weight will change. Let's assume
+you have 5 backends:
+
++-----------+--------+
+| Name      | Weight |
++===========+========+
+| red       | 1      |
++-----------+--------+
+| blue      | 2      |
++-----------+--------+
+| orange    | 4      |
++-----------+--------+
+| yellow    | 8      |
++-----------+--------+
+| green     | 16     |
++-----------+--------+
+
+Total weight would be 31. Normally, "green" will take 16/31, or 51% of the
+traffic. The "yellow" backend will take half that, and so forth. If
+"orange" suddenly went down, the new total weight would be 27. The extra
+load would be distributed evenly: 16/27 would go to "green" (59%), 1/27
+would go to "red" (3.7%).
+
+Generally speaking, it is better to keep weighting more or less equal. It
+makes it simpler for you to estimate load whenever you change your stack.
+
+Dynamic use of directors
+........................
+
+Directors are dynamic, even if backends are not.
+
+An example of this is that you can change the makeup of a director from
+VCL:
+
+.. code:: VCL
+
+   import directors;
+
+   backend one {
+           .host = "192.168.2.1";
+           .port = "80";
+   }
+   backend two {
+           .host = "192.168.2.2";
+           .port = "80";
+   }
+   sub vcl_init {
+           new radirector = directors.random();
+           radirector.add_backend(one, 5.0);
+           radirector.add_backend(two, 1.0);
+   }
+   
+   acl admins {
+           "192.168.0.0"/24;
+   }
+
+   sub vcl_recv {
+           set req.backend_hint = radirector.backend();
+           if (req.url ~ "^/admin" && client.ip ~ admins) {
+                   if (req.url ~ "/add_one") {
+                           radirector.add_backend(one, 1.0);
+                   }
+                   if (req.url ~ "/remove_one") {
+                           radirector.remove_backend(one);
+                   }
+                   if (req.url ~ "/add_two") {
+                           radirector.add_backend(two, 1.0);
+                   }
+                   if (req.url ~ "/remove_one") {
+                           radirector.remove_backend(two);
+                   }
+                   return (synth(200));
+           }
+   }
+
+The above VCL allows someone in the IP range 192.168.0.0/24 to issues HTTP
+requests to ``/admin/add_one``, ``/admin/remove_one``, ``/admin/add_two``
+or ``/admin/remove_two`` to affect the load balancing. This is not very
+common, but sensible use-cases for it could be automatic deployment, where
+a script first removes a backend from the director, then upgrades it, then
+puts it back in production. This, however, can also be achieved with
+``backend.set_health``.
+
+Fallback director
+.................
+
+The fallback director is a simple thing. You can add any number of backends
+to it, but it will always give you the first one that is healthy.
+
+The idea is that you have a primary backend that should always be used, but
+if that fails, you can potentially serve alternate content from a different
+backend.
+
+.. code:: VCL
+
+   import directors;
+
+   backend primary {
+           .host = "192.168.0.1";
+   }
+
+   backend secondary {
+           .host = "127.0.0.1";
+           .port = "8080";
+   }
+
+   sub vcl_init {
+        new fbdirector = directors.fallback();
+        fbdirector.add_backend(primary);
+        fbdirector.add_backend(secondary);
+   }
+
+   sub vcl_recv {
+        set req.backend_hint = fbdirector.backend();
+   }
+
+You can have any number of backends in a fallback director.
+
+Stacking directors
+..................
+
+Varnish treats all backends as directors, and vice versa. Wherever you can
+add a backend, you can add a director.
+
+As a result, you can add a director to an other director. Most of the time,
+this makes little sense.
+
+The one situation where it makes a ton of sense, however, is when you
+combine it with the fallback director.
+
+Let's say you have 2 regular application servers, but also periodically
+generate a static version of your site (or parts of it), that you put on a
+simple web server in case your application goes down.
+
+You can use a regular director for the first backends, but there are two
+ways to use the second backend. One is simple VCL, using ``std.healthy``:
+
+.. code:: VCL
+
+   import directors;
+   import std;
+
+   backend primary {
+           .host = "192.168.0.1";
+   }
+
+   backend secondary {
+           .host = "192.168.0.2";
+   }
+
+   backend fallback {
+           .host = "127.0.0.1";
+           .port = "8080";
+   }
+
+   sub vcl_init {
+        new rrdirector = directors.round_robin();
+        rrdirector.add_backend(primary);
+        rrdirector.add_backend(secondary);
+   }
+
+   sub vcl_recv {
+        if (std.healthy(rrdirector.backend())) {
+                set req.backend_hint = rrdirector.backend();
+        } else {
+                set req.backend_hint = fallback;
+        }
+   }
+
+This works, but can easily clutter your VCL.
+
+An alternative implementation using nested directors can be written as
+such:
+
+.. code:: VCL
+
+   import directors;
+
+   backend primary {
+           .host = "192.168.0.1";
+   }
+
+   backend secondary {
+           .host = "192.168.0.2";
+   }
+
+   backend fallback {
+           .host = "127.0.0.1";
+           .port = "8080";
+   }
+
+   sub vcl_init {
+        new rrdirector = directors.round_robin();
+        rrdirector.add_backend(primary);
+        rrdirector.add_backend(secondary);
+        new fbdirector = directors.fallback();
+        fbdirector.add_backend(rrdirector.backend());
+        fbdirector.add_backend(fallback);
+   }
+
+   sub vcl_recv {
+        set req.backend_hint = fbdirector.backend();
+   }
+
+In this example, the end-result is the same, but all backend-logic is done
+before you start working with `vcl_recv`.
+
+Other examples where this is useful is if you have a set of application
+servers and a set of servers for static content, but the static content is
+_also_ present on the application servers. You might want to have a
+director for the static-only servers and a separate one for application
+servers. Then a director for the combined result can be used for static
+resources:
+
+.. code:: VCL
+
+   import directors;
+
+   probe myprobe { .url = "/health"; }
+
+   backend app1 { .host = "192.168.0.1"; .probe = myprobe; }
+   backend app2 { .host = "192.168.0.2"; .probe = myprobe; }
+   backend app3 { .host = "192.168.0.3"; .probe = myprobe; }
+   backend app4 { .host = "192.168.0.4"; .probe = myprobe; }
+   backend app5 { .host = "192.168.0.5"; .probe = myprobe; }
+
+   backend static1 { .host = "192.168.1.1"; .probe = myprobe; }
+   backend static2 { .host = "192.168.1.2"; .probe = myprobe; }
+   backend static3 { .host = "192.168.1.3"; .probe = myprobe; }
+   backend static4 { .host = "192.168.1.4"; .probe = myprobe; }
+
+   sub vcl_init {
+        new appservers = directors.round_robin();
+        appservers.add_backend(app1);
+        appservers.add_backend(app2);
+        appservers.add_backend(app3);
+        appservers.add_backend(app4);
+        appservers.add_backend(app5);
+
+        new staticonly = directors.round_robin();
+        staticonly.add_backend(static1);
+        staticonly.add_backend(static2);
+        staticonly.add_backend(static3);
+        staticonly.add_backend(static4);
+
+        new static = directors.fallback();
+        static.add_backend(staticonly.backend());
+        static.add_backend(appservers.backend());
+
+   }
+
+   sub vcl_recv {
+           if (req.url ~ "^/static") {
+                   set req.backend_hint = static.backend();
+           } else {
+                   set req.backend_hint = appservers.backend();
+           }
+   }
+
+In the above scenario, you have three directors:
+
+* ``appservers`` are only the application servers, and is used by default.
+* ``staticonly`` are the servers that only has static content.
+* ``static`` is the set of the above - all servers that could deliver
+  static content.
+
+By writing your VCL like this, you separate the load balancing from the
+actual routing of traffic. In `vcl_recv`, you just say "this is static
+content, fetch it from a server that has static files". If you later wanted
+to change the balancing so that the application servers got traffic for
+static content even if a static-only server was up, then you could make
+that change in `vcl_init` without having to adjust `vcl_recv` at all.
 
