@@ -697,7 +697,7 @@ backend.
 
    import directors;
 
-   probe myprobe = { .url = "/"; }
+   probe myprobe { .url = "/"; }
    backend primary {
            .host = "192.168.0.1";
            .probe = myprobe;
@@ -745,7 +745,7 @@ ways to use the second backend. One is simple VCL, using ``std.healthy``:
    import directors;
    import std;
 
-   probe myprobe = { .url = "/"; }
+   probe myprobe { .url = "/"; }
    backend primary {
            .host = "192.168.0.1";
            .probe = myprobe;
@@ -785,7 +785,7 @@ such:
 
    import directors;
 
-   probe myprobe = { .url = "/"; }
+   probe myprobe { .url = "/"; }
 
    backend primary {
            .host = "192.168.0.1";
