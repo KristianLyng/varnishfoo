@@ -1,6 +1,17 @@
 #!/bin/bash
 
-VARNISHD=${VARNISHD:-varnishd}
+
+if [ -z "$VARNISHD" ]; then
+	if which varnishd; then
+		VARNISHD="varnishd"
+	elif [ -x "/usr/sbin/varnishd" ]; then
+		VARNISHD="/usr/sbin/varnishd"
+	elif [ -x "/usr/local/sbin/varnishd" ]; then
+		VARNISHD="/usr/local/sbin/varnishd"
+	fi
+fi
+set -u
+	
 TARGET=$(mktemp -d /tmp/foo.XXXXXX)
 if [ ! -x "$VARNISHD" ]; then
 	echo "No executable found at $VARNISHD"
