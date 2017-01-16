@@ -1,13 +1,13 @@
 WEBTARGET=www.kly.no:/srv/varnishfoo.info/
 PYGMENTSTYLE=default
-RST2HTML=rst2html5.py
+RST2HTML=rst2html
 
 C=control/
 B=build
 
 bases = $(basename $(wildcard chapter*rst appendix*rst))
 CHAPTERS= $(addsuffix .rst,${bases})
-HTML=${B}/index.html $(addprefix ${B}/,$(addsuffix .html,${bases}))
+HTML=${B}/LICENSE ${B}/index.html $(addprefix ${B}/,$(addsuffix .html,${bases}))
 CHAPTERPDF= $(addprefix ${B}/,$(addsuffix .pdf, ${bases}))
 TESTS= $(addprefix ${B}/,$(addsuffix .test, ${bases}))
 PYGCSS=${B}/css/pygment-style.css
@@ -33,6 +33,10 @@ pdfs: ${B}/varnishfoo.pdf ${CHAPTERPDF}
 
 all: web pdfs
 	@echo " [ALL] "$(ok)
+
+${B}/LICENSE: LICENSE | ${B}
+	@cp $< ${B}
+	@echo " [LICENSE] "$(ok)
 
 check: ${TESTS}
 
@@ -67,7 +71,7 @@ ${B}/web-version.rst: $(wildcard *rst Makefile .git/* control/* img/* img/*/*) |
 	@echo >> ${B}/web-version.rst
 	@echo " [RST] "$(ok)
 
-${B}/varnishfoo.rst: Makefile $(wildcard control/*rst) | $(wildcard *rst) ${B}
+${B}/varnishfoo.rst: Makefile $(wildcard control/*rst) $(wildcard *rst) | ${B}
 	@echo ".. include:: ../control/front.rst" > $@
 	@echo >> $@
 	@echo ".. include:: ../control/secondpage.rst" >> $@

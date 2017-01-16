@@ -31,13 +31,9 @@ than just a leaflet.
 
 I am writing this in my spare time, I retain full ownership of the
 material. For now, the material is available under a Creative Commons
-"CC-BY-SA-NC" license. This is a Creative Commons license that allows full
-non-commercial usage to you as the reader, including copies and
-modifications, as long as attribution is provided. The NC-part of that
-license will be removed when I feel the material has matured enough and the
-time is right. To clarify, the "non-commercial" clause is aimed at people
-wanting to sell the book or use it in commercial training (or similar) - it
-is not intended to prevent you from reading the material at work.
+"CC-BY-SA" license. This is a Creative Commons license that allows full
+use to you as the reader, including copies and modifications, as long as
+attribution is provided.
 
 I hope you will enjoy this book, and I would appreciate any feedback you
 could give, positive or negative.

@@ -38,7 +38,7 @@ keyword and operator available. That is precisely what the manual page is
 for.
 
 Since VCL leans heavily on regular expressions, there is also a small
-cheat sheet towards the end, including VCL snippets.
+cheat sheet in appendix D, including VCL snippets.
 
 Working with VCL
 ----------------
@@ -261,6 +261,9 @@ greatly.
         /* Or
          * multi-line C-style comments
          * like this.*/
+
+        # Remember, always start with "vcl 4.0;". The VCL version. Even in
+        # Varnsih 4.1
         vcl 4.0;
        
         # White space is largely optional
@@ -642,7 +645,7 @@ back onto the Host header.
 
 `regsub()` takes three arguments. The input, the regular expression and
 what to change it with. If you are unfamiliar with regular expressions,
-there's a brief introduction and cheat sheet later in the chapter.
+there's a brief introduction and cheat sheet in appendix D.
 
 Note how we do not check if the ``Host`` header contains ``www.`` before we
 issue the `regsub()`. That is because the process of checking and the
@@ -1349,6 +1352,31 @@ backend and relevant VCL didn't prevent it, the value will be true.
 Backend requests
 ----------------
 
+In addition to the state engine provided for client request, there is also
+a smaller one for backend requests. You should consider them isolated, with
+only minimal interaction.
+
+The main interaction between them happens when a cache is empty. In
+addition, there is some interaction when you are using
+"stale-while-revalidate" type of logic.
+
+If you have a cache hit for a perfectly normal object, no backend thread is
+even affected. On the other hand, in the case of a cache miss, the
+client-thread will have to wait for the backend-thread to finish executing.
+
+A third form of interaction takes place when a client hits a stale object.
+An object in cache that has expired, but is still usable for
+"stale-while-revalidate". In these cases, the client will notify a backend
+thread, then deliver the stale object to the client. The backend thread
+will then continue to request the resource from the backend and populate
+the cache, even if there are no clients waiting for it.
+
+It is also worth remembering that multiple client threads can be waiting
+for the same object to be fetched by a single backend thread.
+
+But despite all this, the basic VCL of the backend fetcher is pretty
+straight forward, with one or two minor exceptions.
+
 `vcl_backend_fetch`
 ...................
 
@@ -1454,5 +1482,296 @@ cached.
 
 It is tempting to set `beresp.uncacheable = true;` if your backend server
 is serving an error that you believe to be intermittent, but this is not
-without problems. 
+without problems. This will tell Varnish that the resource is uncachable
+in the future too. If you set `beresp.uncachable = true;`, you should also
+set `beresp.ttl` to the period of time you want to disable caching. For
+intermittent errors, you want a very low `beresp.ttl`. Perhaps as low as
+1s.
 
+We will look closer at how to handle this soon.
+
+`vcl_backend_error`
+...................
+
++------------------------------------------------------------+
+| `vcl_backend_error`                                        |
++=============+==============================================+
+| Context     | Backend request                              |
++-------------+----------------------------------------------+
+| Variables   | `bereq`, `beresp`, `server`, `now`           |
++-------------+----------------------------------------------+
+| Return      | `deliver`, `retry`, `abandon`                |
+| statements  |                                              |
++-------------+----------------------------------------------+
+| Next state  | `vcl_backend_fetch`                          |
++-------------+----------------------------------------------+
+| Typical use | - Change error messages                      |
+|             | - Retry failed requests                      |
+|             | - Decide what to do with errors              |
++-------------+----------------------------------------------+
+
+If Varnish fails to fetch a resource from a server, for instance if the
+server doesn't respond or doesn't respond with HTTP, Varnish will execute
+`vcl_backend_error`. This allows Varnish to generate a synthetic response,
+or put more plainly: an error message.
+
+It is worth emphasising that this is only called if the server doesn't
+respond in any reasonable manner at all, or times out before the response
+is complete. If a server returns "500 Internal Server Error", then
+`vcl_backend_response` is run instead.
+
+In `vcl_backend_error`, you have a `beresp` object, representing a
+synthetic backend response. You also have the original `bereq` object,
+representing the backend request that triggered the error.
+
+The built-in VCL just returns a standard error message:
+
+.. code:: VCL
+
+        sub vcl_backend_error {
+            set beresp.http.Content-Type = "text/html; charset=utf-8";
+            set beresp.http.Retry-After = "5";
+            synthetic( {"<!DOCTYPE html>
+        <html>
+          <head>
+            <title>"} + beresp.status + " " + beresp.reason + {"</title>
+          </head>
+          <body>
+            <h1>Error "} + beresp.status + " " + beresp.reason + {"</h1>
+            <p>"} + beresp.reason + {"</p>
+            <h3>Guru Meditation:</h3>
+            <p>XID: "} + bereq.xid + {"</p>
+            <hr>
+            <p>Varnish cache server</p>
+          </body>
+        </html>
+        "} );
+            return (deliver);
+        }
+
+In addition to `return (deliver);`, you can also use `retry`, to make an
+other attempt at fetching the request is made, and the `bereq.retries`
+counter is increased. If `bereq.retries` exceeds the `max_retries`
+parameter, then no more attempts are made.
+
+The last alternative, the `return (abandon);` is a bit special. It means
+that the result is discarded entirely. This is highly useful if you have
+stale objects in the cache. If you use `return (deliver);`, the stale
+object would be replaced by the error message, while using `return
+(abandon);` does not replace the stale object, allowing you to use that
+instead.
+
+Housekeeping
+------------
+
+There are two more VCL "states" that fall outside of the backend- and
+client-scope. These are special states that are almost exclusively used by
+Varnish modules (VMODS).
+
+Since they are both tiny, there's little point dedicating a chapter to
+each.
+
+The default VCL for both of them look as such:
+
+.. code:: VCL
+
+        sub vcl_init {
+        }
+
+        sub vcl_fini {
+            return (ok);
+        }
+
+You will mostly deal with them when you use Varnish modules. As some of
+these vmods are very common, such as the ones used for load balancing, we
+will cover them when we cover the vmods.
+
+The `vcl_init` state is executed at VCL initialization, while `vcl_fini` is
+run when VCL is unloaded.
+
+Varnish Modules
+---------------
+
+With Varnish 4, Varnish Modules have become quite mature. Varnish Modules
+are basically VCL extensions, but with a little extra on the side. They can
+be used to solve anything from converting text form lowercase to uppercase,
+to cryptographic hash functions to memcached integration. Wether it is a
+good idea or not, is a different question.
+
+Varnish already ships with two vmods. The standard vmod, or "std" vmod,
+provides a number of small but highly useful utilityfunctions. It is
+documented in the manual file `vmod_std(3)`, or on
+https://varnish-cache.org/docs/4.1/reference/vmod_std.generated.html
+.
+
+It can be used to convert text to numbers, log data to syslog, extract port
+numbers from an IP, and so forth. You will see references to it several
+times.
+
+The other vmod varnish ships with by default is the "directors" vmod. This
+used to be an integrated part of Varnish, but is now split off into a
+module. The directors-vmod provides a common set of load balancing
+functions, allowing you to treat a set of multiple origin servers a single
+logical entity. It provides a random-director, round robin, hash-director
+and fallback-director. It is documented in the manual page
+`vmod_directors(5)`, or on
+https://varnish-cache.org/docs/4.1/reference/vmod_directors.generated.html#varnish-directors-module
+.
+
+Using a vmod is simple, once it is installed. All you have to do is add
+"import std;" in your VCL, and the "std" namespace is available to you.
+
+We will look at both of these directors when they are relevant, in addition
+to a few other commonly used modules. For now, just know that they exist.
+
+Bringing it together
+--------------------
+
+There isn't any perfect way to write VCL. This chapter tries to provide a
+mixture of a reference guide that you can use to look up the individual VCL
+states, and some small examples of what you can do with them.
+
+The list of typical uses of a state should reveal a lot about how often you
+will need to tweak it.
+
+An example of a complete, working VCL that makes a lot of sense for many
+sites could look like this:
+
+.. code:: VCL
+
+   vcl 4.0;
+
+   # The standard vmod, std, provides several small but important features.
+   import std;
+
+   # Define a single backend, with a health probe with default settings
+   backend origin {
+           .host = "192.168.1.0";
+           .port = "8080";
+           .probe = {
+                   .url = "/healthcheck";
+           }
+   }
+
+   # A list of IPs that we allow to probe us for state
+   acl monitors {
+           "192.168.0.0"/24;
+   }
+
+   # A list of IPs for clients that will get some extra debug information.
+   # Presumably developers or sysadmins.
+   acl debuggers {
+           "192.168.1.0"/24;
+           "192.168.100.0"/24;
+   }
+
+   sub vcl_recv {
+           # This site only needs cookies under the "/admin" url.
+           # Removing the entire Cookie-header when you don't intend to use
+           # it makes caching a lot safer and easier.
+           if (req.url !~ "^/admin") {
+                   unset req.http.cookie;
+           }
+
+           # Answer health checks
+           if (req.url ~ "/healthcheck") {
+                   # Only answer health checks from monitor-ips.
+                   if (client.ip ~ monitors) {
+                           # Use the std-vmod to check if the backend is
+                           # healthy, as per the health probe. If it is,
+                           # return 200 OK. Otherwise, 503.
+                           if (std.healthy(origin)) {
+                                return (synth(200));
+                           } else {
+                                return (synth(503));
+                           }
+                   } else {
+                           # 401 Unahtorized if someone outside of the
+                           # "monitors" ACL asks for health state.
+                           return (synth(401));
+                   }
+           }
+           # Otherwise, fall through to the built-in VCL and let that
+           # handle the rest.
+   }
+
+   sub vcl_backend_response {
+           # If the backend request wasn't for "/admin", then remove any
+           # "Set-Cookie" header.
+           if (bereq.url !~ "^/admin") {
+                   unset beresp.http.set-cookie;
+           }
+           # Be very cautious about hit-for-pass objects. Only allow
+           # Varnish to disable the cache for 1 second at a time. Unless
+           # the backend itself provides a max-age.
+           if (beresp.uncacheable && beresp.http.cache-control !~ "max-age") {
+                   set beresp.ttl = 1s;
+           }
+           # If the request was a succes (200 OK) and it was for an image,
+           # ensure a minimum cache time.
+           if (beresp.status == 200 && bereq.url ~ "^/images") {
+                   if (beresp.ttl < 600s) {
+                           set beresp.ttl = 600s;
+                   }
+           }
+           # Same as with vcl_recv: Fall through to the built-in VCL if
+           # possible.
+   }
+ 
+   # Custom-routine to add some debug-headers on the response.
+   sub add_debug_headers {
+           if (obj.hits > 0) {
+                   set resp.http.X-Hits = obj.hits;
+                   set resp.http.X-Hit = "true";
+           } else {
+                   set resp.http.X-Hit = "false";
+           }
+           set resp.http.X-Age = resp.http.Age;
+   }
+
+   # Custom-routine to remove debug-headers.
+   sub remove_debug_headers {
+           unset resp.http.X-Varnish;
+           unset resp.http.Via;
+   }
+
+   sub vcl_deliver {
+           # Only add debug-headers for clients in the "debuggers" subnet.
+           if (client.ip ~ debuggers) {
+                   call add_debug_headers;
+           } else {
+                   call remove_debug_headers;
+           }
+           # Remove the Age-header, as we want clients to behave as if any
+           # content from us is 100% fresh with regards to cache duration.
+           unset resp.http.Age;
+   }
+
+This example isn't meant as a best practice type of guide, but to give you
+some inspiration as to how you can use VCL.
+
+Of special note is the lack of return statements. This is a good habit to
+establish, even if it isn't always possible to stick with it. The idea is
+that you make your modifications first, then the built-in VCL provides a
+safety net in case you forgot some corner case or misinterpreted the
+outcome. If the built-in VCL is getting in your way, you should first
+understand exactly why, then see if you can modify the request or response
+so that the built-in VCL will do what you want. Doing this is generally
+safer than just bypassing the built-in VCL entirely.
+
+Summary
+-------
+
+VCL is mostly about cache policy. You work with a single request at a time
+and the goal is to keep the VCL as small and generic as possible.
+
+There are a large number of states you can modify, but in practical usage,
+it's rare that you end up using more than three or four of them.
+
+In chapters to come, we will go through a number of scenarios that are both
+common and uncommon. But because VCL is a language, there isn't finite set
+of tasks you can use it for. It's really up to how your application works.
+
+Hopefully, this chapter can function as a reference for your future VCL
+needs, even when there are no examples available for the problem you are
+trying to solve.
