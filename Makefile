@@ -1,4 +1,4 @@
-WEBTARGET=pathfinder.kly.no:public_html/varnishfoo.info/
+WEBTARGET=www.kly.no:/srv/varnishfoo.info/
 PYGMENTSTYLE=default
 RST2HTML=rst2html5.py
 
