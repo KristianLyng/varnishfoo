@@ -32,6 +32,9 @@ awk -v target=${TARGET} '
 }
 ' "$@"
 
+chmod a+r ${TARGET}/*
+chmod a+x ${TARGET}
+
 prefix() {
 	{ echo "$1"; cat $2; } | sponge $2
 }

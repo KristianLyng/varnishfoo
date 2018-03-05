@@ -1,5 +1,5 @@
 FROM nginx:latest
-RUN apt-get update && apt-get -y install make docutils-common gawk locales varnish git-core rst2pdf inkscape
+RUN apt-get update && apt-get -y install make docutils-common gawk locales varnish git-core rst2pdf inkscape moreutils
 ADD . /vf
 WORKDIR /vf
 RUN echo en_US.UTF-8 UTF-8 >> /etc/locale.gen
