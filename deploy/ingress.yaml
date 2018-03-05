@@ -1,0 +1,28 @@
+apiVersion: extensions/v1beta1
+kind: Ingress
+metadata:
+  annotations:
+    kubernetes.io/ingress.class: nginx
+    kubernetes.io/tls-acme: "true"
+  name: varnishfoo
+spec:
+  rules:
+  - host: varnishfoo.info
+    http:
+      paths:
+      - backend:
+          serviceName: varnishfoo
+          servicePort: 80
+        path: /
+  - host: www.varnishfoo.info
+    http:
+      paths:
+      - backend:
+          serviceName: varnishfoo
+          servicePort: 80
+        path: /
+  tls:
+  - hosts:
+    - varnishfoo.info
+    - www.varnishfoo.info
+    secretName: varnishfoo-tls

@@ -1,0 +1,16 @@
+---
+steps:
+- name: 'gcr.io/cloud-builders/docker'
+  args: ['build', '-t', 'gcr.io/$PROJECT_ID/varnishfoo:$BUILD_ID', '.']
+- name: 'gcr.io/cloud-builders/docker'
+  args: ["push", "gcr.io/$PROJECT_ID/varnishfoo:$BUILD_ID"]
+- name: 'gcr.io/cloud-builders/kubectl'
+  args:
+  - set
+  - image
+  - deployment
+  - varnishfoo
+  - varnishfoo=gcr.io/$PROJECT_ID/varnishfoo:$BUILD_ID
+  env:
+  - 'CLOUDSDK_COMPUTE_ZONE=europe-west1-b'
+  - 'CLOUDSDK_CONTAINER_CLUSTER=cluster-1'

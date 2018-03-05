@@ -1,0 +1,27 @@
+apiVersion: extensions/v1beta1
+kind: Deployment
+metadata:
+  labels:
+    app: varnishfoo
+  name: varnishfoo
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: varnishfoo
+  strategy:
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 1
+    type: RollingUpdate
+  template:
+    metadata:
+      labels:
+        app: varnishfoo
+    spec:
+      containers:
+      - image: nginx:latest
+        name: varnishfoo
+        ports:
+        - containerPort: 80
+          protocol: TCP
