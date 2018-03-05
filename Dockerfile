@@ -1,5 +1,5 @@
 FROM nginx:latest
-RUN apt-get update && apt-get -y install make docutils-common gawk locales varnish
+RUN apt-get update && apt-get -y install make docutils-common gawk locales varnish git-core
 ADD . /usr/share/nginx/html
 WORKDIR /usr/share/nginx/html
 RUN echo en_US.UTF-8 UTF-8 >> /etc/locale.gen
