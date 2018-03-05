@@ -3,7 +3,7 @@
 
 if [ -z "$VARNISHD" ]; then
 	if which varnishd; then
-		VARNISHD="varnishd"
+		VARNISHD="$(which varnishd)"
 	elif [ -x "/usr/sbin/varnishd" ]; then
 		VARNISHD="/usr/sbin/varnishd"
 	elif [ -x "/usr/local/sbin/varnishd" ]; then
