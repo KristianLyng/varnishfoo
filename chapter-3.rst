@@ -628,9 +628,9 @@ If you just type ``varnishadm``, you enter the interactive mode::
         Closing CLI connection
 
 Both modes are functionally identical. One benefit of using the interactive
-mode is that you don't have to worry about yet an other level of quotation
+mode is that you don't have to worry about yet another level of quotation
 marks once you start dealing with more complex commands than ``vcl.load``
-and ``param.list``. For now, it's just a matter of style. An other
+and ``param.list``. For now, it's just a matter of style. Another
 difference is that ``varnishadm`` in interactive mode also offer
 rudimentary command line completion, something your shell might not.
 
@@ -719,7 +719,7 @@ The main area shows 7 columns:
         and similar.
 
 ``CHANGE``
-        "Change per second". Or put an other way: The difference between
+        "Change per second". Or put another way: The difference between
         the current value and the value read a second earlier. Can be read
         as "cache hit per second" or "client reuqests per second".
 
@@ -836,7 +836,7 @@ traffic for that to be useful. You need to be able to filter and group data
 to be able to use ``varnishlog`` productively.
 
 Normally ``varnishlog`` will only parse new data. Since the shmlog contains
-up to 80MB of old data, it's some times useful to look at this data too.
+up to 80MB of old data, it's sometimes useful to look at this data too.
 This can be achieved with the ``-d`` argument.
 
 You can also select if you want backend-traffic (``-b``), client-traffic
@@ -1125,7 +1125,7 @@ Using a VSL query with ``-g raw`` will be similar to ``-i`` or ``-I``::
         # varnishlog -d -g raw -q 'ReqUrl eq "/"'
          2 ReqURL         c /
 
-An other option for grouping is ``-g session``. This will behave similar to
+Another option for grouping is ``-g session``. This will behave similar to
 ``-g request`` for many tests, but it's for a single HTTP session. Or in
 other words: If a client re-uses a connection to issue multiple HTTP
 requests, ``-g request`` will separate each request, but ``-g session``
@@ -1226,7 +1226,7 @@ matching using ``~`` for comparison::
         ::1 - - [18/Dec/2015:14:23:42 +0000] "GET http://localhost/?30808 HTTP/1.1" 200 3092 "-" "HTTPie/0.8.0"
         (...)
 
-An other helpful way to use a VSL query is to investigate the details of
+Another helpful way to use a VSL query is to investigate the details of
 the ``Timestamp`` tag. Quoting directly from the ``vsl(7)`` manual page::
 
        Timestamp - Timing information
@@ -1309,7 +1309,7 @@ will match if ``Timestamp[3]`` is 1.006334, as seen here, but
 ``Timestamp[3] > 1`` will not, because it will be considered the same as
 ``1 > 1``. In short: Use ``1.0`` instead of just ``1``.
 
-An other nifty way to use VSL queries is to investigate the ``TTL`` tag.
+Another nifty way to use VSL queries is to investigate the ``TTL`` tag.
 This log tag is used to report how an object gets its cache duration::
 
         # varnishlog -g raw -d -i TTL

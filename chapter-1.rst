@@ -133,7 +133,7 @@ development power to implement them, but they did not necessarily align
 with the goals and time frames of Varnish Cache. Varnish Plus became a
 commercial test-bed for features that were not *yet* in Varnish Cache for
 various reasons. As time passed, many of the features that begun life in
-Varnish Plus have trickled into Varnish Cache proper in one way or an other
+Varnish Plus have trickled into Varnish Cache proper in one way or another
 (streaming, surrogate keys, and more), and some have still to make it. Some
 may never make it. This book focuses on Varnish Cache proper, but will
 reference Varnish Plus where it makes sense.
@@ -200,7 +200,7 @@ called "The Varnish Book" (Not to be confused with THIS book about
 Varnish). This is available freely through their site at
 http://varnish-software.com, after registration.
 
-An other less known source of information for Varnish is the flow
+Another less known source of information for Varnish is the flow
 charts/``dot``-graphs used to document the VCL state engine. The only
 official location for this is found in the source code of Varnish, under
 ``doc/graphviz/``. They can be generated, assuming you have

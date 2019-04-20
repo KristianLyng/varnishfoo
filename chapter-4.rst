@@ -61,7 +61,7 @@ incorrectly due to re-write rules, then fix your rules but find the old
 content due to the previously wrong VCL.
 
 Reloading VCL is always done through the CLI, but most startup scripts
-provide shorthands that does the job for you. You can do it manually using
+provide shorthands that do the job for you. You can do it manually using
 ``varnishadm``::
 
         # varnishadm vcl.list
@@ -348,11 +348,11 @@ greatly.
                 }
 
                 # The Host header contains the verbatim Host header, as
-                # supplied by the client. Some times, that includes a port
+                # supplied by the client. Sometimes, that includes a port
                 # number, but typically only if it is user-visible (e.g.:
                 # the user entered http://www.example.com:8080/)
                 if (req.http.host == "www.example.com" && req.url == "/login") {
-                        # return (pass) is an other return statement. It
+                        # return (pass) is another return statement. It
                         # instructs Varnish to bypass the cache for this
                         # request.
                         return (pass);
@@ -373,7 +373,7 @@ greatly.
 More on return-statements
 -------------------------
 
-A central mechanism of VCL is the return-statement, some times referred to
+A central mechanism of VCL is the return-statement, sometimes referred to
 as a terminating statement. It is important to understand just what this
 means.
 
@@ -573,8 +573,8 @@ To summarize the built in VCL:
 
 - Reject SPDY / HTTP/2.0 requests
 - Pipe unknown (possibly unsafe) request methods directly to the backend
-- By-pass cache for anything except ``GET`` and ``HEAD`` requests
-- By-pass cache for requests with ``Authorization`` or ``Cookie`` headers.
+- Bypass cache for anything except ``GET`` and ``HEAD`` requests
+- Bypass cache for requests with ``Authorization`` or ``Cookie`` headers.
 
 And the return states that are valid are:
 
@@ -1375,7 +1375,7 @@ It is also worth remembering that multiple client threads can be waiting
 for the same object to be fetched by a single backend thread.
 
 But despite all this, the basic VCL of the backend fetcher is pretty
-straight forward, with one or two minor exceptions.
+straightforward, with one or two minor exceptions.
 
 `vcl_backend_fetch`
 ...................
@@ -1595,7 +1595,7 @@ Varnish Modules
 With Varnish 4, Varnish Modules have become quite mature. Varnish Modules
 are basically VCL extensions, but with a little extra on the side. They can
 be used to solve anything from converting text form lowercase to uppercase,
-to cryptographic hash functions to memcached integration. Wether it is a
+to cryptographic hash functions to memcached integration. Whether it is a
 good idea or not, is a different question.
 
 Varnish already ships with two vmods. The standard vmod, or "std" vmod,

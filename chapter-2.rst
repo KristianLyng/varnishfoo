@@ -221,7 +221,7 @@ Adding other headers is done the same way::
 
 We just simulated what our browser did, and verified that it really was the
 ``If-Modified-Since`` header that made the difference earlier. To have
-multiple headers, just list them one after an other::
+multiple headers, just list them one after another::
 
         $ http -p Hh http://kly.no/ "Host: example.com" "User-Agent: foo" "X-demo: bar"
         GET / HTTP/1.1
@@ -421,7 +421,7 @@ If a server sends a ``Last-Modified``-header, the client can issue a
 indicating that the server only needs to transmit the response body if it's
 been updated.
 
-Some times it isn't trivial to know the modification time, but you might be
+Sometimes it isn't trivial to know the modification time, but you might be
 able to uniquely identify the content anyway. For that matter, the content
 might have been changed back to a previous state. This is where the
 *entity tag*, or ``ETag`` response header is useful.
@@ -717,7 +717,7 @@ for Varnish, and is covered detailed in later chapters. For now, it's good
 to just get used to issuing an extra request to Varnish after the expiry
 time to see the update take place.
 
-Let's do an other example of this, using a browser, and 60 seconds of max
+Let's do another example of this, using a browser, and 60 seconds of max
 age and an ETag header set to something random so our browser can do
 conditional GET requests:
 
