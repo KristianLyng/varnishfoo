@@ -65,7 +65,7 @@ which is typically about 85MB large. It is split in two parts. The
 smallest bit is the part for counters, used to keep track of any part
 of Varnish that could be covered by a number, e.g. number of cache hits,
 number of objects, and so forth. This part of the shmlog is roughly 2MB by
-default, by varies depending on setup.
+default, but varies depending on setup.
 
 The biggest part of the shmlog is reserved for fifo-style log entries,
 directly related to requests typically. This is 80MB by default. Once those
@@ -99,7 +99,7 @@ Varnish will abort. In most cases, that means the entire child process
 shuts down, only to have the manager start it back up. You lose all
 connections, you lose all cache.
 
-Hopefully, you wont run into assert errors. They are there to handle what
+Hopefully, you won't run into assert errors. They are there to handle what
 is believed to be the unthinkable. A more realistic example can be:
 
 - Create an object, called *foo*. Set ``foo.magic`` to ``0x123765``.
@@ -675,8 +675,8 @@ It can also be accessed in manners better suited for scripting, either
 -x`` (XML). The real-time mode collects data over time, to provide you with
 meaningful interpretation. Knowing that you have had 11278670 cache hits
 over the last six and a half days might be interesting, but knowing that
-you have 25.96 cache hits per seconds right now is far more useful. The
-same can be achieved through ``varnishtat -1`` and similar by executing the
+you have 25.96 cache hits per second right now is far more useful. The
+same can be achieved through ``varnishstat -1`` and similar by executing the
 command twice and comparing the values.
 
 Looking at the upper left corner of the screenshot above, you'll see some
@@ -901,7 +901,7 @@ log entries.
 The very first column is used to help you group requests. The single ``*``
 tells you that this particular line is just informing you about the
 following grouping. ``<< Request  >> 2`` tells you that the following is
-grouped as a request, and the *vxid* is 2. A *vixid* is an ID attached to
+grouped as a request, and the *vxid* is 2. A *vxid* is an ID attached to
 all log records. You will also see it in the response header ``X-Varnish``.
 
 Next, you see what is more typical entries. Each log line starts with a
@@ -1368,7 +1368,7 @@ seconds. Let's try to modify some headers from a backend and try again::
         -   End            
 
 You can still see the ``TTL`` header, but now it reads 3600.
-Unfortunately, there's a miss-match between the documentation and
+Unfortunately, there's a mismatch between the documentation and
 implementation in Varnish 4.0 and 4.1. The documentation suggests that
 the first number should take ``Age`` into account, but as we just
 demonstrated, that is clearly not happening (if it was, then the first
@@ -1425,7 +1425,7 @@ Combining multiple queries is also possible::
 These examples are mostly meant to get you started and give you an idea of
 what you can do. The best reference pages for these tools are the manual
 pages, and the ``vsl-query(7)`` and ``vsl(7)`` manual pages. Even if they
-some times do get out of date.
+sometimes do get out of date.
 
 Summary
 -------
@@ -1442,10 +1442,10 @@ scripts, the default values are tuned for real web sites and can be used
 even on quite high-traffic sites.
 
 Of the tools demonstrated here, ``varnishlog``, ``varnishadm`` and
-``varnishstat`` are the real work horses. Mastering a few simple VSL
+``varnishstat`` are the real workhorses. Mastering a few simple VSL
 queries will make operating on the shared memory log a breeze, even when
 your site is serving thousands of requests per second and you need to find
-that one URL that's miss-behaving.
+that one URL that's misbehaving.
 
 When you are introduced to the Varnish Configuration Language in the
 chapters to come, these tools will be right at the center of your work

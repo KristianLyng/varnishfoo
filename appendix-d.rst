@@ -52,7 +52,7 @@ may want with Varnish.
            # This changes /foo/bar/foo/blatti to /bar/bar/bar/blatti.
            set req.url = regsuball(req.url, "foo","bar");
         
-           # Paranthesis can be used to group logic, and | as a logical
+           # Parentheses can be used to group logic, and | as a logical
            # "or" operator.
            if (req.url ~ "^/(html|css|img)") {
                    # Matches /html, /css and /img
@@ -67,7 +67,7 @@ may want with Varnish.
            # puts it into a request header called "x-magic".
            # It does this by first ensuring we've passed the question-mark,
            # then skipping all characters up until "magic=", then starting
-           # a group using paranthesis. The content of the group is one or
+           # a group using parentheses. The content of the group is one or
            # more of any character except &.
            # + acts just like * , but where * means "0 or more", + means "1
            # or more"
