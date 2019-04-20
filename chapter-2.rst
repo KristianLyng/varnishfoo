@@ -28,7 +28,7 @@ Tools: The browser
 ------------------
 
 A browser is an important tool. Most of todays web traffic is,
-unsurprisingly, through a web browser. Therefor, it is important to be able
+unsurprisingly, through a web browser. Therefore, it is important to be able
 to dig deeper into how they work with regards to cache. Most browsers have
 a developer- or debug console, but we will focus on Chrome.
 
@@ -221,7 +221,7 @@ Adding other headers is done the same way::
 
 We just simulated what our browser did, and verified that it really was the
 ``If-Modified-Since`` header that made the difference earlier. To have
-multiple headers, just list them one after an other::
+multiple headers, just list them one after another::
 
         $ http -p Hh http://kly.no/ "Host: example.com" "User-Agent: foo" "X-demo: bar"
         GET / HTTP/1.1
@@ -421,7 +421,7 @@ If a server sends a ``Last-Modified``-header, the client can issue a
 indicating that the server only needs to transmit the response body if it's
 been updated.
 
-Some times it isn't trivial to know the modification time, but you might be
+Sometimes it isn't trivial to know the modification time, but you might be
 able to uniquely identify the content anyway. For that matter, the content
 might have been changed back to a previous state. This is where the
 *entity tag*, or ``ETag`` response header is useful.
@@ -717,7 +717,7 @@ for Varnish, and is covered detailed in later chapters. For now, it's good
 to just get used to issuing an extra request to Varnish after the expiry
 time to see the update take place.
 
-Let's do an other example of this, using a browser, and 60 seconds of max
+Let's do another example of this, using a browser, and 60 seconds of max
 age and an ETag header set to something random so our browser can do
 conditional GET requests:
 
@@ -1260,7 +1260,7 @@ details. The ``Vary`` header simply states that any variation in the
 request header, however small, mandates a new object in the cache. This
 causes numerous headaches. Here are some examples:
 
-- ``Accept-Enoding: gzip,deflate`` and ``Accept-Encoding: deflate,gzip``
+- ``Accept-Encoding: gzip,deflate`` and ``Accept-Encoding: deflate,gzip``
   will result in two different variants.
 - ``Vary: User-Agent`` will cause a tremendous amount of variants, since
   the level of detail in modern ``User-Agent`` headers is extreme.
@@ -1269,7 +1269,7 @@ causes numerous headaches. Here are some examples:
 Many of these things can be remedied or at least worked around in Varnish.
 All of it will be covered in detail in separate chapters.
 
-On a last note, Varnish has a special case were it refuse to cache any
+On a last note, Varnish has a special case where it refuses to cache any
 content with a response header of ``Vary: *``.
 
 Request methods
@@ -1326,14 +1326,14 @@ Varnish::
         127.0.0.1 - - [28/Nov/2015:00:32:05 +0000] "GET /cgi-bin/foo.sh HTTP/1.1" 200 163 "-" "HTTPie/0.8.0"
 
 The client sees the same result, but the web server has logged a ``GET``
-request. Please note that ``HEAD``-requests include a ``Content-Lenght`` as
+request. Please note that ``HEAD``-requests include a ``Content-Length`` as
 if a ``GET``-request was issued. It is only the response body itself that
 is absent.
 
 Cached status codes
 -------------------
 
-Only a subset of response odes allow cacheing, even if an ``s-maxage`` or
+Only a subset of response codes allow caching, even if an ``s-maxage`` or
 similar is provided. Quoting directly from Varnish source code,
 specifically ``bin/varnishd/cache/cache_rfc2616.c``, the list is::
 
@@ -1381,7 +1381,7 @@ Cookies and authorization
 
 Requests with a cookie-header or HTTP basic authorization header are tricky
 at best to cache. Varnish takes a "better safe than sorry" approach, and
-does not cache responses to requests with either a ``Cookie``-header,
+does not cache responses to requests with either a ``Cookie``-header or
 ``Authorization``-header by default. Responses with
 ``Set-Cookie`` are not cached.
 

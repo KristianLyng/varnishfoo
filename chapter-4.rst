@@ -11,7 +11,7 @@ Introducing VCL
    removed.
 
    That said, the content itself is correct and you are welcome to read it
-   and coment.
+   and comment.
 
 The Varnish Configuration Language is a small custom programming language
 that gives you the mechanism to hook into Varnish's request handling state
@@ -61,7 +61,7 @@ incorrectly due to re-write rules, then fix your rules but find the old
 content due to the previously wrong VCL.
 
 Reloading VCL is always done through the CLI, but most startup scripts
-provide shorthands that does the job for you. You can do it manually using
+provide shorthands that do the job for you. You can do it manually using
 ``varnishadm``::
 
         # varnishadm vcl.list
@@ -263,13 +263,13 @@ greatly.
          * like this.*/
 
         # Remember, always start with "vcl 4.0;". The VCL version. Even in
-        # Varnsih 4.1
+        # Varnish 4.1
         vcl 4.0;
        
         # White space is largely optional
         backend foo{.host="localhost";.port="80";}
 
-        # vcl_recv is an other VCL state you can modify. It is the first
+        # vcl_recv is another VCL state you can modify. It is the first
         # one in the request chain, and we will discuss it in great detail
         # shortly.
         sub vcl_recv {
@@ -303,11 +303,11 @@ greatly.
                 set req.http.X-foo = regsuball(req.url,"foo","bar");
         }
 
-        # You can define your own sub routines, but they can't start with
+        # You can define your own subroutines, but they can't start with
         # vcl_. Varnish reserves all VCL function names that start with
-        # vcl_ for it self.
+        # vcl_ for itself.
         sub check_request_method {
-                # Custom sub routines can be accessed anywhere, as long as
+                # Custom subroutines can be accessed anywhere, as long as
                 # the variables and return methods used are valid where the
                 # subroutine is called.
                 if (req.method == "POST" || req.method == "PUT") {
@@ -348,12 +348,12 @@ greatly.
                 }
 
                 # The Host header contains the verbatim Host header, as
-                # supplied by the client. Some times, that includes a port
+                # supplied by the client. Sometimes, that includes a port
                 # number, but typically only if it is user-visible (e.g.:
                 # the user entered http://www.example.com:8080/)
                 if (req.http.host == "www.example.com" && req.url == "/login") {
-                        # return (pass) is an other return statement. It
-                        # instructs Varnish to by-pass the cache for this
+                        # return (pass) is another return statement. It
+                        # instructs Varnish to bypass the cache for this
                         # request.
                         return (pass);
                 }
@@ -373,7 +373,7 @@ greatly.
 More on return-statements
 -------------------------
 
-A central mechanism of VCL is the return-statement, some times referred to
+A central mechanism of VCL is the return-statement, sometimes referred to
 as a terminating statement. It is important to understand just what this
 means.
 
@@ -525,7 +525,7 @@ perfect cache hit rate.
 
 Walking through the list from the top, it starts out by checking if the
 request method is ``PRI``, which is a request method for the SPDY protocol,
-and/or HTTP/2.0. This is currently unsuported, so Varnish terminates the
+and/or HTTP/2.0. This is currently unsupported, so Varnish terminates the
 VCL state with a ``synth(405)``.
 
 This will cause Varnish to synthesize an error message with a pre-set
@@ -573,8 +573,8 @@ To summarize the built in VCL:
 
 - Reject SPDY / HTTP/2.0 requests
 - Pipe unknown (possibly unsafe) request methods directly to the backend
-- By-pass cache for anything except ``GET`` and ``HEAD`` requests
-- By-pass cache for requests with ``Authorization`` or ``Cookie`` headers.
+- Bypass cache for anything except ``GET`` and ``HEAD`` requests
+- Bypass cache for requests with ``Authorization`` or ``Cookie`` headers.
 
 And the return states that are valid are:
 
@@ -623,7 +623,7 @@ changing one of them to the other. This is quite easy in VCL.
         }
 
 Notice how the above VCL split the logically separate problems into two
-different sub routines. We could just as easily have placed them both
+different subroutines. We could just as easily have placed them both
 directly in `vcl_recv`, but the above form will yield a VCL file that is
 easier to read and organize over time.
 
@@ -1342,7 +1342,7 @@ hit, the value will be 1 or greater.
 Other than `obj.hits` and `obj.uncacheable`, you do not have direct access
 to the object. You do, however, have most of what you need in `resp.*`. The
 cached object is always read-only, but the `resp` data structure represents
-this specific response, not the cached object it self. As such, you can
+this specific response, not the cached object itself. As such, you can
 modify it.
 
 The `obj.uncacheable` variable can be used to identify if the response was
@@ -1375,7 +1375,7 @@ It is also worth remembering that multiple client threads can be waiting
 for the same object to be fetched by a single backend thread.
 
 But despite all this, the basic VCL of the backend fetcher is pretty
-straight forward, with one or two minor exceptions.
+straightforward, with one or two minor exceptions.
 
 `vcl_backend_fetch`
 ...................
@@ -1388,7 +1388,7 @@ straight forward, with one or two minor exceptions.
 | Variables   | `bereq`, `server`, `now`                     |
 |             |                                              |
 +-------------+----------------------------------------------+
-| Return      | `fetch`,`abandon`                            |
+| Return      | `fetch`, `abandon`                           |
 | statements  |                                              |
 +-------------+----------------------------------------------+
 | Next state  | `vcl_backend_response`, `vcl_backend_error`  |
@@ -1417,9 +1417,9 @@ The built-in VCL is empty:
 +=============+==============================================+
 | Context     | Backend request                              |
 +-------------+----------------------------------------------+
-| Variables   | `bereq`,`beresp`, `server`, `now`            |
+| Variables   | `bereq`, `beresp`, `server`, `now`           |
 +-------------+----------------------------------------------+
-| Return      | `deliver`,`retry`,`abandon`                  |
+| Return      | `deliver`, `retry`, `abandon`                |
 | statements  |                                              |
 +-------------+----------------------------------------------+
 | Next state  | `vcl_backend_error`                          |
@@ -1595,7 +1595,7 @@ Varnish Modules
 With Varnish 4, Varnish Modules have become quite mature. Varnish Modules
 are basically VCL extensions, but with a little extra on the side. They can
 be used to solve anything from converting text form lowercase to uppercase,
-to cryptographic hash functions to memcached integration. Wether it is a
+to cryptographic hash functions to memcached integration. Whether it is a
 good idea or not, is a different question.
 
 Varnish already ships with two vmods. The standard vmod, or "std" vmod,
@@ -1686,7 +1686,7 @@ sites could look like this:
                                 return (synth(503));
                            }
                    } else {
-                           # 401 Unahtorized if someone outside of the
+                           # 401 Unauthorized if someone outside of the
                            # "monitors" ACL asks for health state.
                            return (synth(401));
                    }
@@ -1702,12 +1702,12 @@ sites could look like this:
                    unset beresp.http.set-cookie;
            }
            # Be very cautious about hit-for-pass objects. Only allow
-           # Varnish to disable the cache for 1 second at a time. Unless
+           # Varnish to disable the cache for 1 second at a time, unless
            # the backend itself provides a max-age.
            if (beresp.uncacheable && beresp.http.cache-control !~ "max-age") {
                    set beresp.ttl = 1s;
            }
-           # If the request was a succes (200 OK) and it was for an image,
+           # If the request was a success (200 OK) and it was for an image,
            # ensure a minimum cache time.
            if (beresp.status == 200 && bereq.url ~ "^/images") {
                    if (beresp.ttl < 600s) {
@@ -1769,7 +1769,7 @@ There are a large number of states you can modify, but in practical usage,
 it's rare that you end up using more than three or four of them.
 
 In chapters to come, we will go through a number of scenarios that are both
-common and uncommon. But because VCL is a language, there isn't finite set
+common and uncommon. But because VCL is a language, there isn't a finite set
 of tasks you can use it for. It's really up to how your application works.
 
 Hopefully, this chapter can function as a reference for your future VCL

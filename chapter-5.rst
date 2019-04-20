@@ -3,8 +3,8 @@ Intelligent traffic routing
 
 .. warning::
 
-   I expect this chapter to change significantly throught its creation, and
-   possibly throught the creation of the rest of the book. It should be
+   I expect this chapter to change significantly throughout its creation, and
+   possibly throughout the creation of the rest of the book. It should be
    seen in context with chapter 4, introduction to VCL.
 
    I advise against reviewing the pedagogical aspects of the chapter until
@@ -65,7 +65,7 @@ the host and port-options. But backends can have a few more options.
 |                       |            | relevant: Geographic distance, virtualization.       |
 +-----------------------+------------+------------------------------------------------------+
 | first_byte_timeout    | From       | Timeout waiting for the very first byte of a reply.  |
-|                       | parameters | This is application-dependant. Typically, an         |
+|                       | parameters | This is application-dependent. Typically, an         |
 |                       | (60s)      | application will send the entire response in one go  |
 |                       |            | after generating it, so this is basically            |
 |                       |            | how long you expect/allow the application to generate|
@@ -94,7 +94,7 @@ systems with greatly increased timeouts. A few questions you should ask
 yourself:
 
 1. How long would a user actually wait.
-2. What are you _actually_ waiting for.
+2. What are you *actually* waiting for.
 3. In what circumstances would you want to send traffic to a backend this
    slow?
 
@@ -727,7 +727,7 @@ Stacking directors
 Varnish treats all backends as directors, and vice versa. Wherever you can
 add a backend, you can add a director.
 
-As a result, you can add a director to an other director. Most of the time,
+As a result, you can add a director to another director. Most of the time,
 this makes little sense.
 
 The one situation where it makes a ton of sense, however, is when you
