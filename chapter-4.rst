@@ -1273,7 +1273,7 @@ A very simple variant of this can be done like this:
            }
    }
 
-   sub vcl_deliver {
+   sub vcl_synth {
            if (resp.status == 301) {
                    set resp.http.Location = 
                         regsub(req.http.host, "^www\.","") + req.url;
